@@ -1,0 +1,2479 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+    doc = """A 32 x 20 m open-plan office under 96 ceiling RectLights (light caps, light ranges, grid culling): desks, partitions, cabinets, glass meeting rooms."""
+)
+
+def Xform "World"
+{
+    def Scope "Looks"
+    {
+        def Material "Wall"
+        {
+            token outputs:surface.connect = </World/Looks/Wall/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.7, 0.7, 0.68)
+                float inputs:roughness = 0.9
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+
+        def Material "Carpet"
+        {
+            token outputs:surface.connect = </World/Looks/Carpet/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.25, 0.27, 0.3)
+                float inputs:roughness = 0.9
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+
+        def Material "Desk"
+        {
+            token outputs:surface.connect = </World/Looks/Desk/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.75, 0.6, 0.45)
+                float inputs:roughness = 0.5
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+
+        def Material "Cabinet"
+        {
+            token outputs:surface.connect = </World/Looks/Cabinet/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.6, 0.62, 0.65)
+                float inputs:roughness = 0.35
+                float inputs:metallic = 1
+                token outputs:surface
+            }
+        }
+
+        def Material "Partition"
+        {
+            token outputs:surface.connect = </World/Looks/Partition/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.3, 0.35, 0.45)
+                float inputs:roughness = 0.8
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+
+        def Material "Glass"
+        {
+            token outputs:surface.connect = </World/Looks/Glass/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.9, 0.95, 1)
+                float inputs:roughness = 0.05
+                float inputs:metallic = 0
+                float inputs:opacity = 0.2
+                float inputs:ior = 1.5
+                token outputs:surface
+            }
+        }
+    }
+
+    def Cube "Ceiling" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, 0, 3.05)
+        float3 xformOp:scale = (32.2, 20.2, 0.1)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wall>
+    }
+
+    def Cube "Back" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, 10.05, 1.5)
+        float3 xformOp:scale = (32.2, 0.1, 3)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wall>
+    }
+
+    def Cube "Front" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, -10.05, 1.5)
+        float3 xformOp:scale = (32.2, 0.1, 3)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wall>
+    }
+
+    def Cube "Left" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-16.05, 0, 1.5)
+        float3 xformOp:scale = (0.1, 20.2, 3)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wall>
+    }
+
+    def Cube "Right" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (16.05, 0, 1.5)
+        float3 xformOp:scale = (0.1, 20.2, 3)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wall>
+    }
+
+    def Cube "Floor" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, 0, -0.05)
+        float3 xformOp:scale = (32.2, 20.2, 0.1)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Carpet>
+    }
+
+    def Cube "Desk000" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-11.3, -5.95, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg000" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-11.975, -5.95, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk001" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-9.7, -5.95, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg001" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-10.375, -5.95, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk002" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-11.3, -5.05, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg002" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-11.975, -5.05, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk003" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-9.7, -5.05, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg003" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-10.375, -5.05, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Screen00" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-10.5, -5.5, 0.625)
+        float3 xformOp:scale = (3.2, 0.06, 1.25)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Partition>
+    }
+
+    def Cube "Desk010" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-11.3, -0.45, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg010" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-11.975, -0.45, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk011" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-9.7, -0.45, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg011" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-10.375, -0.45, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk012" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-11.3, 0.45, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg012" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-11.975, 0.45, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk013" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-9.7, 0.45, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg013" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-10.375, 0.45, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Screen01" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-10.5, 0, 0.625)
+        float3 xformOp:scale = (3.2, 0.06, 1.25)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Partition>
+    }
+
+    def Cube "Desk020" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-11.3, 5.05, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg020" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-11.975, 5.05, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk021" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-9.7, 5.05, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg021" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-10.375, 5.05, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk022" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-11.3, 5.95, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg022" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-11.975, 5.95, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk023" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-9.7, 5.95, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg023" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-10.375, 5.95, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Screen02" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-10.5, 5.5, 0.625)
+        float3 xformOp:scale = (3.2, 0.06, 1.25)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Partition>
+    }
+
+    def Cube "Desk100" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-4.3, -5.95, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg100" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-4.975, -5.95, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk101" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-2.7, -5.95, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg101" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-3.375, -5.95, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk102" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-4.3, -5.05, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg102" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-4.975, -5.05, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk103" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-2.7, -5.05, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg103" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-3.375, -5.05, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Screen10" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-3.5, -5.5, 0.625)
+        float3 xformOp:scale = (3.2, 0.06, 1.25)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Partition>
+    }
+
+    def Cube "Desk110" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-4.3, -0.45, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg110" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-4.975, -0.45, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk111" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-2.7, -0.45, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg111" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-3.375, -0.45, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk112" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-4.3, 0.45, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg112" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-4.975, 0.45, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk113" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-2.7, 0.45, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg113" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-3.375, 0.45, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Screen11" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-3.5, 0, 0.625)
+        float3 xformOp:scale = (3.2, 0.06, 1.25)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Partition>
+    }
+
+    def Cube "Desk120" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-4.3, 5.05, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg120" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-4.975, 5.05, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk121" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-2.7, 5.05, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg121" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-3.375, 5.05, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk122" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-4.3, 5.95, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg122" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-4.975, 5.95, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk123" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-2.7, 5.95, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg123" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-3.375, 5.95, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Screen12" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-3.5, 5.5, 0.625)
+        float3 xformOp:scale = (3.2, 0.06, 1.25)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Partition>
+    }
+
+    def Cube "Desk200" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (2.7, -5.95, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg200" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (2.025, -5.95, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk201" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (4.3, -5.95, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg201" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (3.625, -5.95, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk202" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (2.7, -5.05, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg202" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (2.025, -5.05, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk203" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (4.3, -5.05, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg203" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (3.625, -5.05, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Screen20" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (3.5, -5.5, 0.625)
+        float3 xformOp:scale = (3.2, 0.06, 1.25)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Partition>
+    }
+
+    def Cube "Desk210" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (2.7, -0.45, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg210" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (2.025, -0.45, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk211" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (4.3, -0.45, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg211" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (3.625, -0.45, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk212" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (2.7, 0.45, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg212" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (2.025, 0.45, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk213" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (4.3, 0.45, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg213" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (3.625, 0.45, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Screen21" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (3.5, 0, 0.625)
+        float3 xformOp:scale = (3.2, 0.06, 1.25)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Partition>
+    }
+
+    def Cube "Desk220" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (2.7, 5.05, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg220" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (2.025, 5.05, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk221" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (4.3, 5.05, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg221" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (3.625, 5.05, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk222" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (2.7, 5.95, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg222" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (2.025, 5.95, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk223" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (4.3, 5.95, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg223" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (3.625, 5.95, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Screen22" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (3.5, 5.5, 0.625)
+        float3 xformOp:scale = (3.2, 0.06, 1.25)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Partition>
+    }
+
+    def Cube "Desk300" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (9.7, -5.95, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg300" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (9.025, -5.95, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk301" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (11.3, -5.95, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg301" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (10.625, -5.95, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk302" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (9.7, -5.05, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg302" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (9.025, -5.05, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk303" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (11.3, -5.05, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg303" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (10.625, -5.05, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Screen30" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (10.5, -5.5, 0.625)
+        float3 xformOp:scale = (3.2, 0.06, 1.25)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Partition>
+    }
+
+    def Cube "Desk310" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (9.7, -0.45, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg310" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (9.025, -0.45, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk311" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (11.3, -0.45, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg311" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (10.625, -0.45, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk312" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (9.7, 0.45, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg312" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (9.025, 0.45, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk313" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (11.3, 0.45, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg313" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (10.625, 0.45, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Screen31" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (10.5, 0, 0.625)
+        float3 xformOp:scale = (3.2, 0.06, 1.25)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Partition>
+    }
+
+    def Cube "Desk320" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (9.7, 5.05, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg320" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (9.025, 5.05, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk321" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (11.3, 5.05, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg321" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (10.625, 5.05, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk322" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (9.7, 5.95, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg322" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (9.025, 5.95, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Desk323" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (11.3, 5.95, 0.735)
+        float3 xformOp:scale = (1.56, 0.76, 0.03)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "Leg323" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (10.625, 5.95, 0.36)
+        float3 xformOp:scale = (0.05, 0.6, 0.72)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Screen32" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (10.5, 5.5, 0.625)
+        float3 xformOp:scale = (3.2, 0.06, 1.25)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Partition>
+    }
+
+    def Cube "Cabinet0" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-14, 9.7, 0.564285)
+        float3 xformOp:scale = (1.2, 0.6, 1.12857)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Cabinet1" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-11, 9.7, 0.749639)
+        float3 xformOp:scale = (1.2, 0.6, 1.49928)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Cabinet2" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-8, 9.7, 0.800749)
+        float3 xformOp:scale = (1.2, 0.6, 1.6015)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Cabinet3" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-5, 9.7, 0.514345)
+        float3 xformOp:scale = (1.2, 0.6, 1.02869)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Cabinet4" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-2, 9.7, 0.573963)
+        float3 xformOp:scale = (1.2, 0.6, 1.14793)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Cabinet5" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (1, 9.7, 0.964106)
+        float3 xformOp:scale = (1.2, 0.6, 1.92821)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Cabinet6" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (4, 9.7, 0.53521)
+        float3 xformOp:scale = (1.2, 0.6, 1.07042)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Cabinet7" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (7, 9.7, 0.564887)
+        float3 xformOp:scale = (1.2, 0.6, 1.12977)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Cabinet8" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (10, 9.7, 0.974164)
+        float3 xformOp:scale = (1.2, 0.6, 1.94833)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Cabinet9" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (13, 9.7, 0.810942)
+        float3 xformOp:scale = (1.2, 0.6, 1.62188)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Cabinet>
+    }
+
+    def Cube "Pillar00" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-8, -4, 1.5)
+        float3 xformOp:scale = (0.5, 0.5, 3)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wall>
+    }
+
+    def Cube "Pillar01" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-8, 4, 1.5)
+        float3 xformOp:scale = (0.5, 0.5, 3)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wall>
+    }
+
+    def Cube "Pillar10" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, -4, 1.5)
+        float3 xformOp:scale = (0.5, 0.5, 3)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wall>
+    }
+
+    def Cube "Pillar11" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, 4, 1.5)
+        float3 xformOp:scale = (0.5, 0.5, 3)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wall>
+    }
+
+    def Cube "Pillar20" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (8, -4, 1.5)
+        float3 xformOp:scale = (0.5, 0.5, 3)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wall>
+    }
+
+    def Cube "Pillar21" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (8, 4, 1.5)
+        float3 xformOp:scale = (0.5, 0.5, 3)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wall>
+    }
+
+    def Cube "RoomGlassA0" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (11.01, -7.15, 1.5)
+        float3 xformOp:scale = (0.02, 5.5, 3)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Glass>
+    }
+
+    def Cube "RoomGlassB0" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (13.45, -4.39, 1.5)
+        float3 xformOp:scale = (4.9, 0.02, 3)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Glass>
+    }
+
+    def Cube "Table0" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (13.5, -7.15, 0.74)
+        float3 xformOp:scale = (2, 1.9, 0.04)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def Cube "RoomGlassA1" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (11.01, -0.25, 1.5)
+        float3 xformOp:scale = (0.02, 5.5, 3)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Glass>
+    }
+
+    def Cube "RoomGlassB1" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (13.45, 2.51, 1.5)
+        float3 xformOp:scale = (4.9, 0.02, 3)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Glass>
+    }
+
+    def Cube "Table1" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (13.5, -0.25, 0.74)
+        float3 xformOp:scale = (2, 1.9, 0.04)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Desk>
+    }
+
+    def RectLight "P00_0"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-14.3, -8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P00_1"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-14.3, -6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P00_2"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-14.3, -3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P00_3"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-14.3, -1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P00_4"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-14.3, 1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P00_5"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-14.3, 3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P00_6"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-14.3, 6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P00_7"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-14.3, 8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P01_0"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-11.7, -8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P01_1"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-11.7, -6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P01_2"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-11.7, -3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P01_3"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-11.7, -1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P01_4"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-11.7, 1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P01_5"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-11.7, 3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P01_6"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-11.7, 6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P01_7"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-11.7, 8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P02_0"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-9.1, -8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P02_1"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-9.1, -6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P02_2"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-9.1, -3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P02_3"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-9.1, -1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P02_4"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-9.1, 1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P02_5"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-9.1, 3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P02_6"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-9.1, 6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P02_7"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-9.1, 8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P03_0"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-6.5, -8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P03_1"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-6.5, -6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P03_2"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-6.5, -3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P03_3"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-6.5, -1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P03_4"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-6.5, 1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P03_5"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-6.5, 3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P03_6"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-6.5, 6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P03_7"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-6.5, 8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P04_0"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-3.9, -8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P04_1"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-3.9, -6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P04_2"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-3.9, -3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P04_3"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-3.9, -1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P04_4"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-3.9, 1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P04_5"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-3.9, 3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P04_6"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-3.9, 6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P04_7"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-3.9, 8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P05_0"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-1.3, -8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P05_1"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-1.3, -6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P05_2"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-1.3, -3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P05_3"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-1.3, -1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P05_4"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-1.3, 1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P05_5"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-1.3, 3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P05_6"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-1.3, 6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P05_7"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (-1.3, 8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P06_0"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (1.3, -8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P06_1"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (1.3, -6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P06_2"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (1.3, -3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P06_3"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (1.3, -1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P06_4"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (1.3, 1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P06_5"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (1.3, 3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P06_6"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (1.3, 6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P06_7"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (1.3, 8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P07_0"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (3.9, -8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P07_1"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (3.9, -6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P07_2"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (3.9, -3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P07_3"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (3.9, -1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P07_4"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (3.9, 1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P07_5"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (3.9, 3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P07_6"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (3.9, 6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P07_7"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (3.9, 8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P08_0"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (6.5, -8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P08_1"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (6.5, -6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P08_2"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (6.5, -3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P08_3"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (6.5, -1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P08_4"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (6.5, 1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P08_5"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (6.5, 3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P08_6"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (6.5, 6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P08_7"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (6.5, 8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P09_0"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (9.1, -8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P09_1"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (9.1, -6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P09_2"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (9.1, -3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P09_3"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (9.1, -1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P09_4"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (9.1, 1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P09_5"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (9.1, 3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P09_6"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (9.1, 6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P09_7"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (9.1, 8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P10_0"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (11.7, -8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P10_1"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (11.7, -6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P10_2"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (11.7, -3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P10_3"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (11.7, -1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P10_4"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (11.7, 1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P10_5"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (11.7, 3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P10_6"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (11.7, 6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P10_7"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (11.7, 8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P11_0"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (14.3, -8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P11_1"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (14.3, -6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P11_2"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (14.3, -3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P11_3"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (14.3, -1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P11_4"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (14.3, 1.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P11_5"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (14.3, 3.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P11_6"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (14.3, 6.25, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def RectLight "P11_7"
+    {
+        float inputs:intensity = 6000
+        float inputs:width = 0.6
+        float inputs:height = 1.2
+        double3 xformOp:translate = (14.3, 8.75, 2.95)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Camera "View0"
+    {
+        matrix4d xformOp:transform = ((0.503871, -0.863779, 0, 0), (0.0289992, 0.0169162, 0.999436, 0), (-0.863292, -0.503587, 0.0335725, 0), (-14, -8.5, 1.6, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 28.0083
+        float verticalAperture = 28.0083
+        float2 clippingRange = (0.01, 100000)
+    }
+
+    def Camera "View1"
+    {
+        matrix4d xformOp:transform = ((-0.548656, 0.836048, 0, 0), (-0.039274, -0.0257736, 0.998896, 0), (0.835125, 0.548051, 0.0469758, 0), (10, 7.5, 1.7, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 28.0083
+        float verticalAperture = 28.0083
+        float2 clippingRange = (0.01, 100000)
+    }
+}

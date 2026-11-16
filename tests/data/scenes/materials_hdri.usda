@@ -1,0 +1,39 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+    doc = """Material grid under the studio HDRI (DomeLight)."""
+    subLayers = [@./materials.usda@]
+)
+
+over "World"
+{
+    def DomeLight "Dome"
+    {
+        custom int omni:rtx:usdluxVersion = 2411
+        float inputs:intensity = 1
+        asset inputs:texture:file = @./textures/studio.hdr@
+        token inputs:texture:format = "latlong"
+    }
+
+    def Camera "View0"
+    {
+        matrix4d xformOp:transform = ((1, 0, 0, 0), (0, 0.0161269, 0.99987, 0), (0, -0.99987, 0.0161269, 0), (0, -6.2, 1.5, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 12.612
+        float verticalAperture = 12.612
+        float2 clippingRange = (0.01, 100000)
+    }
+
+    def Camera "View1"
+    {
+        matrix4d xformOp:transform = ((1, 0, 0, 0), (0, 0.130455, 0.991454, 0), (0, -0.991454, 0.130455, 0), (0, -2.8, 0.5, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 16.5685
+        float verticalAperture = 16.5685
+        float2 clippingRange = (0.01, 100000)
+    }
+}

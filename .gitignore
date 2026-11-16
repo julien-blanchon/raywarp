@@ -5,12 +5,16 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .ruff_cache/
-/results/gallery/*.mp4
-/research/optix_poc/out/
-# Suite runs: keep results, reports and stills; videos, logs and frames stay local. Isaac assets
-# (and renders of them) are for local use only.
-/results/suite/**/*.mp4
-/results/suite/**/*_frames/
-/results/suite/**/log.txt
-/results/suite/**/isaac_*.png
-/results/suite/suite-v1/
+# Local run outputs (reports, renders, timings). Durable evidence goes to the HF bucket; the
+# formerly tracked tree is archived at hf://buckets/blanchon/mujoco-warp-pbr/archive/repo-results-2026-11-02/.
+/results/
+/internal/results/
+.claude/worktrees/
+MUJOCO_LOG.TXT
+/dist/
+# What the native build hook (tools/native/hook.py) writes into the source tree on editable installs.
+/raywarp/_native/*
+!/raywarp/_native/__init__.py
+!/raywarp/_native/mdl/
+/raywarp/_native/mdl/*
+!/raywarp/_native/mdl/__init__.py

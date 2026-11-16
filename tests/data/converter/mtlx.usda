@@ -1,0 +1,165 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+    doc = """Converter golden fixture for the MaterialX path (official MaterialX library -> MDL
+generator -> MDL SDK): an OpenPBR network with a tiled sRGB image and a legacy ND_normalmap id, a
+Standard Surface with a procedural noise, an image read through UV set 1 (geompropvalue st1)
+and a transmissive OpenPBR."""
+)
+
+def Xform "World"
+{
+    def Scope "Looks"
+    {
+        def Material "Textured"
+        {
+            token outputs:mtlx:surface.connect = </World/Looks/Textured/Surface.outputs:out>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "ND_open_pbr_surface_surfaceshader"
+                color3f inputs:base_color.connect = </World/Looks/Textured/Ramp.outputs:out>
+                float inputs:specular_roughness = 0.4
+                float3 inputs:geometry_normal.connect = </World/Looks/Textured/Normal.outputs:out>
+                token outputs:out
+            }
+
+            def Shader "Ramp"
+            {
+                uniform token info:id = "ND_tiledimage_color3"
+                asset inputs:file = @./mtlx_ramp.png@ (
+                    colorSpace = "srgb_texture"
+                )
+                float2 inputs:uvtiling = (2, 1)
+                color3f outputs:out
+            }
+
+            def Shader "NormalImage"
+            {
+                uniform token info:id = "ND_image_vector3"
+                asset inputs:file = @./mtlx_flat_normal.png@
+                float3 outputs:out
+            }
+
+            def Shader "Normal"
+            {
+                uniform token info:id = "ND_normalmap"
+                float3 inputs:in.connect = </World/Looks/Textured/NormalImage.outputs:out>
+                float3 outputs:out
+            }
+        }
+
+        def Material "Noise"
+        {
+            token outputs:mtlx:surface.connect = </World/Looks/Noise/Surface.outputs:out>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "ND_standard_surface_surfaceshader"
+                color3f inputs:base_color.connect = </World/Looks/Noise/Noise.outputs:out>
+                float inputs:specular_roughness = 0.6
+                token outputs:out
+            }
+
+            def Shader "Noise"
+            {
+                uniform token info:id = "ND_noise2d_color3"
+                float3 inputs:amplitude = (0.4, 0.3, 0.2)
+                float inputs:pivot = 0.5
+                color3f outputs:out
+            }
+        }
+
+        def Material "UvSet1"
+        {
+            token outputs:mtlx:surface.connect = </World/Looks/UvSet1/Surface.outputs:out>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "ND_open_pbr_surface_surfaceshader"
+                color3f inputs:base_color.connect = </World/Looks/UvSet1/Image.outputs:out>
+                token outputs:out
+            }
+
+            def Shader "Image"
+            {
+                uniform token info:id = "ND_image_color3"
+                asset inputs:file = @./mtlx_ramp.png@
+                float2 inputs:texcoord.connect = </World/Looks/UvSet1/Uv.outputs:out>
+                color3f outputs:out
+            }
+
+            def Shader "Uv"
+            {
+                uniform token info:id = "ND_geompropvalue_vector2"
+                string inputs:geomprop = "st1"
+                float2 outputs:out
+            }
+        }
+
+        def Material "Glass"
+        {
+            token outputs:mtlx:surface.connect = </World/Looks/Glass/Surface.outputs:out>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "ND_open_pbr_surface_surfaceshader"
+                float inputs:transmission_weight = 1
+                float inputs:specular_ior = 1.45
+                float inputs:specular_roughness = 0.05
+                token outputs:out
+            }
+        }
+    }
+
+    def Mesh "Textured" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0)]
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (interpolation = "vertex")
+        uniform token subdivisionScheme = "none"
+        rel material:binding = </World/Looks/Textured>
+    }
+
+    def Mesh "Noise" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0)]
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (interpolation = "vertex")
+        uniform token subdivisionScheme = "none"
+        rel material:binding = </World/Looks/Noise>
+    }
+
+    def Mesh "UvSet1" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0)]
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (interpolation = "vertex")
+        texCoord2f[] primvars:st1 = [(0, 0), (2, 0), (2, 2), (0, 2)] (interpolation = "vertex")
+        uniform token subdivisionScheme = "none"
+        rel material:binding = </World/Looks/UvSet1>
+    }
+
+    def Mesh "Glass" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0)]
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (interpolation = "vertex")
+        uniform token subdivisionScheme = "none"
+        rel material:binding = </World/Looks/Glass>
+    }
+}

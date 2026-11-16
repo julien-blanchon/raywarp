@@ -1,0 +1,40 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+    doc = """Cornell box lit by a 0.5 m RectLight (5000 nits)."""
+    subLayers = [@./cornell_box.usda@]
+)
+
+over "World"
+{
+    def RectLight "Light"
+    {
+        float inputs:intensity = 5000
+        float inputs:width = 0.5
+        float inputs:height = 0.5
+        double3 xformOp:translate = (0, 0, 1.995)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Camera "View0"
+    {
+        matrix4d xformOp:transform = ((1, 0, 0, 0), (0, 0, 1, 0), (0, -1, 0, 0), (0, -3.85, 1, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 13.7731
+        float verticalAperture = 13.7731
+        float2 clippingRange = (0.01, 100000)
+    }
+
+    def Camera "View1"
+    {
+        matrix4d xformOp:transform = ((0.493606, 0.869686, 0, 0), (0.141195, -0.080138, 0.986733, 0), (0.858148, -0.487057, -0.162352, 0), (0.85, -0.85, 0.35, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 28.0083
+        float verticalAperture = 28.0083
+        float2 clippingRange = (0.01, 100000)
+    }
+}

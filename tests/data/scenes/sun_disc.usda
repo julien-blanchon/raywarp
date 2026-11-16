@@ -1,0 +1,258 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+    doc = """A pergola 5 m up and a 6 m flagpole under the 0.53 degree sun: penumbrae grow with the distance to the occluder."""
+)
+
+def Xform "World"
+{
+    def Scope "Looks"
+    {
+        def Material "Floor"
+        {
+            token outputs:surface.connect = </World/Looks/Floor/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.6, 0.6, 0.6)
+                float inputs:roughness = 0.8
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+
+        def Material "Wood"
+        {
+            token outputs:surface.connect = </World/Looks/Wood/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.55, 0.4, 0.28)
+                float inputs:roughness = 0.7
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+    }
+
+    def Cube "Floor" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, 0, -0.025)
+        float3 xformOp:scale = (12, 12, 0.05)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Floor>
+    }
+
+    def Cube "Slat0" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-1, 0, 5.03)
+        float3 xformOp:scale = (0.1, 2.4, 0.06)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wood>
+    }
+
+    def Cube "Slat1" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-0.75, 0, 5.03)
+        float3 xformOp:scale = (0.1, 2.4, 0.06)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wood>
+    }
+
+    def Cube "Slat2" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-0.5, 0, 5.03)
+        float3 xformOp:scale = (0.1, 2.4, 0.06)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wood>
+    }
+
+    def Cube "Slat3" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-0.25, 0, 5.03)
+        float3 xformOp:scale = (0.1, 2.4, 0.06)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wood>
+    }
+
+    def Cube "Slat4" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, 0, 5.03)
+        float3 xformOp:scale = (0.1, 2.4, 0.06)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wood>
+    }
+
+    def Cube "Slat5" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0.25, 0, 5.03)
+        float3 xformOp:scale = (0.1, 2.4, 0.06)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wood>
+    }
+
+    def Cube "Slat6" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0.5, 0, 5.03)
+        float3 xformOp:scale = (0.1, 2.4, 0.06)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wood>
+    }
+
+    def Cube "Slat7" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0.75, 0, 5.03)
+        float3 xformOp:scale = (0.1, 2.4, 0.06)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wood>
+    }
+
+    def Cube "Slat8" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (1, 0, 5.03)
+        float3 xformOp:scale = (0.1, 2.4, 0.06)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wood>
+    }
+
+    def Cylinder "Post0" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.04
+        double height = 5
+        uniform token axis = "Z"
+        double3 xformOp:translate = (-1.1, -1.3, 2.5)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Wood>
+    }
+
+    def Cylinder "Post1" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.04
+        double height = 5
+        uniform token axis = "Z"
+        double3 xformOp:translate = (1.1, -1.3, 2.5)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Wood>
+    }
+
+    def Cylinder "Post2" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.04
+        double height = 5
+        uniform token axis = "Z"
+        double3 xformOp:translate = (-1.1, 1.3, 2.5)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Wood>
+    }
+
+    def Cylinder "Post3" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.04
+        double height = 5
+        uniform token axis = "Z"
+        double3 xformOp:translate = (1.1, 1.3, 2.5)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Wood>
+    }
+
+    def Cylinder "Flagpole" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.03
+        double height = 6
+        uniform token axis = "Z"
+        double3 xformOp:translate = (2.6, 1.6, 3)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Wood>
+    }
+
+    def Cube "Crate" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-2.3, -0.7, 0.2)
+        float3 xformOp:scale = (0.6, 0.6, 0.4)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wood>
+    }
+
+    def DistantLight "Sun"
+    {
+        bool inputs:normalize = 1
+        float inputs:intensity = 80000
+        float inputs:angle = 0.53
+        float3 xformOp:rotateXYZ = (30, 0, 10)
+        uniform token[] xformOpOrder = ["xformOp:rotateXYZ"]
+    }
+
+    def DomeLight "Sky"
+    {
+        custom int omni:rtx:usdluxVersion = 2411
+        float inputs:intensity = 3000
+        color3f inputs:color = (0.7, 0.8, 1)
+    }
+
+    def Camera "View0"
+    {
+        matrix4d xformOp:transform = ((0.999222, -0.039443, 0, 0), (0.0216667, 0.54889, 0.835613, 0), (-0.0329591, -0.834963, 0.549318, 0), (0, -5, 5, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 20.8227
+        float verticalAperture = 20.8227
+        float2 clippingRange = (0.01, 100000)
+    }
+
+    def Camera "View1"
+    {
+        matrix4d xformOp:transform = ((1, 0, 0, 0), (0, 0.573462, 0.819232, 0), (0, -0.819232, 0.573462, 0), (0.4, 1.2, 1.4, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 18.6523
+        float verticalAperture = 18.6523
+        float2 clippingRange = (0.01, 100000)
+    }
+}

@@ -1,0 +1,164 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+    doc = """White furnace: white rough dielectric, metal, coated, fuzz and anisotropic metal spheres in a uniform 1000 nit environment, no lights: every sphere about as bright as the background, none brighter."""
+)
+
+def Xform "World"
+{
+    def Scope "Looks"
+    {
+        def Material "Dielectric"
+        {
+            token outputs:mtlx:surface.connect = </World/Looks/Dielectric/Surface.outputs:out>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "ND_open_pbr_surface_surfaceshader"
+                color3f inputs:base_color = (1, 1, 1)
+                float inputs:specular_roughness = 0.5
+                token outputs:out
+            }
+        }
+
+        def Material "Metal"
+        {
+            token outputs:mtlx:surface.connect = </World/Looks/Metal/Surface.outputs:out>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "ND_open_pbr_surface_surfaceshader"
+                color3f inputs:base_color = (1, 1, 1)
+                float inputs:base_metalness = 1
+                float inputs:specular_roughness = 0.5
+                token outputs:out
+            }
+        }
+
+        def Material "Coated"
+        {
+            token outputs:mtlx:surface.connect = </World/Looks/Coated/Surface.outputs:out>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "ND_open_pbr_surface_surfaceshader"
+                color3f inputs:base_color = (1, 1, 1)
+                float inputs:specular_roughness = 0.5
+                float inputs:coat_weight = 1
+                float inputs:coat_roughness = 0.1
+                token outputs:out
+            }
+        }
+
+        def Material "Fuzz"
+        {
+            token outputs:mtlx:surface.connect = </World/Looks/Fuzz/Surface.outputs:out>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "ND_open_pbr_surface_surfaceshader"
+                color3f inputs:base_color = (1, 1, 1)
+                float inputs:specular_roughness = 0.5
+                float inputs:fuzz_weight = 1
+                color3f inputs:fuzz_color = (1, 1, 1)
+                float inputs:fuzz_roughness = 0.5
+                token outputs:out
+            }
+        }
+
+        def Material "AnisoMetal"
+        {
+            token outputs:mtlx:surface.connect = </World/Looks/AnisoMetal/Surface.outputs:out>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "ND_open_pbr_surface_surfaceshader"
+                color3f inputs:base_color = (1, 1, 1)
+                float inputs:base_metalness = 1
+                float inputs:specular_roughness = 0.5
+                float inputs:specular_roughness_anisotropy = 0.8
+                token outputs:out
+            }
+        }
+    }
+
+    def Sphere "Ball_Dielectric" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.3
+        double3 xformOp:translate = (-1.4, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Dielectric>
+    }
+
+    def Sphere "Ball_Metal" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.3
+        double3 xformOp:translate = (-0.7, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Metal>
+    }
+
+    def Sphere "Ball_Coated" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.3
+        double3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Coated>
+    }
+
+    def Sphere "Ball_Fuzz" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.3
+        double3 xformOp:translate = (0.7, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Fuzz>
+    }
+
+    def Sphere "Ball_AnisoMetal" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.3
+        double3 xformOp:translate = (1.4, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/AnisoMetal>
+    }
+
+    def DomeLight "White"
+    {
+        custom int omni:rtx:usdluxVersion = 2411
+        float inputs:intensity = 1
+        asset inputs:texture:file = @./textures/white.hdr@
+        token inputs:texture:format = "latlong"
+    }
+
+    def Camera "View0"
+    {
+        matrix4d xformOp:transform = ((1, 0, 0, 0), (0, 0, 1, 0), (0, -1, 0, 0), (0, -4, 0, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 18.6523
+        float verticalAperture = 18.6523
+        float2 clippingRange = (0.01, 100000)
+    }
+
+    def Camera "View1"
+    {
+        matrix4d xformOp:transform = ((1, 0, 0, 0), (0, 0.707107, 0.707107, 0), (0, -0.707107, 0.707107, 0), (0, -2.5, 2.5, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 20.8227
+        float verticalAperture = 20.8227
+        float2 clippingRange = (0.01, 100000)
+    }
+}

@@ -1,11 +1,13 @@
 [build-system]
-requires = ["setuptools"]
+# swig: the MDL SDK binding is generated at install time. A source build downloads the pinned
+# NVIDIA MDL SDK and OptiX header artifacts (tools/native/hook.py), so it needs network access.
+requires = ["setuptools>=77", "swig==4.2.1.post0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "mujoco-warp-pbr"
-version = "0.2.0"
-description = "Batched physically based renderer for MuJoCo Warp"
+name = "raywarp"
+version = "0.4.0"
+description = "Batched GPU physically based renderer in NVIDIA Warp for batch RL and dataset generation: MuJoCo / MuJoCo Warp, Newton, Isaac Lab, mjlab, USD and glTF"
 readme = {file = "README.md", content-type = "text/markdown"}
 license = "Apache-2.0"
 authors = [{name = "Julien Blanchon"}]
@@ -15,48 +17,72 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Multimedia :: Graphics :: 3D Rendering",
     "Topic :: Scientific/Engineering",
     "Typing :: Typed",
 ]
 requires-python = ">=3.12"
+# The renderer needs only Warp and NumPy; every simulator and file format is an extra.
 dependencies = [
-    "mujoco>=3.13.0",
-    # The renderer builds on mujoco_warp._src internals: pinned to a revision in [tool.uv.sources].
-    "mujoco-warp>=3.16,<3.18",  # uses mujoco_warp._src internals; tested with 3.16 (git) and 3.17.0
     "numpy",
-    "warp-lang>=1.15",
+    "warp-lang>=1.18,<1.19",
 ]
 
 [project.urls]
-Repository = "https://github.com/julien-blanchon/mujoco_warp_pbr"
-Issues = "https://github.com/julien-blanchon/mujoco_warp_pbr/issues"
+Repository = "https://github.com/julien-blanchon/raywarp"
+Documentation = "https://github.com/julien-blanchon/raywarp/tree/main/docs"
+Changelog = "https://github.com/julien-blanchon/raywarp/blob/main/CHANGELOG.md"
+Issues = "https://github.com/julien-blanchon/raywarp/issues"
+
+[project.scripts]
+raywarp = "raywarp.cli:main"
+
+[project.entry-points."mjlab.rgb_renderers"]
+raywarp = "raywarp.integrations.mjlab:create_groups"
 
 [project.optional-dependencies]
-# Type-checking-only stubs (shape-aware Warp and NumPy, MuJoCo): `pip install mujoco-warp-pbr[typing]`.
+# Type-checking stubs (shape-aware Warp and NumPy, MuJoCo).
 typing = [
     "mujoco-stubs>=3.13",
     "pyrefly-numpy-stubs>=1.4",
-    "pyrefly-warp-stubs>=0.1.1",
+    "pyrefly-warp-stubs>=0.1.3",
 ]
-dev = [
-    "mujoco-warp-pbr[typing]",
-    "pillow",
-    "pre-commit",
-    "pyrefly>=1.4",
-    "pytest",
-    "pytest-xdist",
-    "ruff",
+# Tested with MuJoCo 3.15 (Newton 1.7's `[sim]` pin) and 3.17; MuJoCo Warp pins its MuJoCo.
+mujoco = [
+    "mujoco>=3.15",
+    "mujoco-warp>=3.15",
 ]
-# Reference renderers and image metrics used by benchmarks/.
-bench = [
-    "flip-evaluator",
-    "mitsuba",
+# pyglet: Newton's viewer camera (no display needed). Resolves beside Newton's own `[sim]` extra
+# (tests/tooling/test_packaging.py).
+newton = [
+    "newton>=1.7",
     "pillow",
-    "newton",
-    "pygltflib>=1.16.5",
-    "trimesh",
+    "pyglet>=2.1.6,<3",
+]
+# OpenEXR decodes the EXR compressions scene/images/exr.py does not (PIZ, PXR24, B44, DWA, tiled,
+# multi-part). MaterialX is pinned to the version of the vendored MDL modules its generator
+# imports (raywarp/formats/usd/materials/mdl/library/NOTICE.md).
+usd = [
+    "materialx==1.39.5",
+    "openexr>=3.3",
+    "pillow",
     "usd-core",
+]
+# glTF scenes are converted to USD stages.
+gltf = [
+    "raywarp[usd]",
+    "pygltflib>=1.16.5",
+]
+viewer = [
+    "pillow",
+]
+# NVENC recording from device memory (`raywarp.video`; without it: CPU encoding, the ffmpeg CLI).
+video = [
+    "pynvvideocodec; sys_platform != 'darwin'",  # no macOS build (NVENC needs an NVIDIA GPU)
+]
+all = [
+    "raywarp[mujoco,newton,usd,gltf,viewer,video]",
 ]
 
 [[tool.uv.index]]
@@ -64,35 +90,84 @@ name = "nvidia"
 url = "https://pypi.nvidia.com/"
 explicit = true
 
-[[tool.uv.index]]
-name = "mujoco"
-url = "https://py.mujoco.org/"
-explicit = true
+[dependency-groups]
+# The gates, the test runner and the developer tooling (webui dev server, wpbr-dev, tools.hf).
+# Not the `mujoco` extra: a default group holding an extra that conflicts with newton-sim makes
+# `uv sync --group newton-sim` install both MuJoCo pairs; `--extra mujoco` (or `--all-extras`) adds it.
+dev = [
+    "raywarp[typing]",
+    "hypothesis",
+    "pillow",
+    "pre-commit",
+    # Newton's viewer camera (the headless Newton example tests).
+    "pyglet>=2.1.6,<3",
+    "pyrefly>=1.4",
+    "pytest",
+    "pytest-cov",
+    "pytest-xdist",
+    "ruff",
+    # tools/native/hook.py is tested in tests/tooling.
+    "setuptools>=77",
+    "vulture",
+    "aiohttp",
+    "fastapi",
+    "httpx",
+    "huggingface_hub>=2.3",
+    "uvicorn",
+]
+# Reference renderers, asset IO and image metrics of internal/benchmarks/.
+bench = [
+    "flip-evaluator",
+    "gitpython",  # Newton's asset downloader (newton.utils.download_asset)
+    "mitsuba",
+    "pillow",
+    "newton[importers]",
+    "pygltflib>=1.16.5",
+    "trimesh",
+    "usd-core",
+]
+# Newton's SolverMuJoCo needs the MuJoCo / MuJoCo Warp pins of Newton's `[sim]` extra (Newton 1.7:
+# ~=3.15; MuJoCo Warp 3.17 dropped the `Model.stat` it reads), older than the pair the `mujoco`
+# extra locks: a separate fork of the lock (internal/benchmarks/loop.py).
+newton-sim = ["newton[sim]"]
 
-[tool.uv.workspace]
-members = ["newton-pbr"]
+[tool.uv]
+# `all` holds the `mujoco` extra: both conflict with the newton-sim group.
+conflicts = [[{group = "newton-sim"}, {extra = "mujoco"}], [{group = "newton-sim"}, {extra = "all"}]]
 
 [tool.uv.sources]
 warp-lang = {index = "nvidia"}
-mujoco = {index = "mujoco"}
-# Pinned: the renderer builds on mujoco_warp._src internals.
-mujoco-warp = {git = "https://github.com/google-deepmind/mujoco_warp", rev = "6c33934b3cc0a81025b212e574fa95fca16ef4c5"}
 
 [tool.ruff]
 line-length = 128
 indent-width = 2
-extend-exclude = ["context", "*.ipynb"]
+# Not maintained code: run outputs, the knowledge base, the native wheels' submodules.
+extend-exclude = ["context", "third_party", "*.ipynb", "results", "internal/results", "internal/research"]
 
 [tool.ruff.lint]
-select = ["D", "I", "W", "E", "F", "B", "UP", "RUF", "BLE", "C4", "PLW1510"]
-# UP018 (native literals) and RUF046 (int of int) would rewrite Warp kernel code, where
-# float(x) / int(x) casts are typed DSL calls.
-ignore = ["D100", "D103", "E741", "UP018", "RUF001", "RUF002", "RUF003", "RUF046"]
+# docs/DEVELOPMENT.md section 4: ANN401 no `Any`, ARG no unused arguments (an imposed signature is
+# marked `@typing.override`, which ARG skips), D docstrings, C901 / PLR0915 function size.
+select = [
+  "D", "I", "W", "E", "F", "B", "UP", "RUF", "BLE", "C4", "PLW1510",
+  "ANN401", "ARG", "C901", "PLR0915",
+]
+# D100 / D104: module and package docstrings are optional. D205 / D209: a summary may wrap, closing
+# quotes end the last line. UP018 / RUF046 would rewrite Warp kernel code, where float(x) / int(x)
+# casts are typed DSL calls.
+ignore = ["D100", "D104", "D205", "D209", "E741", "UP018", "RUF001", "RUF002", "RUF003", "RUF046"]
+# Codes not selected yet that documented `# noqa: <code>  # reason` exceptions name: external, so
+# RUF100 keeps those comments. Exact codes (ruff reads prefixes); drop one when it joins `select`.
+external = [
+  "FBT001", "FBT002", "FBT003", "PLC0415", "PLR0913", "PLR0917", "PTH100", "PTH118", "PTH120", "SIM102",
+  "SLF001",
+]
 
 [tool.ruff.lint.isort]
-force-single-line = true
-known-first-party = ["mujoco_warp_pbr", "newton_pbr"]
-single-line-exclusions = ["typing"]
+force-single-line = false
+known-first-party = ["raywarp"]
+# The root conftest.py is imported like a test helper (`from conftest import ...`), sorted with the
+# third-party imports as when it lived in tests/.
+known-third-party = ["conftest"]
 
 [tool.ruff.lint.pycodestyle]
 max-doc-length = 100
@@ -101,36 +176,106 @@ max-line-length = 128
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
-[tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["D"]
-"tests/*" = ["D"]
-"benchmarks/*" = ["D"]
-"tools/*" = ["D"]
+# Device code branches on compile-time flags (`if want.color:`) that mccabe counts although codegen
+# specialises them away: 15 / 60 hold today's code and stop growth.
+[tool.ruff.lint.mccabe]
+max-complexity = 15
 
+[tool.ruff.lint.pylint]
+max-statements = 60
+
+[tool.ruff.lint.per-file-ignores]
+# Tests, benchmarks and tools: no docstring / typing rules; fixtures and CLI callbacks take
+# arguments they do not read; imports after a sys.path setup or importorskip (E402) or deferred
+# (PLC0415); they read the private state they measure or test (SLF001).
+"benchmarks/**" = ["D", "ANN401", "ARG", "C901", "PLR0915", "E402", "PLC0415", "SLF001"]
+"tools/**" = ["D", "ANN401", "ARG", "C901", "PLR0915", "E402", "PLC0415", "SLF001"]
+"internal/**" = ["D", "ANN401", "ARG", "C901", "PLR0915", "E402", "PLC0415", "SLF001"]
+# Tests also hold long MJCF strings (E501).
+"tests/**" = ["D", "ANN401", "ARG", "C901", "PLR0915", "E501", "E402", "PLC0415", "SLF001"]
+"internal/tests/**" = ["D", "ANN401", "ARG", "C901", "PLR0915", "E501", "E402", "PLC0415", "SLF001"]
+"conftest.py" = ["D", "ANN401", "ARG", "C901", "PLR0915", "E501", "E402", "PLC0415", "SLF001"]
+# Vendored MuJoCo Warp code, kept close to upstream.
+"raywarp/core/trace/accel/primitives.py" = ["D205", "RUF059"]
+"raywarp/core/trace/accel/cast.py" = ["RUF059"]
+"raywarp/core/trace/accel/bounds.py" = ["RUF059"]
+# Typed stubs of the MDL SDK's SWIG classes: the SDK's names and signatures.
+"raywarp/formats/usd/materials/mdl/sdk_types.pyi" = ["D101", "D102", "N801", "N802", "A002", "FBT001", "PLR0913", "PLR0917"]
+"raywarp/core/shade/materials/uv.py" = ["D205"]
+"raywarp/core/trace/rays/projection.py" = ["D205"]
 
 [tool.ruff.format]
 docstring-code-format = true
 docstring-code-line-length = 100
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "newton-pbr/tests"]
-# The benchmark scripts and tools import their siblings as top-level modules.
-pythonpath = ["benchmarks", "tools"]
-markers = ["slow: heavy path-traced references (deselect with -m 'not slow')"]
+# internal/tests: the development repository's tests of internal/ (absent from the public export).
+testpaths = ["tests", "internal/tests"]
+# "." for `tools.<module>`, `internal.<package>` and the root conftest (`from conftest import ...`);
+# "tests" for `from fixtures import ...`; the internal benchmark scripts and tools import their
+# siblings as top-level modules.
+pythonpath = [".", "tests", "internal/benchmarks", "internal/tools", "tools"]
+# Every test: `pytest -m "slow or not slow"` (a later -m replaces this one).
+addopts = ["-m", "not slow"]
+markers = ["slow: needs more than ~5 s on the CPU even when made small (the reason is next to the mark); runs at wave gates (--full)"]
+# A hung test dumps every thread's traceback.
+faulthandler_timeout = 900
 
+# The build hook (tools/native/hook.py) bundles the pinned OptiX headers and MDL SDK in
+# raywarp/_native and builds the MDL SDK binding for the stable ABI (cp312-abi3 wheels).
+[tool.setuptools]
+ext-modules = [{name = "raywarp._native.mdl._pymdlsdk", sources = [], py-limited-api = true}]
+
+[tool.setuptools.cmdclass]
+build_ext = "tools.native.hook.BuildNative"
+# Code-digest memos of the sources (tools/release/code_memo.py): a first start parses none.
+build_py = "tools.release.code_memo.BuildPy"
+
+[tool.distutils.bdist_wheel]
+py-limited-api = "cp312"
+
+# Only the library: benchmarks/, tools/, tests/ and internal/ never ship (MANIFEST.in prunes them
+# from the sdist too).
 [tool.setuptools.packages.find]
-include = ["mujoco_warp_pbr*"]
+include = ["raywarp*"]
+exclude = ["internal*", "benchmarks*", "tests*", "tools*"]
 
-# Type checking: Pyrefly with the `typing` extra (shape-aware Warp / NumPy stubs, MuJoCo stubs).
-# Benchmarks and tools import their sibling modules as scripts. The `default` preset is needed: `basic`
-# (Pyrefly without a config) hides shape errors.
+# Pyrefly with the `typing` extra. The `default` preset: `basic` hides shape errors.
 [tool.pyrefly]
 preset = "default"
-search-path = [".", "benchmarks", "tools", "tools/hf", "newton-pbr"]
-project-excludes = ["context", "**/.venv"]
-# Optional packages: the `bench` extra (Newton, Mitsuba, glTF / mesh IO, FLIP, USD), OptiX / ovrtx bindings
-# (not on PyPI) and huggingface_hub (inline metadata of the tools/hf scripts). With only the `dev` extra
-# installed their imports resolve to Any instead of failing; once installed they are checked as usual.
+# The oldest supported Python, so 3.13-only typing names fail the gate.
+python-version = "3.12"
+# Test directories whose files import each other (pytest puts a test file's directory on sys.path).
+search-path = [
+  ".",
+  "internal/benchmarks",
+  "internal/benchmarks/competitors",
+  "internal/benchmarks/report",
+  "internal/tools",
+  "tools",
+  "tests",
+  "tests/contracts",
+  "tests/render",
+  "tests/optix_backend",
+  "tests/adapters/usd",
+  "tests/adapters/newton",
+  "tests/adapters/isaaclab",
+]
+project-includes = [
+  "raywarp",
+  "tests",
+  "internal/tests",
+  "conftest.py",
+  "benchmarks",
+  # The public kernel-build and release tooling (the rest of tools/ is outside the gate).
+  "tools/native",
+  "tools/release",
+  "tools/prebuilt",
+  "tools/hf",
+]
+project-excludes = ["context", "third_party", "**/.venv"]
+# Optional packages (extras, the bench group, OptiX / ovrtx bindings, Isaac Lab and Kit, which pin
+# another Warp, torch, JAX, mjlab): resolve to Any when not installed, checked when installed.
 ignore-missing-imports = [
   "newton",
   "newton.*",
@@ -143,9 +288,114 @@ ignore-missing-imports = [
   "optix",
   "ovrtx",
   "huggingface_hub",
+  "pyglet",
+  "pyglet.*",
+  "PyNvVideoCodec",
+  "OpenEXR",
+  "isaaclab",
+  "isaaclab.*",
+  "isaaclab_newton",
+  "isaaclab_newton.*",
+  "torch",
+  "jax",
+  "jax.*",
+  "omni",
+  "omni.*",
+  "MaterialX",
+  "mjlab",
+  "mjlab.*",
+  # generated at install time (tools/native/hook.py)
+  "raywarp._native.mdl.pymdlsdk",
 ]
-# usd-core ships incomplete stubs for its C++ bindings (pxr.Sdf / Gf / UsdGeom members are missing).
-replace-imports-with-any = ["pxr", "pxr.*"]
+# usd-core ships incomplete stubs for its C++ bindings (pxr.Sdf / Gf / UsdGeom members are missing);
+# MaterialX's package star-imports its C++ bindings, which have no stubs (installed by the `usd` extra,
+# so without this entry the gate depends on the environment).
+replace-imports-with-any = ["pxr", "pxr.*", "MaterialX", "MaterialX.*"]
+
+# Stricter kinds over the `default` preset, each at 0 so they hold the line (docs/DEVELOPMENT.md
+# code-quality rules).
+[tool.pyrefly.errors]
+explicit-any = "error"
+redundant-condition = "error"
+misplaced-ignore = "error"
+unknown-attribute-type = "error"
+implicit-any-attribute = "error"
+unused-type-ignore = "error"
+unused-ignore = "error"
+redundant-cast = "error"
+unnecessary-type-conversion = "error"
+unnecessary-comparison = "error"
+deprecated = "error"
+untyped-function-decorator = "error"
+untyped-class-decorator = "error"
+
+# Stricter kinds for the reviewed light producers and consumers (callback / context / slot
+# parameters stay explicit), one block per file: a sub-config matches one glob, and the folders'
+# other modules do not pass yet.
+[[tool.pyrefly.sub-config]]
+matches = "raywarp/core/shade/lights/area.py"
+[tool.pyrefly.sub-config.errors]
+implicit-any-type-argument = "error"
+unknown-return-type = "error"
+
+[[tool.pyrefly.sub-config]]
+matches = "raywarp/core/shade/lights/sources.py"
+[tool.pyrefly.sub-config.errors]
+implicit-any-type-argument = "error"
+unknown-return-type = "error"
+
+[[tool.pyrefly.sub-config]]
+matches = "raywarp/core/shade/lights/loop.py"
+[tool.pyrefly.sub-config.errors]
+implicit-any-type-argument = "error"
+unknown-return-type = "error"
+
+[[tool.pyrefly.sub-config]]
+matches = "raywarp/core/shade/shadows/budget.py"
+[tool.pyrefly.sub-config.errors]
+implicit-any-type-argument = "error"
+unknown-return-type = "error"
+
+[[tool.pyrefly.sub-config]]
+matches = "raywarp/core/shade/lights/ltc.py"
+[tool.pyrefly.sub-config.errors]
+implicit-any-type-argument = "error"
+unknown-return-type = "error"
+
+[[tool.pyrefly.sub-config]]
+matches = "raywarp/core/kernels/reflections.py"
+[tool.pyrefly.sub-config.errors]
+implicit-any-type-argument = "error"
+unknown-return-type = "error"
+
+[[tool.pyrefly.sub-config]]
+matches = "raywarp/core/kernels/lighting.py"
+[tool.pyrefly.sub-config.errors]
+implicit-any-type-argument = "error"
+unknown-return-type = "error"
+
+[[tool.pyrefly.sub-config]]
+matches = "raywarp/core/shade/shadows/visibility.py"
+[tool.pyrefly.sub-config.errors]
+implicit-any-type-argument = "error"
+unknown-return-type = "error"
+
+[[tool.pyrefly.sub-config]]
+matches = "raywarp/core/shade/lights/punctual.py"
+[tool.pyrefly.sub-config.errors]
+implicit-any-type-argument = "error"
+unknown-return-type = "error"
+
+[[tool.pyrefly.sub-config]]
+matches = "tests/render/test_light_loop.py"
+[tool.pyrefly.sub-config.errors]
+implicit-any-type-argument = "error"
+unknown-return-type = "error"
 
 [tool.setuptools.package-data]
-"*" = ["py.typed"]
+"*" = ["py.typed", "*.pyi", "*.npz"]
+"raywarp.viewer" = ["static/*.html", "static/*.js", "static/*.css"]
+# The pins of the prebuilt kernels (tools/release/kernels.py pin).
+"raywarp.core.build.kernel_cache" = ["kernels.json"]
+# Omniverse's MDL library (Omniverse Core Materials 2.1.4, BSD-3), read by the USD adapter.
+"raywarp.formats.usd.materials.mdl" = ["library/*.md", "library/Base/*.mdl", "library/Ue4/*.mdl", "library/mdl/*/*.mdl"]

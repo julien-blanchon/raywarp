@@ -1,0 +1,1166 @@
+#usda 1.0
+(
+    defaultPrim = "Root"
+    metersPerUnit = 1
+    upAxis = "Z"
+    subLayers = [
+        @/data/assets/isaac51/Isaac/Environments/Office/office.usd@
+    ]
+)
+
+over "Root"
+{
+    over "BP_DrinksMachine_5504"
+    {
+        over "PointLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/asym_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "PointLight1"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/asym_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_Elevator_162"
+    {
+        over "SM_Elevator"
+        {
+            over "SpotLight"
+            {
+                custom float inputs:shaping:cone:angle = 180
+                custom float inputs:shaping:cone:softness = 0
+                custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+                custom bool inputs:shaping:ies:normalize = 1
+            }
+        }
+    }
+
+    over "BP_CeilingLightB_Light4_145"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light10_154"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light11_163"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light12_172"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light13_181"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light14_190"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light15_199"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light16_208"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light17_217"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light18_226"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light19"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light20"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light21"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light22"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light23"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light24"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light25"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light26"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_Lamp02_ON_308"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_Lamp02_ON2_806"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_LampTechnicalA_ON4"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_LampTechnicalA_ON6"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_LampTechnicalA_ON7"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light_1270"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light2"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light3"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light5"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_LampTechnicalA_ON_362"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_LampTechnicalA_ON2"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_LampTechnicalA_ON3"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_LampTechnicalA_ON5"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light6"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light7_4515"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light8_5106"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightB_Light9_794"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_Lamp_311"
+    {
+        over "PointLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightA_Light2"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightA_Light3"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightA_Light_662"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_LampTechnical_ON2"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_LampTechnical_ON3"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_LampTechnical_ON4"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_LampTechnical_ON5"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_LampTechnical_ON_1572"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightC_Light10"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightC_Light11"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightC_Light12"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightC_Light13"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightC_Light14"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightC_Light15"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightC_Light16"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightC_Light17"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightC_Light2_1938"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightC_Light3"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightC_Light4"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightC_Light5"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightC_Light6"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightC_Light7_97"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightC_Light8_110"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightC_Light9"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightC_Light_1443"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightC_NoLight2"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "BP_CeilingLightC_NoLight_314"
+    {
+        over "SpotLight"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+
+    over "ExtraLights"
+    {
+        over "PointLight2_1"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "PointLight_1"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight10_14"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight11"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight12"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight13"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight14"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight15_0"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight16_1"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight17_2"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight18"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight19"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight2"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight20"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight21"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight22"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight23"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight24_3"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight25_4"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight26_5"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight27_6"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight28_7"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight29_8"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight3"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight30_9"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight31_10"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight32_11"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight33_12"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight34_13"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight35_14"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight36_15"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight37_16"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight38_17"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight39"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight40"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight41"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight42"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight43"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight44"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight45"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight46"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight47"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight48"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight49"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight4_12"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight50"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight51"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight5_13"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight6_14"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight7_3"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight8"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight9_7"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/wallwash_2002.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+
+        over "SpotLight_1"
+        {
+            custom float inputs:shaping:cone:angle = 180
+            custom float inputs:shaping:cone:softness = 0
+            custom asset inputs:shaping:ies:file = @./ies/downlight_1995.ies@
+            custom bool inputs:shaping:ies:normalize = 1
+        }
+    }
+}
+

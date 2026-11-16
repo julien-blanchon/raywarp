@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="300" viewBox="0 0 960 300" font-family="sans-serif" font-size="13">
+  <title>One Renderer.render(sim) call, step by step</title>
+  <style>
+    text { fill: #1f2328; }
+    .muted { fill: #57606a; font-size: 11px; }
+    .h { font-weight: bold; font-size: 13px; }
+    .line { stroke: #57606a; stroke-width: 1.6; fill: none; }
+    .head { fill: #57606a; }
+    .host { fill: #fff8c5; stroke: #9a6700; stroke-width: 1.4; }
+    .dev { fill: #dafbe1; stroke: #1a7f37; stroke-width: 1.4; }
+    .lag { fill: none; stroke: #cf222e; stroke-width: 1.4; stroke-dasharray: 5 4; }
+    @media (prefers-color-scheme: dark) {
+      text { fill: #e6edf3; }
+      .muted { fill: #9198a1; }
+      .line { stroke: #9198a1; }
+      .head { fill: #9198a1; }
+      .host { fill: #3b2e00; stroke: #d29922; }
+      .dev { fill: #04260f; stroke: #3fb950; }
+      .lag { stroke: #f85149; }
+    }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="head" d="M0,0 L10,5 L0,10 z"/>
+    </marker>
+  </defs>
+
+  <!-- row 1 -->
+  <rect class="host" x="20" y="30" width="160" height="74" rx="6"/>
+  <text class="h" x="100" y="52" text-anchor="middle">1 backend.prepare</text>
+  <text class="muted" x="100" y="70" text-anchor="middle">waits for background</text>
+  <text class="muted" x="100" y="86" text-anchor="middle">compiles, builds</text>
+  <rect class="host" x="210" y="30" width="160" height="74" rx="6"/>
+  <text class="h" x="290" y="52" text-anchor="middle">2 poll validation</text>
+  <text class="muted" x="290" y="70" text-anchor="middle">last frame's flag word</text>
+  <text class="muted" x="290" y="86" text-anchor="middle">refit shared / raise</text>
+  <rect class="dev" x="400" y="30" width="160" height="74" rx="6"/>
+  <text class="h" x="480" y="52" text-anchor="middle">3 binding.write</text>
+  <text class="muted" x="480" y="70" text-anchor="middle">poses into Renderer</text>
+  <text class="muted" x="480" y="86" text-anchor="middle">buffers (Newton, host)</text>
+  <rect class="host" x="590" y="30" width="160" height="74" rx="6"/>
+  <text class="h" x="670" y="52" text-anchor="middle">4 Frame</text>
+  <text class="muted" x="670" y="70" text-anchor="middle">per-world &gt; binding</text>
+  <text class="muted" x="670" y="86" text-anchor="middle">&gt; scene tables</text>
+  <rect class="dev" x="780" y="30" width="160" height="74" rx="6"/>
+  <text class="h" x="860" y="52" text-anchor="middle">5 pack lights</text>
+  <text class="muted" x="860" y="70" text-anchor="middle">camera poses,</text>
+  <text class="muted" x="860" y="86" text-anchor="middle">history.begin</text>
+  <path class="line" d="M180,67 H208" marker-end="url(#a)"/>
+  <path class="line" d="M370,67 H398" marker-end="url(#a)"/>
+  <path class="line" d="M560,67 H588" marker-end="url(#a)"/>
+  <path class="line" d="M750,67 H778" marker-end="url(#a)"/>
+  <path class="line" d="M860,104 V124 H100 V142" marker-end="url(#a)"/>
+
+  <!-- row 2 -->
+  <rect class="dev" x="20" y="144" width="160" height="74" rx="6"/>
+  <text class="h" x="100" y="166" text-anchor="middle">6 backend.refit</text>
+  <text class="muted" x="100" y="184" text-anchor="middle">world BVH / OptiX IAS</text>
+  <text class="muted" x="100" y="200" text-anchor="middle">(rebuild_every: gated)</text>
+  <rect class="dev" x="210" y="144" width="160" height="74" rx="6"/>
+  <text class="h" x="290" y="166" text-anchor="middle">7 bakes</text>
+  <text class="muted" x="290" y="184" text-anchor="middle">GI probes, light grid,</text>
+  <text class="muted" x="290" y="200" text-anchor="middle">sky (first use / cache)</text>
+  <rect class="dev" x="400" y="144" width="160" height="74" rx="6"/>
+  <text class="h" x="480" y="166" text-anchor="middle">8 backend.launch</text>
+  <text class="muted" x="480" y="184" text-anchor="middle">megakernel or</text>
+  <text class="muted" x="480" y="200" text-anchor="middle">OptiX raygen</text>
+  <rect class="dev" x="590" y="144" width="160" height="74" rx="6"/>
+  <text class="h" x="670" y="166" text-anchor="middle">9 post passes</text>
+  <text class="muted" x="670" y="184" text-anchor="middle">history,</text>
+  <text class="muted" x="670" y="200" text-anchor="middle">imaging, sensor</text>
+  <rect class="dev" x="780" y="144" width="160" height="74" rx="6"/>
+  <text class="h" x="860" y="166" text-anchor="middle">10 validate check</text>
+  <text class="muted" x="860" y="184" text-anchor="middle">one kernel + 8-byte</text>
+  <text class="muted" x="860" y="200" text-anchor="middle">copy to pinned memory</text>
+  <path class="line" d="M180,181 H208" marker-end="url(#a)"/>
+  <path class="line" d="M370,181 H398" marker-end="url(#a)"/>
+  <path class="line" d="M560,181 H588" marker-end="url(#a)"/>
+  <path class="line" d="M750,181 H778" marker-end="url(#a)"/>
+  <path class="lag" d="M860,218 V244 H290 V106" marker-end="url(#a)"/>
+  <text class="muted" x="575" y="260" text-anchor="middle">read by step 2 of the next render (one frame late, no synchronisation)</text>
+
+  <text class="muted" x="20" y="286">yellow: host work (no device sync); green: device work, all capturable in one CUDA graph (Renderer.capture); core/renderer.py render().</text>
+</svg>

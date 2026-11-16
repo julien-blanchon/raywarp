@@ -1,0 +1,192 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+    doc = """Sun shadows: contact, thin geometry, a hovering sheet and a low sun (acne / peter-panning)."""
+)
+
+def Xform "World"
+{
+    def Scope "Looks"
+    {
+        def Material "Floor"
+        {
+            token outputs:surface.connect = </World/Looks/Floor/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.6, 0.6, 0.6)
+                float inputs:roughness = 0.8
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+
+        def Material "Object"
+        {
+            token outputs:surface.connect = </World/Looks/Object/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.75, 0.75, 0.75)
+                float inputs:roughness = 0.5
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+    }
+
+    def Cube "Floor" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, 1, -0.025)
+        float3 xformOp:scale = (6, 6, 0.05)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Floor>
+    }
+
+    def Cube "Box" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-1.35, 0.25, 0.25)
+        float3 xformOp:scale = (0.5, 0.5, 0.5)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Object>
+    }
+
+    def Sphere "Ball" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.3
+        double3 xformOp:translate = (-0.5, 0.3, 0.3)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Object>
+    }
+
+    def Cylinder "Pole0" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.002
+        double height = 1.2
+        uniform token axis = "Z"
+        double3 xformOp:translate = (0.2, 0.5, 0.6)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Object>
+    }
+
+    def Cylinder "Pole1" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.005
+        double height = 1.2
+        uniform token axis = "Z"
+        double3 xformOp:translate = (0.45, 0.5, 0.6)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Object>
+    }
+
+    def Cylinder "Pole2" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.01
+        double height = 1.2
+        uniform token axis = "Z"
+        double3 xformOp:translate = (0.7, 0.5, 0.6)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Object>
+    }
+
+    def Cylinder "Pole3" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.02
+        double height = 1.2
+        uniform token axis = "Z"
+        double3 xformOp:translate = (0.95, 0.5, 0.6)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Object>
+    }
+
+    def Cylinder "Pole4" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.03
+        double height = 1.2
+        uniform token axis = "Z"
+        double3 xformOp:translate = (1.2, 0.5, 0.6)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Object>
+    }
+
+    def Cube "Sheet" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (2, 0.4, 0.011)
+        float3 xformOp:scale = (0.8, 0.8, 0.002)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Object>
+    }
+
+    def Cube "Tilted" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-2.2, 1.225, 0.4)
+        float3 xformOp:rotateXYZ = (0, 0, 30)
+        float3 xformOp:scale = (0.8, 0.05, 0.8)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Object>
+    }
+
+    def DistantLight "Sun"
+    {
+        bool inputs:normalize = 1
+        float inputs:intensity = 60000
+        float inputs:angle = 0.53
+        float3 xformOp:rotateXYZ = (75, 0, 70)
+        uniform token[] xformOpOrder = ["xformOp:rotateXYZ"]
+    }
+
+    def DomeLight "Sky"
+    {
+        custom int omni:rtx:usdluxVersion = 2411
+        float inputs:intensity = 2000
+        color3f inputs:color = (0.7, 0.8, 1)
+    }
+
+    def Camera "View0"
+    {
+        matrix4d xformOp:transform = ((1, 0, 0, 0), (0, 0.309086, 0.951034, 0), (0, -0.951034, 0.309086, 0), (0, -3.5, 1.6, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 20.8227
+        float verticalAperture = 20.8227
+        float2 clippingRange = (0.01, 100000)
+    }
+
+    def Camera "View1"
+    {
+        matrix4d xformOp:transform = ((1, 0, 0, 0), (0, 0.0570498, 0.998371, 0), (0, -0.998371, 0.0570498, 0), (2, -1, 0.08, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 14.5588
+        float verticalAperture = 14.5588
+        float2 clippingRange = (0.01, 100000)
+    }
+}

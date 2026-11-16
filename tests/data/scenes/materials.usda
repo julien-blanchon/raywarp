@@ -1,0 +1,789 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+    doc = """Material grid: metallic (rows, bottom 0 -> top 1) x roughness (columns 0 -> 1), and a variant row."""
+)
+
+def Xform "World"
+{
+    def Scope "Looks"
+    {
+        def Material "Floor"
+        {
+            token outputs:surface.connect = </World/Looks/Floor/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.3, 0.3, 0.3)
+                float inputs:roughness = 0.8
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+
+        def Material "M0R0"
+        {
+            token outputs:surface.connect = </World/Looks/M0R0/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 0
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+
+        def Material "M0R1"
+        {
+            token outputs:surface.connect = </World/Looks/M0R1/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 0.25
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+
+        def Material "M0R2"
+        {
+            token outputs:surface.connect = </World/Looks/M0R2/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 0.5
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+
+        def Material "M0R3"
+        {
+            token outputs:surface.connect = </World/Looks/M0R3/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 0.75
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+
+        def Material "M0R4"
+        {
+            token outputs:surface.connect = </World/Looks/M0R4/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 1
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+
+        def Material "M1R0"
+        {
+            token outputs:surface.connect = </World/Looks/M1R0/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 0
+                float inputs:metallic = 0.25
+                token outputs:surface
+            }
+        }
+
+        def Material "M1R1"
+        {
+            token outputs:surface.connect = </World/Looks/M1R1/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 0.25
+                float inputs:metallic = 0.25
+                token outputs:surface
+            }
+        }
+
+        def Material "M1R2"
+        {
+            token outputs:surface.connect = </World/Looks/M1R2/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 0.5
+                float inputs:metallic = 0.25
+                token outputs:surface
+            }
+        }
+
+        def Material "M1R3"
+        {
+            token outputs:surface.connect = </World/Looks/M1R3/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 0.75
+                float inputs:metallic = 0.25
+                token outputs:surface
+            }
+        }
+
+        def Material "M1R4"
+        {
+            token outputs:surface.connect = </World/Looks/M1R4/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 1
+                float inputs:metallic = 0.25
+                token outputs:surface
+            }
+        }
+
+        def Material "M2R0"
+        {
+            token outputs:surface.connect = </World/Looks/M2R0/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 0
+                float inputs:metallic = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "M2R1"
+        {
+            token outputs:surface.connect = </World/Looks/M2R1/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 0.25
+                float inputs:metallic = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "M2R2"
+        {
+            token outputs:surface.connect = </World/Looks/M2R2/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 0.5
+                float inputs:metallic = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "M2R3"
+        {
+            token outputs:surface.connect = </World/Looks/M2R3/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 0.75
+                float inputs:metallic = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "M2R4"
+        {
+            token outputs:surface.connect = </World/Looks/M2R4/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 1
+                float inputs:metallic = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "M3R0"
+        {
+            token outputs:surface.connect = </World/Looks/M3R0/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 0
+                float inputs:metallic = 0.75
+                token outputs:surface
+            }
+        }
+
+        def Material "M3R1"
+        {
+            token outputs:surface.connect = </World/Looks/M3R1/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 0.25
+                float inputs:metallic = 0.75
+                token outputs:surface
+            }
+        }
+
+        def Material "M3R2"
+        {
+            token outputs:surface.connect = </World/Looks/M3R2/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 0.5
+                float inputs:metallic = 0.75
+                token outputs:surface
+            }
+        }
+
+        def Material "M3R3"
+        {
+            token outputs:surface.connect = </World/Looks/M3R3/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 0.75
+                float inputs:metallic = 0.75
+                token outputs:surface
+            }
+        }
+
+        def Material "M3R4"
+        {
+            token outputs:surface.connect = </World/Looks/M3R4/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 1
+                float inputs:metallic = 0.75
+                token outputs:surface
+            }
+        }
+
+        def Material "M4R0"
+        {
+            token outputs:surface.connect = </World/Looks/M4R0/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 0
+                float inputs:metallic = 1
+                token outputs:surface
+            }
+        }
+
+        def Material "M4R1"
+        {
+            token outputs:surface.connect = </World/Looks/M4R1/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 0.25
+                float inputs:metallic = 1
+                token outputs:surface
+            }
+        }
+
+        def Material "M4R2"
+        {
+            token outputs:surface.connect = </World/Looks/M4R2/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 0.5
+                float inputs:metallic = 1
+                token outputs:surface
+            }
+        }
+
+        def Material "M4R3"
+        {
+            token outputs:surface.connect = </World/Looks/M4R3/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 0.75
+                float inputs:metallic = 1
+                token outputs:surface
+            }
+        }
+
+        def Material "M4R4"
+        {
+            token outputs:surface.connect = </World/Looks/M4R4/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.54)
+                float inputs:roughness = 1
+                float inputs:metallic = 1
+                token outputs:surface
+            }
+        }
+
+        def Material "Plastic"
+        {
+            token outputs:surface.connect = </World/Looks/Plastic/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.6, 0.05, 0.05)
+                float inputs:roughness = 0.3
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+
+        def Material "Ior1_33"
+        {
+            token outputs:surface.connect = </World/Looks/Ior1_33/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.6, 0.05, 0.05)
+                float inputs:roughness = 0.3
+                float inputs:metallic = 0
+                float inputs:ior = 1.33
+                token outputs:surface
+            }
+        }
+
+        def Material "Ior2_4"
+        {
+            token outputs:surface.connect = </World/Looks/Ior2_4/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.6, 0.05, 0.05)
+                float inputs:roughness = 0.3
+                float inputs:metallic = 0
+                float inputs:ior = 2.4
+                token outputs:surface
+            }
+        }
+
+        def Material "SpecularGold"
+        {
+            token outputs:surface.connect = </World/Looks/SpecularGold/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.02, 0.02, 0.02)
+                float inputs:roughness = 0.3
+                float inputs:metallic = 0
+                int inputs:useSpecularWorkflow = 1
+                color3f inputs:specularColor = (1, 0.77, 0.34)
+                token outputs:surface
+            }
+        }
+
+        def Material "Clearcoat"
+        {
+            token outputs:surface.connect = </World/Looks/Clearcoat/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.6, 0.05, 0.05)
+                float inputs:roughness = 0.6
+                float inputs:metallic = 0
+                float inputs:clearcoat = 1
+                float inputs:clearcoatRoughness = 0.05
+                token outputs:surface
+            }
+        }
+
+        def Material "Emissive"
+        {
+            token outputs:surface.connect = </World/Looks/Emissive/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.05, 0.05, 0.05)
+                float inputs:roughness = 0.5
+                float inputs:metallic = 0
+                color3f inputs:emissiveColor = (400, 260, 120)
+                token outputs:surface
+            }
+        }
+    }
+
+    def Cube "Floor" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, 0.5, -0.01)
+        float3 xformOp:scale = (6, 5, 0.02)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Floor>
+    }
+
+    def Sphere "Sphere_M0_R0" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (-1, 0, 0.62)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M0R0>
+    }
+
+    def Sphere "Sphere_M0_R1" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (-0.5, 0, 0.62)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M0R1>
+    }
+
+    def Sphere "Sphere_M0_R2" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (0, 0, 0.62)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M0R2>
+    }
+
+    def Sphere "Sphere_M0_R3" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (0.5, 0, 0.62)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M0R3>
+    }
+
+    def Sphere "Sphere_M0_R4" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (1, 0, 0.62)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M0R4>
+    }
+
+    def Sphere "Sphere_M1_R0" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (-1, 0, 1.12)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M1R0>
+    }
+
+    def Sphere "Sphere_M1_R1" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (-0.5, 0, 1.12)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M1R1>
+    }
+
+    def Sphere "Sphere_M1_R2" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (0, 0, 1.12)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M1R2>
+    }
+
+    def Sphere "Sphere_M1_R3" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (0.5, 0, 1.12)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M1R3>
+    }
+
+    def Sphere "Sphere_M1_R4" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (1, 0, 1.12)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M1R4>
+    }
+
+    def Sphere "Sphere_M2_R0" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (-1, 0, 1.62)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M2R0>
+    }
+
+    def Sphere "Sphere_M2_R1" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (-0.5, 0, 1.62)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M2R1>
+    }
+
+    def Sphere "Sphere_M2_R2" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (0, 0, 1.62)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M2R2>
+    }
+
+    def Sphere "Sphere_M2_R3" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (0.5, 0, 1.62)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M2R3>
+    }
+
+    def Sphere "Sphere_M2_R4" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (1, 0, 1.62)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M2R4>
+    }
+
+    def Sphere "Sphere_M3_R0" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (-1, 0, 2.12)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M3R0>
+    }
+
+    def Sphere "Sphere_M3_R1" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (-0.5, 0, 2.12)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M3R1>
+    }
+
+    def Sphere "Sphere_M3_R2" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (0, 0, 2.12)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M3R2>
+    }
+
+    def Sphere "Sphere_M3_R3" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (0.5, 0, 2.12)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M3R3>
+    }
+
+    def Sphere "Sphere_M3_R4" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (1, 0, 2.12)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M3R4>
+    }
+
+    def Sphere "Sphere_M4_R0" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (-1, 0, 2.62)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M4R0>
+    }
+
+    def Sphere "Sphere_M4_R1" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (-0.5, 0, 2.62)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M4R1>
+    }
+
+    def Sphere "Sphere_M4_R2" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (0, 0, 2.62)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M4R2>
+    }
+
+    def Sphere "Sphere_M4_R3" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (0.5, 0, 2.62)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M4R3>
+    }
+
+    def Sphere "Sphere_M4_R4" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (1, 0, 2.62)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/M4R4>
+    }
+
+    def Sphere "Variant_Plastic" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (-1.25, -0.9, 0.2)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Plastic>
+    }
+
+    def Sphere "Variant_Ior1_33" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (-0.75, -0.9, 0.2)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Ior1_33>
+    }
+
+    def Sphere "Variant_Ior2_4" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (-0.25, -0.9, 0.2)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Ior2_4>
+    }
+
+    def Sphere "Variant_SpecularGold" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (0.25, -0.9, 0.2)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/SpecularGold>
+    }
+
+    def Sphere "Variant_Clearcoat" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (0.75, -0.9, 0.2)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Clearcoat>
+    }
+
+    def Sphere "Variant_Emissive" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.2
+        double3 xformOp:translate = (1.25, -0.9, 0.2)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Emissive>
+    }
+}

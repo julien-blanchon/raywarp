@@ -1,0 +1,42 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+    doc = """The brushed-metal scene under the full studio HDRI (the sphere light off)."""
+    subLayers = [@./layered_anisotropy.usda@]
+)
+
+over "World"
+{
+    over "Key" (
+        active = false
+    )
+    {
+    }
+
+    over "Dome"
+    {
+        float inputs:intensity = 1
+    }
+
+    def Camera "View0"
+    {
+        matrix4d xformOp:transform = ((1, 0, 0, 0), (0, 0.326337, 0.945253, 0), (0, -0.945253, 0.326337, 0), (0, -4.2, 1.8, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 16.5685
+        float verticalAperture = 16.5685
+        float2 clippingRange = (0.01, 100000)
+    }
+
+    def Camera "View1"
+    {
+        matrix4d xformOp:transform = ((1, 0, 0, 0), (0, 0.209529, 0.977802, 0), (0, -0.977802, 0.209529, 0), (-0.6, -2.4, 0.9, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 20.8227
+        float verticalAperture = 20.8227
+        float2 clippingRange = (0.01, 100000)
+    }
+}

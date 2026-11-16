@@ -1,0 +1,16 @@
+{
+ "converter": 15,
+ "scenes": {
+  "materials": "c50684054357f5202fd5995f",
+  "lights_area": "aee46dea16beb5180867b50d",
+  "cutouts": "a64ba8772dce7c9cbecdc496",
+  "instancing": "24925b9dc3fbe2c2e547f632",
+  "environment": "0cb1ccf4eb2621f46f9ec307",
+  "ies_fixtures": "d38461843f52306b5e9bae4d",
+  "meshes": "4f8b12b626882b690c7fea80",
+  "mdl": "a0a6ca45070acb4fff8f810f",
+  "mtlx": "6c69a03d70e7fef4f896c181",
+  "layered_coat": "d8e3a10142375411b4f418c8",
+  "layered_fuzz": "1d9f795e3f21c99a1b14bc1e"
+ }
+}

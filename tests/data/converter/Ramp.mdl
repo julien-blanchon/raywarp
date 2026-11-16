@@ -1,0 +1,14 @@
+mdl 1.6;
+import ::df::*;
+import ::state::*;
+import ::tex::*;
+
+// A spatially varying base color and roughness: the MDL baker bakes both (no constant folds).
+export material Ramp(color tint = color(0.8, 0.4, 0.2))
+ = let {
+  float2 uv = float2(state::texture_coordinate(0).x, state::texture_coordinate(0).y);
+  float rough = 0.2 + 0.6 * uv.x;
+} in material(surface: material_surface(scattering: df::custom_curve_layer(
+  normal_reflectivity: 0.04,
+  layer: df::microfacet_ggx_vcavities_bsdf(roughness_u: rough * rough, roughness_v: rough * rough),
+  base: df::diffuse_reflection_bsdf(tint: tint * color(uv.x, uv.y, 1.0 - uv.x)))));

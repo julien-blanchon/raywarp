@@ -1,0 +1,261 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+    doc = """Cloth (OpenPBR fuzz): a dark red base without fuzz, with white / pink / blue fuzz at roughness 0.3 / 0.6, and a lying capsule with fuzz, back-lit by a grazing rim light."""
+)
+
+def Xform "World"
+{
+    def Scope "Looks"
+    {
+        def Material "Floor"
+        {
+            token outputs:surface.connect = </World/Looks/Floor/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.1, 0.1, 0.1)
+                float inputs:roughness = 0.7
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+
+        def Material "NoFuzz"
+        {
+            token outputs:mtlx:surface.connect = </World/Looks/NoFuzz/Surface.outputs:out>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "ND_open_pbr_surface_surfaceshader"
+                color3f inputs:base_color = (0.3, 0.02, 0.03)
+                float inputs:specular_roughness = 0.8
+                token outputs:out
+            }
+        }
+
+        def Material "WhiteR03"
+        {
+            token outputs:mtlx:surface.connect = </World/Looks/WhiteR03/Surface.outputs:out>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "ND_open_pbr_surface_surfaceshader"
+                color3f inputs:base_color = (0.3, 0.02, 0.03)
+                float inputs:specular_roughness = 0.8
+                float inputs:fuzz_weight = 1
+                color3f inputs:fuzz_color = (1, 1, 1)
+                float inputs:fuzz_roughness = 0.3
+                token outputs:out
+            }
+        }
+
+        def Material "WhiteR06"
+        {
+            token outputs:mtlx:surface.connect = </World/Looks/WhiteR06/Surface.outputs:out>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "ND_open_pbr_surface_surfaceshader"
+                color3f inputs:base_color = (0.3, 0.02, 0.03)
+                float inputs:specular_roughness = 0.8
+                float inputs:fuzz_weight = 1
+                color3f inputs:fuzz_color = (1, 1, 1)
+                float inputs:fuzz_roughness = 0.6
+                token outputs:out
+            }
+        }
+
+        def Material "PinkR03"
+        {
+            token outputs:mtlx:surface.connect = </World/Looks/PinkR03/Surface.outputs:out>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "ND_open_pbr_surface_surfaceshader"
+                color3f inputs:base_color = (0.3, 0.02, 0.03)
+                float inputs:specular_roughness = 0.8
+                float inputs:fuzz_weight = 1
+                color3f inputs:fuzz_color = (1, 0.45, 0.7)
+                float inputs:fuzz_roughness = 0.3
+                token outputs:out
+            }
+        }
+
+        def Material "BlueR06"
+        {
+            token outputs:mtlx:surface.connect = </World/Looks/BlueR06/Surface.outputs:out>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "ND_open_pbr_surface_surfaceshader"
+                color3f inputs:base_color = (0.3, 0.02, 0.03)
+                float inputs:specular_roughness = 0.8
+                float inputs:fuzz_weight = 1
+                color3f inputs:fuzz_color = (0.3, 0.5, 1)
+                float inputs:fuzz_roughness = 0.6
+                token outputs:out
+            }
+        }
+
+        def Material "WrapR05"
+        {
+            token outputs:mtlx:surface.connect = </World/Looks/WrapR05/Surface.outputs:out>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "ND_open_pbr_surface_surfaceshader"
+                color3f inputs:base_color = (0.3, 0.02, 0.03)
+                float inputs:specular_roughness = 0.8
+                float inputs:fuzz_weight = 1
+                color3f inputs:fuzz_color = (1, 0.8, 0.8)
+                float inputs:fuzz_roughness = 0.5
+                float inputs:subsurface_weight = 1
+                color3f inputs:subsurface_color = (0.6, 0.15, 0.1)
+                float inputs:ext:wrap = 0.5
+                token outputs:out
+            }
+        }
+
+        def Material "Drape"
+        {
+            token outputs:mtlx:surface.connect = </World/Looks/Drape/Surface.outputs:out>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "ND_open_pbr_surface_surfaceshader"
+                color3f inputs:base_color = (0.3, 0.02, 0.03)
+                float inputs:specular_roughness = 0.8
+                float inputs:fuzz_weight = 1
+                color3f inputs:fuzz_color = (1, 1, 1)
+                float inputs:fuzz_roughness = 0.5
+                token outputs:out
+            }
+        }
+    }
+
+    def Cube "Floor" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, 0.25, -0.01)
+        float3 xformOp:scale = (6, 5.5, 0.02)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Floor>
+    }
+
+    def Sphere "Cloth_NoFuzz" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.25
+        double3 xformOp:translate = (-1.75, 0, 0.25)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/NoFuzz>
+    }
+
+    def Sphere "Cloth_WhiteR03" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.25
+        double3 xformOp:translate = (-1.15, 0, 0.25)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/WhiteR03>
+    }
+
+    def Sphere "Cloth_WhiteR06" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.25
+        double3 xformOp:translate = (-0.55, 0, 0.25)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/WhiteR06>
+    }
+
+    def Sphere "Cloth_PinkR03" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.25
+        double3 xformOp:translate = (0.05, 0, 0.25)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/PinkR03>
+    }
+
+    def Sphere "Cloth_BlueR06" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.25
+        double3 xformOp:translate = (0.65, 0, 0.25)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/BlueR06>
+    }
+
+    def Sphere "Cloth_WrapR05" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.25
+        double3 xformOp:translate = (1.25, 0, 0.25)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/WrapR05>
+    }
+
+    def Capsule "Drape" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.18
+        double height = 0.5
+        uniform token axis = "Z"
+        double3 xformOp:translate = (1.75, 0, 0.18)
+        float3 xformOp:rotateXYZ = (0, 90, 30)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Drape>
+    }
+
+    def RectLight "Rim"
+    {
+        float inputs:intensity = 4000
+        float inputs:width = 4
+        float inputs:height = 0.4
+        double3 xformOp:translate = (0, 1.2, 0.6)
+        float3 xformOp:rotateXYZ = (-80, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def DomeLight "Dome"
+    {
+        custom int omni:rtx:usdluxVersion = 2411
+        float inputs:intensity = 0.15
+        asset inputs:texture:file = @./textures/studio.hdr@
+        token inputs:texture:format = "latlong"
+    }
+
+    def Camera "View0"
+    {
+        matrix4d xformOp:transform = ((1, 0, 0, 0), (0, 0.181162, 0.983453, 0), (0, -0.983453, 0.181162, 0), (0, -3.8, 1, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 16.5685
+        float verticalAperture = 16.5685
+        float2 clippingRange = (0.01, 100000)
+    }
+
+    def Camera "View1"
+    {
+        matrix4d xformOp:transform = ((0.992877, 0.119145, 0, 0), (-0.0117718, 0.0980981, 0.995107, 0), (0.118562, -0.988019, 0.0988019, 0), (1.2, -2.2, 0.5, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 16.5685
+        float verticalAperture = 16.5685
+        float2 clippingRange = (0.01, 100000)
+    }
+}

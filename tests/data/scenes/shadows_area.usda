@@ -1,0 +1,125 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+    doc = """Soft shadows of a 1 m rect light: penumbrae widen away from the contact points."""
+)
+
+def Xform "World"
+{
+    def Scope "Looks"
+    {
+        def Material "Floor"
+        {
+            token outputs:surface.connect = </World/Looks/Floor/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.6, 0.6, 0.6)
+                float inputs:roughness = 0.9
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+
+        def Material "Object"
+        {
+            token outputs:surface.connect = </World/Looks/Object/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.75, 0.75, 0.75)
+                float inputs:roughness = 0.5
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+    }
+
+    def Cube "Floor" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, 0, -0.025)
+        float3 xformOp:scale = (6, 6, 0.05)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Floor>
+    }
+
+    def Cylinder "Pole" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.03
+        double height = 1.5
+        uniform token axis = "Z"
+        double3 xformOp:translate = (0, 0, 0.75)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Object>
+    }
+
+    def Cube "Block" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0.8, -0.1, 0.125)
+        float3 xformOp:scale = (0.4, 0.4, 0.25)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Object>
+    }
+
+    def Sphere "Ball" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.25
+        double3 xformOp:translate = (-0.7, -0.2, 0.25)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Object>
+    }
+
+    def Cube "Slab" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, 0.8, 0.61)
+        float3 xformOp:scale = (0.8, 0.4, 0.02)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Object>
+    }
+
+    def RectLight "Panel"
+    {
+        float inputs:intensity = 4000
+        float inputs:width = 1
+        float inputs:height = 1
+        double3 xformOp:translate = (0, 0, 2.2)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Camera "View0"
+    {
+        matrix4d xformOp:transform = ((1, 0, 0, 0), (0, 0.351123, 0.936329, 0), (0, -0.936329, 0.351123, 0), (0, -3.2, 1.6, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 20.8227
+        float verticalAperture = 20.8227
+        float2 clippingRange = (0.01, 100000)
+    }
+
+    def Camera "View1"
+    {
+        matrix4d xformOp:transform = ((0.707107, 0.707107, 0, 0), (-0.258544, 0.258544, 0.930758, 0), (0.658145, -0.658145, 0.365636, 0), (1.8, -1.8, 1.2, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 20.8227
+        float verticalAperture = 20.8227
+        float2 clippingRange = (0.01, 100000)
+    }
+}

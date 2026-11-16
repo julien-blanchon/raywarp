@@ -1,0 +1,37 @@
+"""Format-neutral host scene description (no USD or MuJoCo imports)."""
+
+from raywarp.scene.build.builder import SceneBuilder as SceneBuilder
+from raywarp.scene.build.displacement import DisplacementOptions as DisplacementOptions
+from raywarp.scene.images.colorspace import ColorSpace as ColorSpace
+from raywarp.scene.images.hdr import read_hdr as read_hdr
+from raywarp.scene.lighting.sky import sun_sky as sun_sky
+from raywarp.scene.model.lights import EnvironmentLight as EnvironmentLight
+from raywarp.scene.model.lights import Ies as Ies
+from raywarp.scene.model.lights import Light as Light
+from raywarp.scene.model.lights import LightExt as LightExt
+from raywarp.scene.model.lights import Shaping as Shaping
+from raywarp.scene.model.material import Displacement as Displacement
+from raywarp.scene.model.material import Material as Material
+from raywarp.scene.model.material import OpenPbrExtras as OpenPbrExtras
+from raywarp.scene.model.material import RaywarpExt as RaywarpExt
+from raywarp.scene.model.report import LoadReport as LoadReport
+from raywarp.scene.model.scene import Scene as Scene
+from raywarp.scene.model.table import StringTable as StringTable
+from raywarp.scene.model.types import CHANNEL_A as CHANNEL_A
+from raywarp.scene.model.types import CHANNEL_B as CHANNEL_B
+from raywarp.scene.model.types import CHANNEL_G as CHANNEL_G
+from raywarp.scene.model.types import CHANNEL_R as CHANNEL_R
+from raywarp.scene.model.types import CHANNEL_RGB as CHANNEL_RGB
+from raywarp.scene.model.types import AlphaMode as AlphaMode
+from raywarp.scene.model.types import Camera as Camera
+from raywarp.scene.model.types import EnvFormat as EnvFormat
+from raywarp.scene.model.types import InstanceFlags as InstanceFlags
+from raywarp.scene.model.types import InstanceKind as InstanceKind
+from raywarp.scene.model.types import LightFlags as LightFlags
+from raywarp.scene.model.types import LightKind as LightKind
+from raywarp.scene.model.types import MaterialFlags as MaterialFlags
+from raywarp.scene.model.types import PixelType as PixelType
+from raywarp.scene.model.types import Projection as Projection
+from raywarp.scene.model.types import Slot as Slot
+from raywarp.scene.model.types import TextureRef as TextureRef
+from raywarp.scene.model.types import Wrap as Wrap

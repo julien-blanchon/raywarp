@@ -1,0 +1,488 @@
+{
+ "points": 1140,
+ "refused": 20,
+ "served": 1060,
+ "holes": [
+  {
+   "base": "default",
+   "settings": {
+    "aa.spp": "2"
+   },
+   "scene": {},
+   "why": "tier default_ss2: key not filled"
+  },
+  {
+   "base": "default",
+   "settings": {
+    "aa.spp": "3"
+   },
+   "scene": {},
+   "why": "tier default_ss2: key not filled"
+  },
+  {
+   "base": "default",
+   "settings": {
+    "shadows.samples": "2"
+   },
+   "scene": {},
+   "why": "tier default_sampled: key not filled"
+  },
+  {
+   "base": "default",
+   "settings": {
+    "shadows.samples": "3"
+   },
+   "scene": {},
+   "why": "tier default_sampled: key not filled"
+  },
+  {
+   "base": "default",
+   "settings": {
+    "shadows.samples": "4"
+   },
+   "scene": {},
+   "why": "tier default_sampled: key not filled"
+  },
+  {
+   "base": "default",
+   "settings": {
+    "shadows.samples": "8"
+   },
+   "scene": {},
+   "why": "tier default_sampled: key not filled"
+  },
+  {
+   "base": "default",
+   "settings": {
+    "reflections.shadows": "'sun'"
+   },
+   "scene": {},
+   "why": "tier default_hit_sun: key not filled"
+  },
+  {
+   "base": "default",
+   "settings": {
+    "surfaces.anisotropy": "16"
+   },
+   "scene": {},
+   "why": "tier default_sampled: key not filled"
+  },
+  {
+   "base": "default",
+   "settings": {
+    "surfaces.shading": "'unlit'"
+   },
+   "scene": {},
+   "why": "tier unlit_sampled: key not filled"
+  },
+  {
+   "base": "default",
+   "settings": {
+    "outputs": "'rgb+motion'"
+   },
+   "scene": {},
+   "why": "tier default: key not filled"
+  },
+  {
+   "base": "default",
+   "settings": {
+    "outputs": "'all'"
+   },
+   "scene": {},
+   "why": "tier default: key not filled"
+  },
+  {
+   "base": "default",
+   "settings": {},
+   "scene": {
+    "camera": "distortion"
+   },
+   "why": "tier default: key not filled"
+  },
+  {
+   "base": "default",
+   "settings": {},
+   "scene": {
+    "camera": "bundle"
+   },
+   "why": "tier default: key not filled"
+  },
+  {
+   "base": "default",
+   "settings": {},
+   "scene": {
+    "declared.camera.distortion": "on"
+   },
+   "why": "tier default: key not filled"
+  },
+  {
+   "base": "fast",
+   "settings": {
+    "aa.spp": "2"
+   },
+   "scene": {},
+   "why": "tier fast_ss2: key not filled"
+  },
+  {
+   "base": "fast",
+   "settings": {
+    "aa.spp": "3"
+   },
+   "scene": {},
+   "why": "tier fast_ss2: key not filled"
+  },
+  {
+   "base": "fast",
+   "settings": {
+    "shadows.samples": "2"
+   },
+   "scene": {},
+   "why": "tier fast_sampled: key not filled"
+  },
+  {
+   "base": "fast",
+   "settings": {
+    "shadows.samples": "3"
+   },
+   "scene": {},
+   "why": "tier fast_sampled: key not filled"
+  },
+  {
+   "base": "fast",
+   "settings": {
+    "shadows.samples": "4"
+   },
+   "scene": {},
+   "why": "tier fast_sampled: key not filled"
+  },
+  {
+   "base": "fast",
+   "settings": {
+    "shadows.samples": "8"
+   },
+   "scene": {},
+   "why": "tier fast_sampled: key not filled"
+  },
+  {
+   "base": "fast",
+   "settings": {
+    "surfaces.anisotropy": "2"
+   },
+   "scene": {},
+   "why": "tier fast_sampled: key not filled"
+  },
+  {
+   "base": "fast",
+   "settings": {
+    "surfaces.anisotropy": "4"
+   },
+   "scene": {},
+   "why": "tier fast_sampled: key not filled"
+  },
+  {
+   "base": "fast",
+   "settings": {
+    "surfaces.anisotropy": "8"
+   },
+   "scene": {},
+   "why": "tier fast_sampled: key not filled"
+  },
+  {
+   "base": "fast",
+   "settings": {
+    "surfaces.anisotropy": "16"
+   },
+   "scene": {},
+   "why": "tier fast_sampled: key not filled"
+  },
+  {
+   "base": "fast",
+   "settings": {},
+   "scene": {
+    "camera": "distortion"
+   },
+   "why": "tier fast: key not filled"
+  },
+  {
+   "base": "fast",
+   "settings": {},
+   "scene": {
+    "camera": "bundle"
+   },
+   "why": "tier fast: key not filled"
+  },
+  {
+   "base": "fast",
+   "settings": {},
+   "scene": {
+    "declared.camera.distortion": "on"
+   },
+   "why": "tier fast: key not filled"
+  },
+  {
+   "base": "unlit",
+   "settings": {
+    "aa.spp": "2"
+   },
+   "scene": {},
+   "why": "tier unlit_ss2: key not filled"
+  },
+  {
+   "base": "unlit",
+   "settings": {
+    "aa.spp": "3"
+   },
+   "scene": {},
+   "why": "tier unlit_ss2: key not filled"
+  },
+  {
+   "base": "unlit",
+   "settings": {
+    "surfaces.anisotropy": "2"
+   },
+   "scene": {},
+   "why": "tier unlit_sampled: key not filled"
+  },
+  {
+   "base": "unlit",
+   "settings": {
+    "surfaces.anisotropy": "4"
+   },
+   "scene": {},
+   "why": "tier unlit_sampled: key not filled"
+  },
+  {
+   "base": "unlit",
+   "settings": {
+    "surfaces.anisotropy": "8"
+   },
+   "scene": {},
+   "why": "tier unlit_sampled: key not filled"
+  },
+  {
+   "base": "unlit",
+   "settings": {
+    "surfaces.anisotropy": "16"
+   },
+   "scene": {},
+   "why": "tier unlit_sampled: key not filled"
+  },
+  {
+   "base": "unlit",
+   "settings": {
+    "outputs": "'rgb+motion'"
+   },
+   "scene": {},
+   "why": "tier unlit: key not filled"
+  },
+  {
+   "base": "unlit",
+   "settings": {},
+   "scene": {
+    "camera": "distortion"
+   },
+   "why": "tier unlit: key not filled"
+  },
+  {
+   "base": "unlit",
+   "settings": {},
+   "scene": {
+    "camera": "bundle"
+   },
+   "why": "tier unlit: key not filled"
+  },
+  {
+   "base": "unlit",
+   "settings": {},
+   "scene": {
+    "declared.camera.distortion": "on"
+   },
+   "why": "tier unlit: key not filled"
+  },
+  {
+   "base": "quality",
+   "settings": {
+    "shadows.enabled": "False"
+   },
+   "scene": {},
+   "why": "tier default_ss2: key not filled"
+  },
+  {
+   "base": "quality",
+   "settings": {
+    "surfaces.shading": "'unlit'"
+   },
+   "scene": {},
+   "why": "tier unlit_ss2: key not filled"
+  },
+  {
+   "base": "quality",
+   "settings": {},
+   "scene": {
+    "camera": "distortion"
+   },
+   "why": "tier default_ss2_counts: key not filled"
+  },
+  {
+   "base": "quality",
+   "settings": {},
+   "scene": {
+    "camera": "bundle"
+   },
+   "why": "tier default_ss2_counts: key not filled"
+  },
+  {
+   "base": "quality",
+   "settings": {},
+   "scene": {
+    "declared.camera.distortion": "on"
+   },
+   "why": "tier default_ss2_counts: key not filled"
+  },
+  {
+   "base": "reference",
+   "settings": {
+    "shadows.enabled": "False"
+   },
+   "scene": {},
+   "why": "tier default_ss2: key not filled"
+  },
+  {
+   "base": "reference",
+   "settings": {
+    "surfaces.shading": "'unlit'"
+   },
+   "scene": {},
+   "why": "tier unlit_ss2: key not filled"
+  },
+  {
+   "base": "reference",
+   "settings": {},
+   "scene": {
+    "camera": "distortion"
+   },
+   "why": "tier default_ss2_counts: key not filled"
+  },
+  {
+   "base": "reference",
+   "settings": {},
+   "scene": {
+    "camera": "bundle"
+   },
+   "why": "tier default_ss2_counts: key not filled"
+  },
+  {
+   "base": "reference",
+   "settings": {},
+   "scene": {
+    "declared.camera.distortion": "on"
+   },
+   "why": "tier default_ss2_counts: key not filled"
+  },
+  {
+   "base": "rtx_look",
+   "settings": {
+    "shadows.max_casters": "None"
+   },
+   "scene": {},
+   "why": "tier default_hit_sun: key not filled"
+  },
+  {
+   "base": "rtx_look",
+   "settings": {
+    "lighting.max_exact": "1"
+   },
+   "scene": {},
+   "why": "tier default_hit_sun: key not filled"
+  },
+  {
+   "base": "rtx_look",
+   "settings": {
+    "lighting.max_exact": "2"
+   },
+   "scene": {},
+   "why": "tier default_hit_sun: key not filled"
+  },
+  {
+   "base": "rtx_look",
+   "settings": {
+    "lighting.max_exact": "3"
+   },
+   "scene": {},
+   "why": "tier default_hit_sun: key not filled"
+  },
+  {
+   "base": "rtx_look",
+   "settings": {
+    "lighting.max_exact": "4"
+   },
+   "scene": {},
+   "why": "tier default_hit_sun: key not filled"
+  },
+  {
+   "base": "rtx_look",
+   "settings": {
+    "lighting.max_exact": "5"
+   },
+   "scene": {},
+   "why": "tier default_hit_sun: key not filled"
+  },
+  {
+   "base": "rtx_look",
+   "settings": {
+    "lighting.max_exact": "8"
+   },
+   "scene": {},
+   "why": "tier default_hit_sun: key not filled"
+  },
+  {
+   "base": "rtx_look",
+   "settings": {
+    "surfaces.shading": "'unlit'"
+   },
+   "scene": {},
+   "why": "tier unlit_sampled: key not filled"
+  },
+  {
+   "base": "rtx_look",
+   "settings": {
+    "outputs": "'rgb+motion'"
+   },
+   "scene": {},
+   "why": "tier default_counts: key not filled"
+  },
+  {
+   "base": "rtx_look",
+   "settings": {
+    "outputs": "'all'"
+   },
+   "scene": {},
+   "why": "tier default_counts: key not filled"
+  },
+  {
+   "base": "rtx_look",
+   "settings": {},
+   "scene": {
+    "camera": "distortion"
+   },
+   "why": "tier default_counts: key not filled"
+  },
+  {
+   "base": "rtx_look",
+   "settings": {},
+   "scene": {
+    "camera": "bundle"
+   },
+   "why": "tier default_counts: key not filled"
+  },
+  {
+   "base": "rtx_look",
+   "settings": {},
+   "scene": {
+    "declared.camera.distortion": "on"
+   },
+   "why": "tier default_counts: key not filled"
+  }
+ ],
+ "anomalies": []
+}

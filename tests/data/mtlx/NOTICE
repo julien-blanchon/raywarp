@@ -1,0 +1,10 @@
+standard_surface/*.mtlx and gltf_pbr/*.mtlx are copied unchanged from the MaterialX repository,
+resources/Materials/Examples/StandardSurface and resources/Materials/Examples/GltfPbr
+(https://github.com/AcademySoftwareFoundation/MaterialX).
+
+Copyright Contributors to the MaterialX Project. Licensed under the Apache License, Version 2.0
+(http://www.apache.org/licenses/LICENSE-2.0).
+
+open_pbr/open_pbr_gold.mtlx is copied unchanged from the OpenPBR repository, examples/
+(https://github.com/AcademySoftwareFoundation/OpenPBR). Licensed under the Apache License,
+Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).

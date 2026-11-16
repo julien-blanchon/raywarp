@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>raywarp viewer</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <aside id="side">
+      <header>
+        <h1>raywarp viewer</h1>
+        <div id="device" class="muted"></div>
+      </header>
+      <section>
+        <label for="scene">Scene</label>
+        <select id="scene"></select>
+        <form id="path-form">
+          <input id="path" placeholder="path on the GPU machine: .wpbr .usd .glb .xml" spellcheck="false" />
+          <button type="submit">Open</button>
+        </form>
+      </section>
+      <section class="grid">
+        <label for="base">Base</label>
+        <select id="base"></select>
+        <label for="view">View</label>
+        <select id="view"></select>
+        <label for="size">Size</label>
+        <select id="size"></select>
+        <label for="fov">FOV <span id="fov-value"></span></label>
+        <input id="fov" type="range" min="5" max="150" step="1" />
+      </section>
+      <section class="row">
+        <label class="check"><input id="live" type="checkbox" checked /> live</label>
+        <button id="home" type="button" title="back to the scene's opening view (H)">home</button>
+        <button id="reset" type="button" title="every setting back to the base">reset settings</button>
+      </section>
+      <section id="settings-box">
+        <div class="row">
+          <input id="filter" placeholder="filter settings" spellcheck="false" />
+          <label class="check"><input id="only-changed" type="checkbox" /> changed</label>
+        </div>
+        <div class="legend muted">
+          <span class="badge runtime">R</span> run time
+          <span class="badge rebake">B</span> run time, rebakes
+          <span class="badge recompile">K</span> kernel build (prebuilt tier)
+        </div>
+        <div id="settings"></div>
+      </section>
+    </aside>
+    <main>
+      <div id="banner" hidden></div>
+      <div id="stage" tabindex="0">
+        <canvas id="canvas" width="16" height="9"></canvas>
+        <div id="hud"></div>
+        <div id="loading" hidden>loading…</div>
+        <div id="activity" hidden></div>
+      </div>
+      <div id="status">
+        <span id="compiles"></span>
+        <span id="kernels" class="muted"></span>
+        <span id="warm"></span>
+      </div>
+      <details id="events-box">
+        <summary>Compile and module-creation events (<span id="event-count">0</span>)</summary>
+        <ol id="events"></ol>
+      </details>
+      <div class="muted help">
+        drag: look &middot; W A S D: move &middot; Q / E: down / up &middot; Shift: faster &middot; wheel: fly speed
+        &middot; H: home view &middot; click the image first for the keys
+      </div>
+    </main>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

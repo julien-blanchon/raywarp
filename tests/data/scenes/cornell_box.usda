@@ -1,0 +1,134 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+    doc = """Cornell box geometry (2 m cube, open front); lights in cornell_rect / cornell_sphere."""
+)
+
+def Xform "World"
+{
+    def Scope "Looks"
+    {
+        def Material "White"
+        {
+            token outputs:surface.connect = </World/Looks/White/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.725, 0.71, 0.68)
+                float inputs:roughness = 1
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+
+        def Material "Red"
+        {
+            token outputs:surface.connect = </World/Looks/Red/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.63, 0.065, 0.05)
+                float inputs:roughness = 1
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+
+        def Material "Green"
+        {
+            token outputs:surface.connect = </World/Looks/Green/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.14, 0.45, 0.091)
+                float inputs:roughness = 1
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+    }
+
+    def Cube "Floor" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, 0.05, -0.05)
+        float3 xformOp:scale = (2.2, 2.1, 0.1)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/White>
+    }
+
+    def Cube "Ceiling" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, 0.05, 2.05)
+        float3 xformOp:scale = (2.2, 2.1, 0.1)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/White>
+    }
+
+    def Cube "Back" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, 1.05, 1)
+        float3 xformOp:scale = (2.2, 0.1, 2)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/White>
+    }
+
+    def Cube "Left" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-1.05, 0, 1)
+        float3 xformOp:scale = (0.1, 2, 2)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Red>
+    }
+
+    def Cube "Right" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (1.05, 0, 1)
+        float3 xformOp:scale = (0.1, 2, 2)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Green>
+    }
+
+    def Cube "TallBlock" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-0.35, 0.3, 0.6)
+        float3 xformOp:rotateXYZ = (0, 0, 17)
+        float3 xformOp:scale = (0.6, 0.6, 1.2)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/White>
+    }
+
+    def Cube "ShortBlock" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0.35, -0.3, 0.3)
+        float3 xformOp:rotateXYZ = (0, 0, -17)
+        float3 xformOp:scale = (0.6, 0.6, 0.6)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/White>
+    }
+}

@@ -1,140 +1,207 @@
-# mujoco_warp_pbr
+# Raywarp
 
-A batched, physically based renderer for [MuJoCo Warp](https://github.com/google-deepmind/mujoco_warp),
-written in [NVIDIA Warp](https://github.com/NVIDIA/warp). It renders thousands of MuJoCo Warp worlds
-per launch with a single specialised megakernel, using MuJoCo's own material, texture and light
-fields.
+A batched, physically based renderer written in [NVIDIA Warp](https://github.com/NVIDIA/warp)
+(`import raywarp as rw`) for robotics training. It renders thousands of worlds x cameras per
+launch with one megakernel per settings tier, prebuilt and downloaded on first use (scene data is
+run-time data: a new scene compiles nothing). A format-neutral core
+(`raywarp.core`, which imports only Warp and NumPy) is fed by adapters:
+[MuJoCo Warp](https://github.com/google-deepmind/mujoco_warp) (`rw.integrations.mujoco`, arrays aliased
+with no copy), USD (`rw.formats.usd`, host scene) and [Newton](https://github.com/newton-physics/newton)
+(`rw.integrations.newton`: scenes bound to Newton bodies, a drop-in camera sensor), plus glTF (`rw.formats.gltf`) and
+[mjlab](https://github.com/mujocolab/mjlab) camera sensors (`raywarp.integrations.mjlab`).
 
-- **Real-time tier** (default): primary ray, ray-traced (soft) shadows, Filament's BRDF with
-  multiscatter energy compensation, split-sum image-based lighting from HDR environment maps,
-  normal / ORM / emissive / opacity maps with ray-cone mip selection, specular anti-aliasing,
-  in-kernel supersampling, MuJoCo reflectance (mirror ray) and alpha blending. Deterministic and
-  noise-free.
-- **Path-traced tier**: unidirectional path tracing with next-event estimation and multiple
-  importance sampling (lights, environment, BSDF). Same BRDF, converges to Mitsuba 3. Optional
-  edge-avoiding à-trous denoiser (`denoise=True`) guided by first-hit albedo, normal and depth.
-- Every material, light and environment parameter can vary per world (domain randomisation)
-  without recompiling. Depth and segmentation match MuJoCo Warp's renderer.
+- Real-time ray tracing: primary rays, ray-traced (soft) shadows, Filament's BRDF with
+  multiscatter energy compensation, LTC area lights, split-sum image-based lighting from HDR
+  environment maps, normal / ORM / emissive / opacity maps with ray-cone mip selection and
+  anisotropic filtering, mirror and glossy reflections, translucent layers, probe GI, fog, a
+  light visibility grid and light / shadow budgets for many-light scenes.
+  The default and every per-frame configuration are deterministic and noise-free.
+- One material model: every source (MJCF, UsdPreviewSurface, MDL, MaterialX OpenPBR / Standard
+  Surface / glTF PBR, Newton) becomes an [OpenPBR Surface](docs/scenes.md#the-material-openpbr-surface)
+  (`rw.Material`), turned into device values once, at upload; what the core does not render is
+  carried and reported.
+- Depth (planar / radial), instance or semantic segmentation, albedo, normals, motion vectors,
+  channels-first training layouts; depth and segmentation match MuJoCo Warp's renderer.
+- The default, `rw.FAST` and the recipes run on prebuilt kernels: switching between them, or
+  changing any single setting, compiles nothing. Material, light, environment, exposure, fog,
+  camera and visibility parameters vary per world (domain randomisation) without recompiling.
+  Static scenery is stored and traced once for every world.
+- NVIDIA GPUs first (CUDA, OptiX RT cores, CUDA graphs with the simulator step); the CPU device
+  works everywhere.
+
+**Documentation**: the [user guide](docs/README.md) ([install](docs/install.md), [quickstart](docs/quickstart.md),
+[scenes](docs/scenes.md), [settings](docs/settings.md),
+[performance](docs/performance.md), [robotics recipes](docs/robotics.md), [recording video](docs/recording.md),
+[command line](docs/cli.md), [benchmark](docs/benchmark.md), [FAQ](docs/faq.md)), runnable [examples](examples/)
+and the [developer guide](docs/DEVELOPMENT.md) (architecture, standards, testing, adapters).
+Every Python block of the docs and of this README runs in the test suite.
 
 ## Install
 
 ```bash
-pip install mujoco-warp-pbr          # Python >= 3.12; pulls mujoco, mujoco-warp and warp-lang
-pip install newton-pbr               # optional: Newton camera sensor and viewer
-pip install "mujoco-warp-pbr[typing]"  # optional: shape-aware type stubs for Pyrefly
+pip install "raywarp[mujoco]"   # Python >= 3.12; the core needs only warp-lang 1.18 and numpy
+pip install "raywarp[newton]"   # optional: Newton scenes and camera sensor
+pip install "raywarp[usd]"      # optional: USD stages (usd-core, pillow, materialx, openexr)
+pip install "raywarp[gltf]"     # optional: glTF scenes (the usd extra and pygltflib)
+pip install "raywarp[typing]"   # optional: shape-aware type stubs for Pyrefly
+pip install "raywarp[viewer]"   # optional: the web viewer (Pillow)
+pip install "raywarp[video]"    # optional: NVENC recording from device memory (PyNvVideoCodec)
 ```
 
+The kernels come prebuilt: the first renderer on a machine detects its GPU's architecture (sm_80,
+86, 89, 90, 120) and downloads that build (only what it uses, from a public Hugging Face bucket)
+into a local cache, so nothing compiles. `rw.kernels.configure(download=False)` reads the local
+cache only, `compile=False` makes a configuration that is not prebuilt raise instead of compiling
+(or `RAYWARP_KERNELS_DOWNLOAD=0` / `RAYWARP_KERNELS_COMPILE=0`): [install](docs/install.md).
+Offline machines, mirrors and warming ahead:
+[first frame](docs/performance.md#first-frame-prebuilt-kernels-caches-and-warm). `raywarp info`
+checks a machine ([command line](docs/cli.md)).
+
 ## Usage
+
+Every source becomes a device scene (`GpuScene`) with one `scene(...)` call, and every scene
+renders the same way:
+
+```python
+# docs: skip (placeholders: each adapter's own model / file)
+scene = rw.integrations.mujoco.scene(mjm, m)  # MuJoCo Warp: model tables aliased, poses from the Data you render
+scene = rw.formats.usd.scene("office.usd")  # a USD stage (converted once, then a memory-mapped .wpbr)
+scene = rw.formats.gltf.scene("helmet.glb")  # a glTF 2.0 asset
+scene = rw.integrations.newton.scene(model)  # a Newton model, bound to its bodies: r.render(state)
+r = rw.Renderer(scene, nworld=64, cameras=["front"], resolution=(256, 256))
+```
+
+A complete MuJoCo Warp example:
 
 ```python
 import mujoco
 import mujoco_warp as mjw
-import warp as wp
 
-import mujoco_warp_pbr as mjpbr
+import raywarp as rw
+import raywarp.integrations.mujoco
 
-mjm = mujoco.MjModel.from_xml_path("scene.xml")
-mjd = mujoco.MjData(mjm)
+spec = mujoco.MjSpec.from_string("""
+<mujoco><worldbody>
+  <light pos="0 0 2" dir="0 0 -1" castshadow="true"/>
+  <geom type="plane" size="2 2 0.1"/>
+  <body pos="0 0 0.3"><freejoint/><geom type="sphere" size="0.2" rgba="0.8 0.3 0.2 1"/></body>
+  <camera name="front" pos="0 -2 1" xyaxes="1 0 0 0 0.45 0.9"/>
+  <camera name="wrist" pos="0.5 -0.5 0.6" xyaxes="0.7 0.7 0 -0.3 0.3 0.9"/>
+</worldbody></mujoco>""")  # or mujoco.MjSpec.from_file("scene.xml")
+# No dark scenes: fill light is yours to add, never added behind your back. Three unshadowed
+# directional fill lights from every side (added to the model: MuJoCo Warp owns the light tables);
+# lighting=rw.Lighting(envmap="studio.hdr") adds image-based lighting.
+lighting = rw.integrations.mujoco.add_lights(spec, rw.Lighting(lights=rw.Lighting.fill_lights(3, brightness=0.3)))
+mjm = spec.compile()
 m = mjw.put_model(mjm)
-d = mjw.put_data(mjm, mjd, nworld=1024)
+d = mjw.make_data(mjm, nworld=64)
 
-rc = mjpbr.create_render_context(
-  mjm,
-  nworld=1024,
-  cam_res=(128, 128),
-  render_rgb=True,
-  render_depth=True,
-  envmap="studio.hdr",  # optional equirectangular HDR environment
+scene = rw.integrations.mujoco.scene(mjm, m, lighting=lighting)  # GpuScene: geoms, materials, lights, cameras
+r = rw.Renderer(
+  scene,
+  nworld=64,
+  cameras=["front", "wrist"],  # MJCF camera names (or rw.CameraSpec)
+  resolution=(64, 64),  # (width, height), every camera
+  settings=rw.RenderSettings().replace(  # the default; .replace(rw.FAST) for max throughput
+    {
+      "outputs": rw.Outputs.of("rgb", "depth", "seg"),
+      "lighting.camera_light": True,  # a camera light: what the camera sees is lit
+      "lighting.fill": 0.05,  # a constant fill: a white surface shows at least 5 % (runtime)
+    }
+  ),
 )
-
+print(r.explain())  # what the settings resolve to on this scene, and the frame's cost class
 mjw.step(m, d)
-mjw.refit_bvh(m, d, rc.base)  # after the geometry moved
-mjpbr.render(m, d, rc)
-
-rgb = wp.zeros((1024, 128, 128), dtype=wp.vec3)
-mjpbr.get_rgb(rc, 0, rgb)  # camera 0, display RGB in [0, 1]
+out = r.render(d)  # refits the BVH itself; never syncs the host
+assert out.rgb.shape == (64, 2, 64, 64)  # (nworld, ncam, H, W) vec4ub RGBA (torch: (..., 4) uint8)
+assert out.depth.shape == out.seg.shape == (64, 2, 64, 64)  # float32 planar depth / int32 geom id (-1: miss)
 ```
 
-Per-world variation: replace any batched array of the context or model with one whose leading
-dimension is `nworld`, e.g. `rc.geom_roughness = wp.array(r, dtype=float)` with `r` of shape
-`(nworld, ngeom)`, `rc.env_id` to select one of several environment maps per world, or
-`m.geom_rgba` (MuJoCo Warp's convention: arrays are indexed with `worldid % shape[0]`).
+`out.torch()` gives zero-copy torch views (the same memory every frame), `r.bind_outputs(...)`
+renders into your own arrays, `r.capture(lambda: mjw.step(m, d), sim=d)` captures the step and
+the render in one CUDA graph. The host scene behind a `scene(...)` call (`rw.formats.usd.load`,
+`rw.integrations.newton.load`, ...: a `rw.Scene` to inspect, edit or save) uploads with `rw.upload`.
+Newton's camera sensor has a drop-in, `raywarp.integrations.newton.sensor.SensorCamera`, and mjlab picks
+raywarp as a camera sensor's RGB backend ([quickstart](docs/quickstart.md)).
 
-Camera rays: by default each camera is a pinhole (MuJoCo's `fovy` / intrinsics). Pass per-pixel
-camera-frame rays instead (distorted or fisheye lenses, any projection) with
-`create_render_context(..., camera_rays=rays)` or `mjpbr.set_camera_rays(rc, rays)`: one
-`(height, width, 2)` vec3 array per rendering camera, origins in `[..., 0]` and directions in
-`[..., 1]` (-z forward, +y up, the layout of Newton's `camera_rays`). Both tiers and the OptiX
-traversal use them; supersampling and the path tracer's sub-pixel jitter interpolate between
-neighbouring rays (exactly for pinhole bundles) and texture filtering estimates the pixel
-footprint from them. With rays, depth is the distance along each ray. The mode is compiled in:
-the kernels of pinhole cameras do not contain it and render bit-identically. `render_guides=True`
-also writes each pixel's first-hit base colour and world-space normal (`get_albedo` /
-`get_normal`).
+A dark scene or interior: [the FAQ](docs/faq.md#dark-interiors) (GI, `lighting.fill`, the
+headlight, `rw.Lighting.fill_lights`, exposure).
 
-On GPUs with RT cores, `traversal="optix"` traces the real-time tier's rays with OptiX instead of
-Warp's software BVHs: 3–7× faster on mesh scenes, at most 1.3× on primitive-only scenes (and
-slower with a mirror floor); `traversal="auto"` picks OptiX only when meshes are rendered. It needs
-PyOptiX
-([otk-pyoptix](https://github.com/NVIDIA/otk-pyoptix), built against the OptiX version of the
-driver) and the OptiX SDK headers (`OPTIX_INCLUDE_DIR`), and falls back to the software path with
-a warning otherwise; see `results/rt_backend.md` for what it supports.
+## Settings
 
-## Materials and lights
+`RenderSettings` is a frozen dataclass of frozen groups (`outputs`, `aa`, `shadows`, `lighting`,
+`environment`, `reflections`, `transparency`, `gi`, `openpbr`, `surfaces`, `post`, `atmosphere`,
+`exposure`, `grading`, `sensor`, `performance`, `tuning`; the group classes: `rw.settings`); a field is addressed as `"group.field"`:
+`settings.replace({"shadows.samples": 4})`, `settings.replace(shadows={"max_casters": 2})`,
+`r.update_settings(**{"exposure.mode": "manual", "exposure.ev100": 12.0})`. One default, `RenderSettings()`, for every entry
+point: probe GI, LTC area lights, glossy reflections, 4 shadow casters, PBR Neutral tone mapping,
+automatic exposure, deterministic per frame. `rw.FAST` is the field set for maximum training
+throughput (`RenderSettings().replace(rw.FAST)`: point lights, no reflection rays, 2 shadow
+casters; -29 to -67 % frame time); the unlit, quality, reference and Omniverse RTX
+looks are field recipes ([settings](docs/settings.md#recipes)). All of them run on prebuilt
+kernels, and any settings take any `Outputs` (depth / segmentation only: one geometry kernel).
+For small clean images use `aa.spp=2`.
 
-Only native MuJoCo fields are used, so existing MJCF works unchanged:
+**Compiled in or runtime.** The kernels are a few fixed tiers (the default's, `FAST`'s, unlit's
+and their variants), prebuilt per GPU architecture and downloaded on first use. A discrete
+setting is compile-time: with the scene it resolves into a `Features` key that picks one of those
+builds, so switching settings, any single compile-time change or a new scene compiles nothing
+(the exceptions, and whether outputs compile: [settings](docs/settings.md#compiled-in-or-runtime)).
+These fields are runtime (they reach the
+kernels as data; "rebuilds": the probe volume or light grid is rebuilt on the next render). The
+list is generated from the field metadata (`RenderSettings.fields_table()`,
+`tools/settings_table.py`):
 
-| MuJoCo | Renderer |
-| --- | --- |
-| `rgba`, texture layer `rgb` / `rgba` | base colour (linear) and alpha |
-| `metallic`, `roughness` (-1 = unset) | metallic, perceptual roughness; unset: metallic 0, roughness 1 − `shininess` (or `unset_material=UnsetMaterial.HEURISTIC`, or `default_material=`) |
-| `specular` | dielectric reflectance, F0 = 0.16 · specular² (0.5 → 0.04) |
-| layers `orm`, `occlusion`, `roughness`, `metallic` | ambient occlusion, roughness and metallic maps (factor × texel) |
-| layer `normal` | tangent-space normal map (glTF convention) |
-| `emission`, layer `emissive` | emitted radiance (display-relative: 1 = full brightness) |
-| layer `opacity` | alpha |
-| `reflectance` | mirror reflection blended by reflectance |
-| light `intensity` (lux / candela), `range`, `bulbradius`, `diffuse` | physical lights (`light_model=LightModel.PHYSICAL`, default); intensity 0 uses a calibrated fallback |
-| light `attenuation`, `cutoff`, `exponent`, `ambient`, `specular` | MuJoCo's GL semantics (`light_model=LightModel.MUJOCO`) |
-| skybox texture | environment lighting and background when no `envmap` is given |
+<!-- runtime-fields:begin (generated by tools/settings_table.py; do not edit) -->
+- `aa`: `post`
+- `shadows`: `area_rays`
+- `lighting`: `light_grid_cell` (rebuilds), `fill`, `fill_color`, `visible_lights`, `contact_ao`
+- `environment`: `background_color`
+- `reflections`: `max_roughness`
+- `transparency`: `max_layers` (rebuilds)
+- `gi`: `spacing` (rebuilds), `max_probes` (rebuilds), `bounds` (rebuilds), `rays` (rebuilds), `normal_bias` (rebuilds), `update_every`, `bake_updates`, `relight`
+- `post`: `tone_mapper`
+- `atmosphere`: `color`, `start`, `end`, `haze`
+- `exposure`: `mode`, `ev100`, `metering`, `key`, `compensation`, `min_ev`, `max_ev`, `adaptation`, `frame_time`
+- `grading`: `enabled`, `kelvin`, `tint`, `lift`, `gamma`, `gain`, `saturation`
+- `sensor`: `rolling_shutter`, `motion_blur`, `vignette`, `noise`, `full_well`, `read_noise`, `bits`, `response`, `aberration`, `depth`, `baseline`, `disparity_noise`, `disparity_step`, `range_noise`, `min_depth`, `max_depth`, `dropout`, `edge_dropout`, `edge_threshold`
+- `performance`: `render_order`, `rebuild_every`
+<!-- runtime-fields:end -->
 
-`tools/gltf_to_mjcf.py` converts glTF 2.0 assets (metallic-roughness core) to MJCF with these
-fields.
-
-Supported geometry: planes, spheres, capsules, ellipsoids, cylinders, boxes, meshes, height fields
-and SDFs with full PBR; flex is shaded without normal maps and Gaussian splats keep MuJoCo Warp's
-unlit compositing (a warning is printed for both).
-
-## Newton
-
-[`newton-pbr/`](https://github.com/julien-blanchon/mujoco_warp_pbr/blob/main/newton-pbr/README.md) is a small package depending on this one and on
-[Newton](https://github.com/newton-physics/newton). It provides drop-in replacements for Newton's
-camera sensor and GL viewer: switch with one import or one constructor.
-
-```python
-from newton_pbr import SensorCamera  # instead of: from newton.sensors import SensorCamera
-
-camera = SensorCamera(model, envmap="studio.hdr")  # Newton's constructor, plus PBR options
-rays = SensorCamera.compute_camera_rays_pinhole(640, 480, camera_fov=1.0)  # or OpenCV / fisheye
-color = camera.allocate_image_color(view_count, 640, 480)
-camera.update(state, camera_transforms, rays, color_image=color)  # Newton's update()
-
-viewer = newton_pbr.ViewerPbr()  # instead of: newton.viewer.ViewerGL()
-```
-
-`SensorCamera` keeps Newton's outputs (colour, ray / forward depth, shape index, normal, albedo,
-HDR), view-to-world mapping, clear values and render settings; `ViewerPbr` keeps ViewerGL's window,
-UI and camera controls and renders the main view (or, headless, `get_frame()`) with this
-renderer. See the package README for what differs from Newton (deformables, particles and
-Gaussians are not rendered).
+Everything else, including `shadows.samples`, `shadows.max_casters`, `lighting.camera_light`,
+`environment.background` and every
+`performance` and `tuning` field but `rebuild_every`, is compiled in. Also runtime: the cameras' clip planes
+(`r.set_clip`) and rays (`r.set_camera_rays`), the semantic table, the world skip mask, every
+per-world table (`r.per_world[...]`) and the MuJoCo model's aliased arrays. Settings that cannot
+change the generated code resolve to the same `Features` (one build for all of them).
 
 ## Performance
 
-Camera-frames per second, 4096 worlds at 64², one camera per world, HDR environment and shadows
-for this renderer (RTX PRO 6000 Blackwell; from `benchmarks/suite.py`, full tables for three GPUs
-and all renderers in [`results/suite/suite-v2`](https://github.com/julien-blanchon/mujoco_warp_pbr/blob/main/results/suite/suite-v2/README.md)):
+An earlier checkpoint (RTX PRO 6000 Blackwell; `internal/results/checkpoint/gpu4-r1/report.md`),
+camera-frames per second, one camera per world:
 
-| scene | real-time | real-time (OptiX) | Newton `SensorCamera` | Newton RTX (tiled) | MuJoCo Warp |
+| scene | worlds x resolution | settings | software BVH | OptiX |
+| --- | --- | --- | ---: | ---: |
+| DamagedHelmet | 4096 x 64^2 | `FAST` | 309k | **1.29M** |
+| DamagedHelmet | 4096 x 64^2 | default | 194k | **626k** |
+| ANYmal C | 4096 x 64^2 | default | | **1.13M** |
+| DamagedHelmet | 1024 x 128^2 | RTX look | | 88.6k |
+| Isaac Office | 16 x 256^2 | default | | 4.5k (10.7 ms / frame) |
+| Isaac Hospital | 16 x 256^2 | default | | 9.5k (5.1 ms / frame) |
+
+The default rows predate its coarse GI (`internal/results/history/phase_a/decisions/`): on an L4
+GI costs DamagedHelmet 4096 x 64^2 19 % (147k -> 119k frames/s) and Office / Sponza 960 x 540
++20-22 % per frame; the `FAST` row is unchanged.
+
+Cold start (empty caches) / warm start (kernel and bake disk caches filled, e.g. by
+`Renderer.warm`): DamagedHelmet 30.9 s / 2.55 s, Office 65.6 s / 15.1 s. More in
+[performance](docs/performance.md).
+
+Against other renderers (an earlier version of this code on the same GPU class;
+camera-frames/s, 4096 worlds at 64^2, HDR environment and shadows for this renderer; full tables for
+three GPUs in the archived `internal/results/suite/suite-v2/README.md`, see [evidence paths](docs/README.md)):
+
+| scene | real-time | real-time (OptiX) | Newton `SensorCamera` | Omniverse RTX RTPT (tiled) | MuJoCo Warp |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | DamagedHelmet | 312k | **1.61M** | 168k | 71k | 112k |
 | ABeautifulGame (1.5M triangles) | 246k | **1.33M** | 134k | 65k | 147k |
@@ -145,129 +212,113 @@ and all renderers in [`results/suite/suite-v2`](https://github.com/julien-blanch
 
 - Newton's `SensorCamera` and MuJoCo Warp shade with albedo and simple lights (Newton's MJCF
   import also drops the scenes' lights and textures); this renderer runs full PBR with
-  image-based lighting.
-- On primitive-only scenes it runs at 0.6–0.7× MuJoCo Warp's speed, where PBR shading outweighs
-  traversal.
-- Across GPUs (geometric mean over the suite's scenes, 4096 × 64², real-time tier without
-  OptiX): RTX PRO 6000 418k, H200 167k, A100 115k frames/s.
-- Single-camera renderers for reference (frames/s, 256², DamagedHelmet): MuJoCo's OpenGL
-  renderer 4.4k, Newton's `ViewerRTX` 91, Mitsuba 3 at 16 spp 218, this renderer's path-traced
-  tier at 16 spp 82 (5.0k real-time; measured before the path tier applied `max_registers`, which
-  made it about 2× faster). Batched through one tiled render product (the "Newton RTX
-  (tiled)" column, static scenes only, `research/web/ovrtx_batching.md`), Omniverse RTX runs at
-  about 70k frames/s whatever the scene.
-- Throughput saturates from about 1–4 M pixels per launch (e.g. 256 worlds at 64²).
+  image-based lighting. On primitive-only scenes it runs at 0.6-0.7x MuJoCo Warp's speed, where
+  PBR shading outweighs traversal.
+- **Compare like for like with Omniverse RTX.** The RTX column is RealTimePathTracing (RTPT)
+  through one tiled render product (static scenes, `internal/research/web/ovrtx_batching.md`): about 70k
+  frames/s whatever the scene; compare it with the RTX look recipe. RTX's Minimal mode (simple shading)
+  measured 215-547k frames/s on the same scenes and GPU, but renders them wrong with these
+  lights; compare it with `FAST` / the unlit recipe, not with the RTX look. Isaac Lab's published
+  camera-task numbers (OVRTX 57-92k at 8192 environments, 64^2) are end-to-end training
+  throughput measured in **RTX Minimal mode** (`simple_shading_full_mdl`, "the RTX mode closest to
+  Newton Warp's direct-lighting RGB": Isaac Lab's
+  [renderer concepts page](https://github.com/isaac-sim/IsaacLab/blob/main/docs/source/concepts/renderers.rst), its
+  release camera benchmarks), not render-only numbers in the RTPT mode: compare them with our
+  Minimal column and `FAST` / the unlit recipe.
+- Single-camera renderers for reference (frames/s, 256^2, DamagedHelmet): MuJoCo's OpenGL
+  renderer 4.4k, Newton's `ViewerRTX` 91, Mitsuba 3 at 16 spp 218, this renderer 5.0k.
 
-![DamagedHelmet in every renderer](https://raw.githubusercontent.com/julien-blanchon/mujoco_warp_pbr/main/results/suite/suite-v2/rtx-pro-6000/gallery/damaged_helmet.png)
+![DamagedHelmet in every renderer](https://raw.githubusercontent.com/julien-blanchon/raywarp/main/docs/img/renderers_damaged_helmet.png)
 
 Left to right: MuJoCo OpenGL, MuJoCo Warp, Newton `SensorCamera`, Newton `ViewerRTX`, this
-renderer's real-time tier, its path-traced tier (256 spp) and Mitsuba 3 (256 spp).
+renderer (a path-traced tier, since removed, in the second-to-last panel) and Mitsuba 3 (256 spp).
 
-See `results/scaling.md` and the milestone logs in [`results/history/`](https://github.com/julien-blanchon/mujoco_warp_pbr/blob/main/results/history/README.md)
-(`m5_baseline.md`, `m7_autoresearch.md`) for more tables, `results/history/m6_pathtrace.md` for the
-path-traced tier and `results/rt_backend.md` for the OptiX backend.
+On GPUs with RT cores, `performance.traversal="auto"` (the default) traces with OptiX (3-7x faster
+on mesh scenes); on the CPU and on GPUs without RT cores (A100, H100) it uses the software BVH,
+as it does for scenes with dim-1 flex (segments). OptiX needs nothing beyond raywarp itself and
+an NVIDIA driver serving OptiX 9.0 (R580 or newer): raywarp calls the driver's OptiX through its
+own ctypes binding, and its install fetches the OptiX SDK headers. There is no silent fallback:
+where OptiX cannot run, "auto" on an RT-core GPU raises (set `performance.traversal="software"` to
+run without OptiX) ([docs/performance.md](docs/performance.md#optix)). Milestone logs (`internal/results/history/`)
+are archived in the HF bucket ([evidence paths](docs/README.md)).
 
-Tuning knobs: `max_registers` (96 by default, tuned on Hopper; 0 leaves it to the compiler; both
-tiers apply it), `render_order` (`RenderOrder.TILED` default; `RenderOrder.WORLD` is up to 2.7×
-faster when all worlds render nearly the same image, e.g. fixed cameras), `block_dim`,
-`samples_per_pixel`, `shadow_samples`, and disabling unused features (`use_shadows`,
-`use_textures`, `specular_aa`, `enable_reflections`). The host side of a `render()` call takes
-about 61 µs (was 136 µs).
+## Web viewer
 
-Settings are compiled into the kernel only where reading them at runtime measured slower
-(DamagedHelmet and the material grid, 4096 worlds at 64², RTX PRO 6000):
+`raywarp view` serves an interactive viewer from the GPU
+machine: pick a scene, change any setting, fly through it, and see every frame's time and whether
+anything compiled. Install the `viewer` extra (Pillow; the server is the standard library's and
+the page has no build step) plus the extras of your scene formats; the prebuilt kernels for your
+GPU download on first use.
 
-| compiled-in setting | why | measured runtime cost |
-| --- | --- | ---: |
-| `samples_per_pixel` | sample loop | 4–20% |
-| translucency (`max_layers`) | layer loop | 2–10% |
-| reflections, textures, environment map, light model, denoise | code paths | 2–6% |
-| light count, `render_order` | unrolled loop / pixel mapping | 1–4% |
-| tier, geom types, traversal, fast math, `max_registers` | structural | – |
+```bash
+raywarp view office.usd robot/scene.xml helmet.glb --scenes-dir ~/scenes   # any .wpbr / USD / glTF / MJCF
+# raywarp viewer: http://127.0.0.1:8080/?token=...
+#   device cuda:0 (NVIDIA RTX PRO 6000 ...); prebuilt kernels: sm120, Warp 1.18.0, content ...
+```
 
-Changing one of these recompiles the kernel at the next render (about 2–7 s on GPU, 2 s on CPU);
-every other setting (tone mapper, shadows and shadow samples, headlight, clip planes, HDR output,
-environment background, specular AA, vertex normals, spot lights, …) is read at runtime.
+The server binds the loopback interface and prints a URL with a session token. From a laptop,
+forward the port over SSH and open that URL locally:
+
+```bash
+ssh -N -L 8080:127.0.0.1:8080 user@gpu-host     # then open http://127.0.0.1:8080/?token=... on the laptop
+```
+
+- **Scenes:** the built-in demo, the files and directories of the command line, or any path on
+  the GPU machine typed in the page. A scene that fails to load is reported; the previous one
+  stays.
+- **Settings:** every `RenderSettings` field, grouped as in `rw.RenderSettings`, starting from the
+  default or `rw.FAST`, with each field's kind (R run time, B run time with a rebake, K another
+  prebuilt kernel build) and the fields changed from that base highlighted. Changes apply between two
+  frames on the live renderer; a refused value is reported and the renderer keeps its settings.
+  The view menu picks the image shown (rgb, depth, normal, albedo, ...; on OptiX the outputs switch at run
+  time: [settings](docs/settings.md#compiled-in-or-runtime)).
+- **Camera:** drag to look, W A S D to move, Q / E down / up, Shift faster, the wheel sets the
+  speed, H returns to the scene's view. FOV and image size in the side panel.
+- **Compiles, live:** the status line counts kernel compiles, OptiX PTX compiles and OptiX module
+  creations since the start, and names the kernel tier serving the settings. With the prebuilt
+  bundle, kernel and PTX compiles stay at 0; any compile is listed and flagged in red, and
+  settings outside the prebuilt tiers are named before a frame renders. An OptiX module created
+  on first use (no module pack for this driver) is a stall of seconds, shown in amber. While the
+  renderer is blocked (a scene load, a kernel compile, an OptiX module creation), the page shows
+  what it waits for, for how long, and the estimate.
+- **Background warm:** after a scene opens (and after a change of a kernel-build field), the
+  viewer creates in the background the OptiX modules of every output view and of the settings one
+  change away (`Renderer.warm(..., nearby=..., nearby_outputs=...)`), so the next click finds them
+  ready; the frames keep streaming meanwhile and the status line says when it is done.
+
+Flags: `--device cuda:1`, `--port 0` (any free port), `--size 1280x720`, `--base fast`,
+`--warm N` (modules created ahead at most; 0: none), `--host 0.0.0.0` (other machines; prefer the
+SSH forward), `--no-token`. The frames are JPEGs pushed over one WebSocket on the same port: the
+frame rate follows the renderer and the link's bandwidth, not its round trip, and a credit window
+of unacknowledged frames (grown while the link shows no queue, shrunk when it does) keeps the
+newest camera at most about one round trip away.
 
 ## Running on CPU
 
-No GPU is needed: the renderer runs unchanged on Warp's CPU device, with images within 1/255 of
-the GPU's for the real-time tier.
+No GPU is needed: the renderer runs unchanged on Warp's CPU device, with images within a few
+1/255 of the GPU's. A CPU launch runs on one core, so give each core its own worker (threads or
+pinned processes), each with its own `Data` and Renderer. DamagedHelmet at 64^2 renders at about
+125-150 frames/s per core (`internal/results/cpu.md`, archived). The regression suite checks CPU / GPU
+parity over its whole case list (`internal/benchmarks/regression.py check --device cuda:0`).
 
-```python
-with wp.ScopedDevice("cpu"):
-  m = mjw.put_model(mjm)
-  d = mjw.put_data(mjm, mjd, nworld=16)
-  rc = mjpbr.create_render_context(mjm, nworld=16, cam_res=(64, 64), render_rgb=True)
-  mjpbr.render(m, d, rc)
-```
-
-Warp runs a CPU launch on a single core, so throughput does not grow with `nworld`. To use every
-core, give each core its own worker, with its own `Data` and render context: Python threads
-(Warp's launch releases the GIL) or pinned processes. `benchmarks/cpu_bench.py` measures this,
-plus MuJoCo's OpenGL renderer on a software rasteriser and Mitsuba 3's LLVM backend:
+## Benchmark
 
 ```bash
-python benchmarks/cpu_bench.py --scene damaged_helmet --res 64 --nworld 32 --workers 1 8 32 [--mode process]
-python benchmarks/cpu_bench.py --parity --scene damaged_helmet --res 64   # CPU vs GPU images
+python -m benchmarks.run --scene franka --worlds 64 --res 512     # or showcase, sponza; --settings fast
 ```
 
-DamagedHelmet at 64² renders at about 125–150 frames/s per core, scaling to 2.5k frames/s on a
-16-core / 32-thread EPYC and 34k on a GH200 node (4× 72-core Grace). One GH200 GPU is 6–47×
-faster than one 72-core Grace. A render context with an HDR environment takes about 2 s to
-create on the CPU device (the map's prefilter runs in row bands on up to 16 threads; it took
-about 32–35 s on one core). Full tables, the scaling curve and the baselines
-are in [`results/cpu.md`](https://github.com/julien-blanchon/mujoco_warp_pbr/blob/main/results/cpu.md).
-
-## Benchmarks and validation
-
-```bash
-python tools/fetch_assets.py            # Khronos glTF, Menagerie robots, Poly Haven HDRIs
-python benchmarks/bench.py --scene damaged_helmet --nworld 4096 --res 64
-python benchmarks/bench.py --scene damaged_helmet --nworld 4096 --res 64 --gpus 0 1 2 3   # multi-GPU scaling
-python benchmarks/sweep.py --preset score --out results/score.jsonl   # also: scaling, tune
-python benchmarks/validate.py --res 256 --spp 1024   # FLIP / PSNR against Mitsuba 3
-python benchmarks/denoise_eval.py --scene grid_env --samples 4 16   # FLIP of the denoiser
-python benchmarks/gallery.py --scene franka_showroom --frames 48      # side-by-side orbit video
-```
-
-Assets are cached in `$MJPBR_ASSET_DIR` (default `~/.cache/mujoco_warp_pbr`); `--set
-envmap=hdri/<file>.hdr` and the other scripts resolve relative environment maps against it. The
-reference renderers (Mitsuba 3, Newton) and image metrics install with the `bench` extra.
-`benchmarks/cpu_bench.py` is the CPU counterpart of `bench.py` (see Running on CPU).
-
-`benchmarks/suite.py` compares every renderer:
-- this renderer: real-time tier, path-traced tier, and through `newton_pbr`;
-- MuJoCo Warp, MuJoCo's OpenGL renderer and Mitsuba 3;
-- Newton's `SensorCamera` and `ViewerRTX` (NVIDIA Omniverse RTX, on RTX GPUs).
-
-It runs them on showcase, robotics and light-rig scenes, for a single scene and for batches, and
-writes a markdown report with orbit videos. `tools/hf/run_suite.py` runs it on several
-[Hugging Face Jobs](https://huggingface.co/docs/huggingface_hub/guides/jobs) GPUs, with a private
-bucket carrying code, assets and results:
-
-```bash
-uv run tools/hf/run_suite.py --bucket USER/BUCKET --flavors rtx-pro-6000 h200 a100-large --sync-assets --wait
-```
+prints ms/frame, images/s, the first-frame time and the compile count, and saves one PNG; the
+scenes download on first use ([benchmark](docs/benchmark.md), [benchmarks/README.md](benchmarks/README.md)).
 
 ## Development
 
 ```bash
-uv sync --all-extras
-uv run pytest
-uv run pytest -m "not slow"   # skips the high-sample path-traced references
-uv run ruff check . && uv run ruff format --check .   # or: pre-commit install
-uv run pyrefly check
+uv sync --all-extras                  # every extra and the dev dependency group
+uv run pytest -n 8                     # default CPU suite (no `slow` tests); every test: -m "slow or not slow"
+uv run ruff check . && uv run ruff format --check .
+uv run pyrefly check raywarp
+uv run python tools/settings_table.py  # the generated settings tables of the docs are current
 ```
 
-**Type checking.** [Pyrefly](https://pyrefly.org/en/docs/tensor-shapes/) is the type checker. The `dev` extra
-pulls in Pyrefly and the `typing` extra (`pip install mujoco-warp-pbr[typing]`): shape-aware stubs for Warp
-(`pyrefly-warp-stubs`) and NumPy (`pyrefly-numpy-stubs`), and `mujoco-stubs`. Host code annotates array shapes
-with named dimensions, e.g. `wp.array[wp.vec3, [NWorld, H, W]]` or `np.ndarray[[H, W, 3], np.dtype[np.float32]]`,
-so image sizes, batch and channel counts are checked across calls; kernel signatures stay plain Warp
-(`wp.array2d[float]`). The annotations are type-checking-only (`from __future__ import annotations`), so a plain
-install needs neither Pyrefly nor the stubs. `uv sync --extra dev` is enough for `pyrefly check`: the
-benchmark-only packages (`bench` extra, OptiX, ovrtx, huggingface_hub) are listed in `ignore-missing-imports`, so
-their imports are untyped when absent and checked when installed.
-
-Design notes and literature: [`research/`](https://github.com/julien-blanchon/mujoco_warp_pbr/blob/main/research/README.md).
+Architecture (with diagrams), the standards S1-S7 and their gates, the test layout and how to add
+a feature or an adapter: the [developer guide](docs/DEVELOPMENT.md).

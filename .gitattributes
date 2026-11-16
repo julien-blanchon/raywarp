@@ -1,0 +1,4 @@
+# The development-only tree (internal benchmarks, knowledge base, results, dev tools and their
+# tests) stays tracked (worktrees and HF jobs see it) but is left out of the public export
+# (`git archive`); the HF harness ships it explicitly (tools/hf/runs.py `archive`).
+internal/ export-ignore

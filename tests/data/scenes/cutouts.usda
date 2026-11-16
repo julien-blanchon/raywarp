@@ -1,0 +1,1235 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+    doc = """Alpha cutouts: a tiled chain-link fence, a soft-edged decal on a wall and a bush of leaf cards (opacityThreshold 0.5) in the sun."""
+)
+
+def Xform "World"
+{
+    def Scope "Looks"
+    {
+        def Material "Floor"
+        {
+            token outputs:surface.connect = </World/Looks/Floor/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.6, 0.6, 0.6)
+                float inputs:roughness = 0.8
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+
+        def Material "Checker"
+        {
+            token outputs:surface.connect = </World/Looks/Checker/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor.connect = </World/Looks/Checker/Tex_diffuseColor.outputs:rgb>
+                float inputs:roughness = 0.8
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+
+            def Shader "St"
+            {
+                uniform token info:id = "UsdPrimvarReader_float2"
+                string inputs:varname = "st"
+                float2 outputs:result
+            }
+
+            def Shader "Tex_diffuseColor"
+            {
+                uniform token info:id = "UsdUVTexture"
+                asset inputs:file = @./textures/checker.png@
+                float2 inputs:st.connect = </World/Looks/Checker/St.outputs:result>
+                token inputs:wrapS = "repeat"
+                token inputs:wrapT = "repeat"
+                token inputs:sourceColorSpace = "auto"
+                float3 outputs:rgb
+            }
+        }
+
+        def Material "Fence"
+        {
+            token outputs:surface.connect = </World/Looks/Fence/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor.connect = </World/Looks/Fence/Tex_diffuseColor.outputs:rgb>
+                float inputs:roughness = 0.4
+                float inputs:metallic = 0.8
+                float inputs:opacityThreshold = 0.5
+                float inputs:opacity.connect = </World/Looks/Fence/Tex_opacity.outputs:a>
+                token outputs:surface
+            }
+
+            def Shader "St"
+            {
+                uniform token info:id = "UsdPrimvarReader_float2"
+                string inputs:varname = "st"
+                float2 outputs:result
+            }
+
+            def Shader "Tile"
+            {
+                uniform token info:id = "UsdTransform2d"
+                float2 inputs:in.connect = </World/Looks/Fence/St.outputs:result>
+                float2 inputs:scale = (6, 6)
+                float2 outputs:result
+            }
+
+            def Shader "Tex_diffuseColor"
+            {
+                uniform token info:id = "UsdUVTexture"
+                asset inputs:file = @./textures/fence.png@
+                float2 inputs:st.connect = </World/Looks/Fence/Tile.outputs:result>
+                token inputs:wrapS = "repeat"
+                token inputs:wrapT = "repeat"
+                token inputs:sourceColorSpace = "auto"
+                float3 outputs:rgb
+            }
+
+            def Shader "Tex_opacity"
+            {
+                uniform token info:id = "UsdUVTexture"
+                asset inputs:file = @./textures/fence.png@
+                float2 inputs:st.connect = </World/Looks/Fence/Tile.outputs:result>
+                token inputs:wrapS = "repeat"
+                token inputs:wrapT = "repeat"
+                token inputs:sourceColorSpace = "raw"
+                float outputs:a
+            }
+        }
+
+        def Material "Decal"
+        {
+            token outputs:surface.connect = </World/Looks/Decal/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor.connect = </World/Looks/Decal/Tex_diffuseColor.outputs:rgb>
+                float inputs:roughness = 0.6
+                float inputs:metallic = 0
+                float inputs:opacityThreshold = 0.5
+                float inputs:opacity.connect = </World/Looks/Decal/Tex_opacity.outputs:a>
+                token outputs:surface
+            }
+
+            def Shader "St"
+            {
+                uniform token info:id = "UsdPrimvarReader_float2"
+                string inputs:varname = "st"
+                float2 outputs:result
+            }
+
+            def Shader "Tex_diffuseColor"
+            {
+                uniform token info:id = "UsdUVTexture"
+                asset inputs:file = @./textures/decal.png@
+                float2 inputs:st.connect = </World/Looks/Decal/St.outputs:result>
+                token inputs:wrapS = "repeat"
+                token inputs:wrapT = "repeat"
+                token inputs:sourceColorSpace = "auto"
+                float3 outputs:rgb
+            }
+
+            def Shader "Tex_opacity"
+            {
+                uniform token info:id = "UsdUVTexture"
+                asset inputs:file = @./textures/decal.png@
+                float2 inputs:st.connect = </World/Looks/Decal/St.outputs:result>
+                token inputs:wrapS = "repeat"
+                token inputs:wrapT = "repeat"
+                token inputs:sourceColorSpace = "raw"
+                float outputs:a
+            }
+        }
+
+        def Material "Leaf"
+        {
+            token outputs:surface.connect = </World/Looks/Leaf/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor.connect = </World/Looks/Leaf/Tex_diffuseColor.outputs:rgb>
+                float inputs:roughness = 0.7
+                float inputs:metallic = 0
+                float inputs:opacityThreshold = 0.5
+                float inputs:opacity.connect = </World/Looks/Leaf/Tex_opacity.outputs:a>
+                token outputs:surface
+            }
+
+            def Shader "St"
+            {
+                uniform token info:id = "UsdPrimvarReader_float2"
+                string inputs:varname = "st"
+                float2 outputs:result
+            }
+
+            def Shader "Tex_diffuseColor"
+            {
+                uniform token info:id = "UsdUVTexture"
+                asset inputs:file = @./textures/leaf.png@
+                float2 inputs:st.connect = </World/Looks/Leaf/St.outputs:result>
+                token inputs:wrapS = "repeat"
+                token inputs:wrapT = "repeat"
+                token inputs:sourceColorSpace = "auto"
+                float3 outputs:rgb
+            }
+
+            def Shader "Tex_opacity"
+            {
+                uniform token info:id = "UsdUVTexture"
+                asset inputs:file = @./textures/leaf.png@
+                float2 inputs:st.connect = </World/Looks/Leaf/St.outputs:result>
+                token inputs:wrapS = "repeat"
+                token inputs:wrapT = "repeat"
+                token inputs:sourceColorSpace = "raw"
+                float outputs:a
+            }
+        }
+    }
+
+    def Cube "Floor" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, 0.5, -0.025)
+        float3 xformOp:scale = (8, 7, 0.05)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Floor>
+    }
+
+    def Mesh "Wall" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-4, -1.5, 0), (4, 1.5, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-4, -1.5, 0), (4, -1.5, 0), (4, 1.5, 0), (-4, 1.5, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (4, 0), (4, 4), (0, 4)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        double3 xformOp:translate = (0, 2.5, 1.5)
+        float3 xformOp:rotateXYZ = (90, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Checker>
+    }
+
+    def Mesh "Fence" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-2, -1, 0), (2, 1, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-2, -1, 0), (2, -1, 0), (2, 1, 0), (-2, 1, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (0, 0, 1)
+        float3 xformOp:rotateXYZ = (90, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Fence>
+    }
+
+    def Mesh "Decal0" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.45, -0.45, 0), (0.45, 0.45, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.45, -0.45, 0), (0.45, -0.45, 0), (0.45, 0.45, 0), (-0.45, 0.45, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        double3 xformOp:translate = (-1.5, 2.48, 1.3)
+        float3 xformOp:rotateXYZ = (90, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Decal>
+    }
+
+    def Mesh "Decal1" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.45, -0.45, 0), (0.45, 0.45, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.45, -0.45, 0), (0.45, -0.45, 0), (0.45, 0.45, 0), (-0.45, 0.45, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        double3 xformOp:translate = (0.2, 2.48, 1.8)
+        float3 xformOp:rotateXYZ = (90, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Decal>
+    }
+
+    def Mesh "Decal2" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.45, -0.45, 0), (0.45, 0.45, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.45, -0.45, 0), (0.45, -0.45, 0), (0.45, 0.45, 0), (-0.45, 0.45, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        double3 xformOp:translate = (1.6, 2.48, 0.9)
+        float3 xformOp:rotateXYZ = (90, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Decal>
+    }
+
+    def Mesh "Leaf0" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.51259, 1.55749, 0.770549)
+        float3 xformOp:rotateXYZ = (81.0746, 108.06, 314.479)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf1" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (1.95474, 1.48911, 0.787656)
+        float3 xformOp:rotateXYZ = (168.457, 109.092, 100.233)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf2" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.17938, 1.15057, 0.553639)
+        float3 xformOp:rotateXYZ = (199.259, 358.38, 285.358)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf3" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.50996, 1.64006, 0.322247)
+        float3 xformOp:rotateXYZ = (57.6763, 220.514, 15.8191)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf4" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (1.98211, 1.2134, 0.522965)
+        float3 xformOp:rotateXYZ = (330.18, 226.521, 185.082)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf5" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.39719, 0.972763, 0.159435)
+        float3 xformOp:rotateXYZ = (69.2648, 249.132, 72.2184)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf6" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.28258, 0.753361, 0.814038)
+        float3 xformOp:rotateXYZ = (55.606, 96.3357, 316.92)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf7" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.40881, 1.51244, 0.661774)
+        float3 xformOp:rotateXYZ = (267.038, 32.9384, 194.812)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf8" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.407, 1.53421, 0.439011)
+        float3 xformOp:rotateXYZ = (215.346, 21.3306, 139.547)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf9" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.24073, 0.88518, 0.80307)
+        float3 xformOp:rotateXYZ = (136.601, 352.349, 212.397)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf10" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.49455, 1.3242, 0.69116)
+        float3 xformOp:rotateXYZ = (54.2837, 158.513, 86.243)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf11" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.31225, 0.837034, 0.924262)
+        float3 xformOp:rotateXYZ = (77.4015, 241.835, 108.151)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf12" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.73667, 1.34599, 0.255293)
+        float3 xformOp:rotateXYZ = (304.227, 340.181, 325.41)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf13" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.46275, 0.880914, 0.303971)
+        float3 xformOp:rotateXYZ = (334.046, 198.838, 64.9989)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf14" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.74565, 1.32741, 0.605755)
+        float3 xformOp:rotateXYZ = (135.464, 147.944, 86.2161)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf15" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (1.98425, 1.5386, 0.524184)
+        float3 xformOp:rotateXYZ = (197.149, 115.979, 270.477)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf16" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (1.97268, 1.08497, 0.17428)
+        float3 xformOp:rotateXYZ = (44.2412, 348.173, 236.794)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf17" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.3354, 1.22137, 0.848247)
+        float3 xformOp:rotateXYZ = (123.916, 212.505, 246.126)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf18" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.26987, 1.21719, 0.762198)
+        float3 xformOp:rotateXYZ = (327.305, 54.3824, 336.031)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf19" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (1.95466, 1.42768, 0.798421)
+        float3 xformOp:rotateXYZ = (49.2351, 150.805, 293.492)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf20" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (1.96284, 1.31562, 0.784419)
+        float3 xformOp:rotateXYZ = (184.681, 261.306, 81.5125)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf21" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.12867, 1.07681, 0.293525)
+        float3 xformOp:rotateXYZ = (124.582, 341.325, 206.4)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf22" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.25606, 0.994372, 0.911632)
+        float3 xformOp:rotateXYZ = (160.012, 352.942, 185.588)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf23" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.41905, 1.55689, 0.744214)
+        float3 xformOp:rotateXYZ = (209.035, 153.594, 316.148)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf24" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.32048, 1.58048, 0.204972)
+        float3 xformOp:rotateXYZ = (154.799, 187.025, 342.338)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf25" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.1759, 1.47544, 0.691177)
+        float3 xformOp:rotateXYZ = (258.151, 226.664, 349.762)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf26" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.24941, 1.10845, 0.312329)
+        float3 xformOp:rotateXYZ = (18.2535, 76.647, 329.567)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf27" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.70615, 0.851165, 0.633023)
+        float3 xformOp:rotateXYZ = (172.511, 214.087, 237.339)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf28" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.22599, 1.61522, 0.522672)
+        float3 xformOp:rotateXYZ = (226.116, 228.681, 66.2002)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf29" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.00568, 1.12037, 0.761224)
+        float3 xformOp:rotateXYZ = (293.48, 262.796, 40.7538)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf30" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.77202, 1.47183, 0.852153)
+        float3 xformOp:rotateXYZ = (188.389, 329.629, 16.7948)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf31" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (1.97726, 0.768194, 0.352215)
+        float3 xformOp:rotateXYZ = (89.4851, 67.5012, 204.14)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf32" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (1.98509, 1.28135, 0.282809)
+        float3 xformOp:rotateXYZ = (244.035, 7.58713, 111.805)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf33" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.79451, 1.23456, 0.79927)
+        float3 xformOp:rotateXYZ = (236.889, 219.87, 68.851)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf34" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.46696, 0.785718, 0.791332)
+        float3 xformOp:rotateXYZ = (345.626, 307.443, 18.2555)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf35" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.25479, 1.0362, 0.240174)
+        float3 xformOp:rotateXYZ = (225.58, 287.085, 112.94)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf36" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.72653, 1.46741, 0.25331)
+        float3 xformOp:rotateXYZ = (276.069, 317.743, 71.0217)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf37" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.46628, 1.32487, 0.637467)
+        float3 xformOp:rotateXYZ = (34.6484, 238.029, 227.504)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf38" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.6915, 1.47316, 0.411735)
+        float3 xformOp:rotateXYZ = (259.937, 312.218, 321.461)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def Mesh "Leaf39" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (2.09536, 0.774032, 0.670646)
+        float3 xformOp:rotateXYZ = (77.2835, 202.936, 340.13)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Leaf>
+    }
+
+    def DistantLight "Sun"
+    {
+        bool inputs:normalize = 1
+        float inputs:intensity = 80000
+        float inputs:angle = 0.53
+        float3 xformOp:rotateXYZ = (40, 0, 25)
+        uniform token[] xformOpOrder = ["xformOp:rotateXYZ"]
+    }
+
+    def DomeLight "Sky"
+    {
+        custom int omni:rtx:usdluxVersion = 2411
+        float inputs:intensity = 4000
+        color3f inputs:color = (0.7, 0.8, 1)
+    }
+
+    def Camera "View0"
+    {
+        matrix4d xformOp:transform = ((1, 0, 0, 0), (0, 0.0598923, 0.998205, 0), (0, -0.998205, 0.0598923, 0), (0, -4, 1.2, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 20.8227
+        float verticalAperture = 20.8227
+        float2 clippingRange = (0.01, 100000)
+    }
+
+    def Camera "View1"
+    {
+        matrix4d xformOp:transform = ((0.879707, 0.475517, 0, 0), (-0.0671551, 0.124237, 0.989977, 0), (0.470751, -0.87089, 0.141225, 0), (3.2, -2.2, 1.4, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 18.6523
+        float verticalAperture = 18.6523
+        float2 clippingRange = (0.01, 100000)
+    }
+}

@@ -1,0 +1,34 @@
+<mujoco model="motion">
+  <!-- A spinning paddle, a sliding block and thin poles over a checker floor: motion vectors. -->
+  <!-- Written by internal/benchmarks/scenes/generate.py; cameras: internal/benchmarks/feature_scenes.py. -->
+  <compiler angle="degree"/>
+  <visual>
+    <headlight active="0" ambient="0 0 0" diffuse="0 0 0" specular="0 0 0"/>
+    <map znear="0.002" zfar="200"/>
+    <quality shadowsize="4096"/>
+  </visual>
+  <asset>
+    <texture name="grid" type="2d" builtin="checker" width="256" height="256" rgb1="0.85 0.85 0.85" rgb2="0.1 0.1 0.1"/>
+    <material name="floor" texture="grid" texrepeat="10 10" texuniform="true" roughness="0.7" metallic="0"/>
+    <material name="paddle" rgba="0.9 0.5 0.1 1" roughness="0.4" metallic="0"/>
+    <material name="block" rgba="0.15 0.3 0.85 1" roughness="0.3" metallic="0"/>
+    <material name="pole" rgba="0.95 0.95 0.95 1" roughness="0.5" metallic="0"/>
+  </asset>
+  <worldbody>
+    <light name="sun" type="directional" dir="-0.3 0.5 -0.8" intensity="40000" castshadow="true"/>
+    <light name="fill" type="directional" dir="0.4 -0.3 -0.8" intensity="8000" castshadow="false"/>
+    <geom name="floor" type="plane" size="5 5 0.1" material="floor"/>
+    <body name="spinner" pos="-0.6 0.3 0.5">
+      <joint name="spin" type="hinge" axis="0 0 1"/>
+      <geom name="paddle" type="box" size="0.6 0.03 0.12" material="paddle"/>
+      <geom name="hub" type="cylinder" size="0.06 0.15" material="pole"/>
+    </body>
+    <geom name="axle" type="cylinder" size="0.02 0.2" pos="-0.6 0.3 0.2" material="pole"/>
+    <body name="slider" pos="0.8 -0.2 0.15">
+      <joint name="slide" type="slide" axis="1 0 0"/>
+      <geom name="block" type="box" size="0.15 0.15 0.15" material="block"/>
+    </body>
+    <geom name="pole0" type="cylinder" size="0.01 0.6" pos="-1.4 1.2 0.6" material="pole"/><geom name="pole1" type="cylinder" size="0.01 0.6" pos="-1.05 1.2 0.6" material="pole"/><geom name="pole2" type="cylinder" size="0.01 0.6" pos="-0.7 1.2 0.6" material="pole"/><geom name="pole3" type="cylinder" size="0.01 0.6" pos="-0.35 1.2 0.6" material="pole"/><geom name="pole4" type="cylinder" size="0.01 0.6" pos="0 1.2 0.6" material="pole"/><geom name="pole5" type="cylinder" size="0.01 0.6" pos="0.35 1.2 0.6" material="pole"/><geom name="pole6" type="cylinder" size="0.01 0.6" pos="0.7 1.2 0.6" material="pole"/><geom name="pole7" type="cylinder" size="0.01 0.6" pos="1.05 1.2 0.6" material="pole"/><geom name="pole8" type="cylinder" size="0.01 0.6" pos="1.4 1.2 0.6" material="pole"/>
+    <camera name="cam" pos="0 -3.5 1.6" xyaxes="1 0 0 0 0.323688 0.946164" fovy="50"/>
+  </worldbody>
+</mujoco>

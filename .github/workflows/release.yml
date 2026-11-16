@@ -1,9 +1,25 @@
-# Builds mujoco-warp-pbr and newton-pbr and publishes them to PyPI when a v* tag is pushed, or by
-# hand for an existing tag (workflow_dispatch, e.g. to finish a partly failed release).
-# Uses PyPI trusted publishing: no token is stored; each project trusts this workflow and the
-# GitHub environment named in the matrix (https://docs.pypi.org/trusted-publishers/): `pypi` for
-# mujoco-warp-pbr, `pypi-newton-pbr` for newton-pbr. Separate environments let PyPI tell the two
-# projects apart, since both trust the same repository and workflow.
+# Builds raywarp and publishes it to PyPI when a v* tag is pushed, or by hand for an existing tag
+# (workflow_dispatch, e.g. to finish a partly failed release). `pip install raywarp` never builds:
+#
+#   sdist      the source (its native build hook runs only for a source install)
+#   wheels     one cp312-abi3 wheel per platform with the native components prebuilt (the MDL SDK and
+#              its SWIG binding, the OptiX headers: tools/native/hook.py): manylinux_2_28 x86_64 and
+#              aarch64 (built in the manylinux image, `auditwheel repair` with libcuda.so.1 excluded:
+#              the driver's, never bundled; the MDL SDK's own stub covers machines without one) and
+#              macOS arm64
+#   smoke      each Linux wheel installed into a fresh environment with no compiler and no source
+#              build allowed, then the MDL fixtures converted and checked against the golden digests
+#   publish    PyPI trusted publishing (no token: the project trusts this workflow and the GitHub
+#              environment `pypi`, https://docs.pypi.org/trusted-publishers/)
+#
+# Every build pins warp-lang to the exact Warp release of the prebuilt kernels the package pins
+# (tools/release/pin_warp.py: a bundle serves one Warp release only; a newer Warp would leave it
+# unused and compile everything).
+#
+# The prebuilt GPU kernels are not in the wheels: the renderer downloads what it uses on first use
+# from their remote (raywarp/core/build/kernel_cache/store.py), published by .github/workflows/kernels.yml
+# before the tag, whose pins (raywarp/core/build/kernel_cache/kernels.json) these wheels carry. newton-pbr was
+# folded into raywarp[newton] (0.3.0): its last release stays 0.2.0.
 name: Release
 
 on:
@@ -15,48 +31,145 @@ on:
         description: "Existing tag to build and publish (files already on PyPI are skipped)"
         required: true
 
+env:
+  # The pinned NVIDIA artifacts of the native build hook, fetched once per hook revision.
+  RAYWARP_NATIVE_ARCHIVES: ${{ github.workspace }}/.native-archives
+
 jobs:
-  build:
+  check-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - name: Check that the tag matches the package version
+        run: |
+          tag="${{ inputs.tag || github.ref_name }}"
+          tag="${tag#v}"
+          grep -q "^version = \"$tag\"$" pyproject.toml || { echo "pyproject.toml does not have version $tag"; exit 1; }
+
+  sdist:
+    needs: check-version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.tag || github.ref }}
       - uses: astral-sh/setup-uv@v6
-      - name: Check that the tag matches both package versions
-        run: |
-          tag="${{ inputs.tag || github.ref_name }}"
-          tag="${tag#v}"
-          for f in pyproject.toml newton-pbr/pyproject.toml; do
-            grep -q "^version = \"$tag\"$" "$f" || { echo "$f does not have version $tag"; exit 1; }
-          done
-      - run: uv build --package mujoco-warp-pbr --out-dir dist/mujoco-warp-pbr
-      - run: uv build --package newton-pbr --out-dir dist/newton-pbr
+      - name: Pin Warp to the prebuilt kernels' release
+        run: python3 tools/release/pin_warp.py
+      - run: uv build --sdist --out-dir dist
       - uses: actions/upload-artifact@v4
         with:
-          name: dist
+          name: dist-sdist
           path: dist/
 
-  publish:
-    needs: build
-    runs-on: ubuntu-latest
-    environment: ${{ matrix.environment }}
-    permissions:
-      id-token: write
+  linux:
+    needs: check-version
     strategy:
-      max-parallel: 1
       matrix:
         include:
-          - package: mujoco-warp-pbr
-            environment: pypi
-          - package: newton-pbr
-            environment: pypi-newton-pbr
+          - arch: x86_64
+            runner: ubuntu-24.04
+            platform: linux-x86-64
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+            platform: linux-aarch64
+    runs-on: ${{ matrix.runner }}
+    container: quay.io/pypa/manylinux_2_28_${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - uses: actions/cache@v4
+        with:
+          path: .native-archives
+          key: native-${{ matrix.platform }}-${{ hashFiles('tools/native/hook.py') }}
+      - name: Fetch the pinned native artifacts (checksummed)
+        run: python3.12 tools/native/hook.py fetch "$RAYWARP_NATIVE_ARCHIVES" --platform ${{ matrix.platform }}
+      - name: Pin Warp to the prebuilt kernels' release
+        run: python3.12 tools/release/pin_warp.py
+      - name: Build the wheel
+        run: |
+          python3.12 -m pip install --root-user-action ignore uv
+          python3.12 -m uv build --wheel --python python3.12 --out-dir raw
+      - name: Repair to manylinux (libcuda.so.1 stays the driver's)
+        run: |
+          python3.12 -m pip install --root-user-action ignore "auditwheel>=6.1" patchelf
+          python3.12 -m auditwheel repair --exclude libcuda.so.1 --plat manylinux_2_28_${{ matrix.arch }} -w dist raw/*.whl
+          python3.12 -m auditwheel show dist/*.whl
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-linux-${{ matrix.arch }}
+          path: dist/
+
+  macos:
+    needs: check-version
+    runs-on: macos-14
+    env:
+      MACOSX_DEPLOYMENT_TARGET: "14.0"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/cache@v4
+        with:
+          path: .native-archives
+          key: native-macosx-aarch64-${{ hashFiles('tools/native/hook.py') }}
+      - run: uv run --no-project --python 3.12 --with setuptools python tools/native/hook.py fetch "$RAYWARP_NATIVE_ARCHIVES" --platform macosx-aarch64
+      - name: Pin Warp to the prebuilt kernels' release
+        run: python3 tools/release/pin_warp.py
+      - run: uv build --wheel --python 3.12 --out-dir dist
+      # The MDL SDK links only system libraries on macOS (no CUDA): check that nothing else leaks in.
+      - run: uvx --python 3.12 delocate-listdeps --all dist/*.whl
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-macos-arm64
+          path: dist/
+
+  smoke:
+    needs: linux
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-24.04
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist-linux-${{ matrix.arch }}
+          path: dist/
+      # --no-build: every package from a wheel (raywarp's own above all); the checkout only
+      # supplies the fixtures, never the package (python -I from another directory).
+      - name: Install into a fresh environment (no source build)
+        run: |
+          uv venv --python 3.12 /tmp/smoke
+          uv pip install --python /tmp/smoke/bin/python --no-build --find-links dist \
+            --index-strategy unsafe-best-match --extra-index-url https://pypi.nvidia.com "raywarp[usd]"
+      - name: Convert the MDL fixtures (the bundled MDL SDK, no CUDA driver)
+        run: cd /tmp && /tmp/smoke/bin/python -I "$GITHUB_WORKSPACE/tools/release/mdl_smoke.py" "$GITHUB_WORKSPACE"
+
+  publish:
+    needs: [sdist, linux, macos, smoke]
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: dist
+          pattern: dist-*
+          merge-multiple: true
           path: dist/
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: dist/${{ matrix.package }}/
+          packages-dir: dist/
           skip-existing: true

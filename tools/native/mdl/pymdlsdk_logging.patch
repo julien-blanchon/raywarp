@@ -1,0 +1,82 @@
+diff --git a/mdl_python_swig.i b/mdl_python_swig.i
+index 617c0796..362e2f18 100644
+--- a/mdl_python_swig.i
++++ b/mdl_python_swig.i
+@@ -1174,6 +1174,7 @@ DICE_INTERFACE(IMessage)
+ DICE_INTERFACE(IMdl_distiller_api)
+ DICE_INTERFACE(IMdl_execution_context)
+ DICE_INTERFACE(IMdl_i18n_configuration)
++DICE_INTERFACE(ILogging_configuration)
+ DICE_INTERFACE(IMdl_resolved_module)
+ DICE_INTERFACE(IMdl_resolved_resource)
+ DICE_INTERFACE(IMdl_resolved_resource_element)
+@@ -1434,6 +1435,45 @@ EXTEND_FUNCTION_AS(mi::neuraylib::IExpression_list, get_expression)
+     }
+ }
+ 
++// special handling for: mi::neuraylib::ILogging_configuration (added by raywarp-mdl)
++// ----------------------------------------------------------------------------
++// The log level only: the loggers (ILogger is not wrapped) and the per-category / prefix /
++// priority settings are ignored. The level crosses as an int (a Message_severity value).
++%ignore mi::neuraylib::ILogging_configuration::set_receiving_logger;
++%ignore mi::neuraylib::ILogging_configuration::get_receiving_logger;
++%ignore mi::neuraylib::ILogging_configuration::get_forwarding_logger;
++%ignore mi::neuraylib::ILogging_configuration::set_log_level;
++%ignore mi::neuraylib::ILogging_configuration::get_log_level;
++%ignore mi::neuraylib::ILogging_configuration::set_log_level_by_category;
++%ignore mi::neuraylib::ILogging_configuration::get_log_level_by_category;
++%ignore mi::neuraylib::ILogging_configuration::set_log_prefix;
++%ignore mi::neuraylib::ILogging_configuration::get_log_prefix;
++%ignore mi::neuraylib::ILogging_configuration::set_log_priority;
++%ignore mi::neuraylib::ILogging_configuration::get_log_priority;
++%ignore mi::neuraylib::ILogging_configuration::set_log_locally;
++%ignore mi::neuraylib::ILogging_configuration::get_log_locally;
++// The prefix flags belong to the ignored set_log_prefix (post_swig.py rejects unhandled globals).
++%ignore mi::neuraylib::Log_prefix;
++%ignore mi::neuraylib::LOG_PREFIX_TIME;
++%ignore mi::neuraylib::LOG_PREFIX_TIME_SECONDS;
++%ignore mi::neuraylib::LOG_PREFIX_HOST_THREAD;
++%ignore mi::neuraylib::LOG_PREFIX_HOST_NAME;
++%ignore mi::neuraylib::LOG_PREFIX_MODULE;
++%ignore mi::neuraylib::LOG_PREFIX_CATEGORY;
++%ignore mi::neuraylib::LOG_PREFIX_SEVERITY;
++%ignore mi::neuraylib::LOG_PREFIX_CUDA_DEVICE;
++%ignore mi::neuraylib::LOG_PREFIX_TAGS;
++%extend SmartPtr<mi::neuraylib::ILogging_configuration> {
++    mi::Sint32 set_log_level_value(mi::Sint32 level)
++    {
++        return $self->get()->set_log_level(static_cast<mi::base::Message_severity>(level));
++    }
++    mi::Sint32 get_log_level_value() const
++    {
++        return static_cast<mi::Sint32>($self->get()->get_log_level());
++    }
++}
++
+ // special handling for: mi::neuraylib::IBaker
+ // ----------------------------------------------------------------------------
+ 
+@@ -2179,6 +2219,7 @@ EXTEND_FUNCTION_AS(mi::neuraylib::ITransaction, edit)
+ %include "mi/neuraylib/imdl_entity_resolver.h"
+ %include "mi/neuraylib/imdl_execution_context.h"
+ %include "mi/neuraylib/imdl_i18n_configuration.h"
++%include "mi/neuraylib/ilogging_configuration.h"
+ %include "mi/neuraylib/imdl_factory.h"
+ %include "mi/neuraylib/imdl_impexp_api.h"
+ %include "mi/neuraylib/imdl_module_builder.h"
+@@ -2220,6 +2261,7 @@ NEURAY_DEFINE_HANDLE_TYPEMAP(mi::neuraylib::IMdl_distiller_api)
+ NEURAY_DEFINE_HANDLE_TYPEMAP(mi::neuraylib::IMdl_evaluator_api)
+ NEURAY_DEFINE_HANDLE_TYPEMAP(mi::neuraylib::IMdl_execution_context)
+ NEURAY_DEFINE_HANDLE_TYPEMAP(mi::neuraylib::IMdl_i18n_configuration)
++NEURAY_DEFINE_HANDLE_TYPEMAP(mi::neuraylib::ILogging_configuration)
+ NEURAY_DEFINE_HANDLE_TYPEMAP(mi::neuraylib::IMdl_resolved_module)
+ NEURAY_DEFINE_HANDLE_TYPEMAP(mi::neuraylib::IMdl_resolved_resource)
+ NEURAY_DEFINE_HANDLE_TYPEMAP(mi::neuraylib::IMdl_resolved_resource_element)
+@@ -2330,6 +2372,7 @@ NEURAY_CREATE_HANDLE_TEMPLATE(mi::neuraylib, IMdl_distiller_api)
+ NEURAY_CREATE_HANDLE_TEMPLATE(mi::neuraylib, IMdl_evaluator_api)
+ NEURAY_CREATE_HANDLE_TEMPLATE(mi::neuraylib, IMdl_execution_context)
+ NEURAY_CREATE_HANDLE_TEMPLATE(mi::neuraylib, IMdl_i18n_configuration)
++NEURAY_CREATE_HANDLE_TEMPLATE(mi::neuraylib, ILogging_configuration)
+ NEURAY_CREATE_HANDLE_TEMPLATE(mi::neuraylib, IMdl_resolved_module)
+ NEURAY_CREATE_HANDLE_TEMPLATE(mi::neuraylib, IMdl_resolved_resource)
+ NEURAY_CREATE_HANDLE_TEMPLATE(mi::neuraylib, IMdl_resolved_resource_element)

@@ -1,0 +1,2733 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+    doc = """A 12 x 12 m hall under 256 small sphere lights (light grid and shadow budget stress)."""
+)
+
+def Xform "World"
+{
+    def Scope "Looks"
+    {
+        def Material "Wall"
+        {
+            token outputs:surface.connect = </World/Looks/Wall/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.6, 0.6, 0.6)
+                float inputs:roughness = 0.9
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+
+        def Material "Floor"
+        {
+            token outputs:surface.connect = </World/Looks/Floor/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.45, 0.42, 0.4)
+                float inputs:roughness = 0.5
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+
+        def Material "Prop"
+        {
+            token outputs:surface.connect = </World/Looks/Prop/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.7, 0.5, 0.35)
+                float inputs:roughness = 0.6
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+    }
+
+    def Cube "Ceiling" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, 0, 3.05)
+        float3 xformOp:scale = (12.2, 12.2, 0.1)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wall>
+    }
+
+    def Cube "Back" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, 6.05, 1.5)
+        float3 xformOp:scale = (12.2, 0.1, 3)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wall>
+    }
+
+    def Cube "Front" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, -6.05, 1.5)
+        float3 xformOp:scale = (12.2, 0.1, 3)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wall>
+    }
+
+    def Cube "Left" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-6.05, 0, 1.5)
+        float3 xformOp:scale = (0.1, 12.2, 3)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wall>
+    }
+
+    def Cube "Right" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (6.05, 0, 1.5)
+        float3 xformOp:scale = (0.1, 12.2, 3)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wall>
+    }
+
+    def Cube "Floor" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, 0, -0.05)
+        float3 xformOp:scale = (12.2, 12.2, 0.1)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Floor>
+    }
+
+    def Cube "Pillar0" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (1.25095, 3.97214, 0.435158)
+        float3 xformOp:rotateXYZ = (0, 0, 78.6198)
+        float3 xformOp:scale = (1.02055, 0.580166, 0.870316)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def Cube "Pillar1" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-4.94735, 3.21228, 0.437881)
+        float3 xformOp:rotateXYZ = (0, 0, 25.0583)
+        float3 xformOp:scale = (1.03766, 0.774348, 0.875762)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def Cube "Pillar2" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-2.4513, -0.549237, 1.09573)
+        float3 xformOp:rotateXYZ = (0, 0, 71.3396)
+        float3 xformOp:scale = (0.803639, 0.842798, 2.19145)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def Cube "Pillar3" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (1.22179, 4.8896, 0.731913)
+        float3 xformOp:rotateXYZ = (0, 0, 3.95478)
+        float3 xformOp:scale = (0.572247, 0.52817, 1.46383)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def Cube "Pillar4" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-4.6432, 0.148888, 0.747765)
+        float3 xformOp:rotateXYZ = (0, 0, 46.2706)
+        float3 xformOp:scale = (0.772965, 1.13373, 1.49553)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def Cube "Pillar5" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-0.0312656, -2.52485, 0.807431)
+        float3 xformOp:rotateXYZ = (0, 0, 18.0546)
+        float3 xformOp:scale = (0.409435, 0.553922, 1.61486)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def Cube "Pillar6" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-1.30464, -4.96266, 0.404219)
+        float3 xformOp:rotateXYZ = (0, 0, 79.2299)
+        float3 xformOp:scale = (1.06404, 0.523569, 0.808439)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def Cube "Pillar7" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0.0979081, 3.4715, 0.236921)
+        float3 xformOp:rotateXYZ = (0, 0, 48.7029)
+        float3 xformOp:scale = (0.911774, 0.993417, 0.473842)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def Cube "Pillar8" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0.0777224, 3.71339, 0.206289)
+        float3 xformOp:rotateXYZ = (0, 0, 34.8869)
+        float3 xformOp:scale = (0.689011, 0.878547, 0.412578)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def Cube "Pillar9" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-1.76964, -3.498, 1.07981)
+        float3 xformOp:rotateXYZ = (0, 0, 53.0993)
+        float3 xformOp:scale = (1.05307, 0.703557, 2.15962)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def Cube "Pillar10" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (1.05056, 1.37997, 0.568298)
+        float3 xformOp:rotateXYZ = (0, 0, 21.5608)
+        float3 xformOp:scale = (0.94116, 0.52063, 1.1366)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def Cube "Pillar11" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-0.975017, -4.03296, 0.788177)
+        float3 xformOp:rotateXYZ = (0, 0, 27.0378)
+        float3 xformOp:scale = (1.17426, 0.572003, 1.57635)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def Cube "Pillar12" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (3.74077, 1.62215, 1.0477)
+        float3 xformOp:rotateXYZ = (0, 0, 81.3525)
+        float3 xformOp:scale = (0.505293, 1.07606, 2.0954)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def Cube "Pillar13" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0.697191, -3.5454, 0.67471)
+        float3 xformOp:rotateXYZ = (0, 0, 16.2497)
+        float3 xformOp:scale = (0.553971, 1.14232, 1.34942)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def Cube "Pillar14" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (3.84057, 1.41572, 0.540408)
+        float3 xformOp:rotateXYZ = (0, 0, 21.554)
+        float3 xformOp:scale = (0.855755, 0.70103, 1.08082)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def Cube "Pillar15" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-4.61943, 3.76219, 0.456055)
+        float3 xformOp:rotateXYZ = (0, 0, 67.6192)
+        float3 xformOp:scale = (0.774184, 0.838108, 0.91211)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def Cube "Pillar16" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-4.74803, -1.27815, 1.06879)
+        float3 xformOp:rotateXYZ = (0, 0, 59.1985)
+        float3 xformOp:scale = (0.42428, 0.498314, 2.13758)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def Cube "Pillar17" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-0.717798, 0.237401, 0.710776)
+        float3 xformOp:rotateXYZ = (0, 0, 61.5316)
+        float3 xformOp:scale = (1.09825, 0.675369, 1.42155)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def Cube "Pillar18" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-1.44586, 0.190985, 0.293509)
+        float3 xformOp:rotateXYZ = (0, 0, 84.0077)
+        float3 xformOp:scale = (1.0122, 1.12734, 0.587018)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def Cube "Pillar19" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-4.94821, 2.52978, 0.547958)
+        float3 xformOp:rotateXYZ = (0, 0, 73.3731)
+        float3 xformOp:scale = (1.04842, 0.509411, 1.09592)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def Cube "Pillar20" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-4.85729, 1.28462, 0.839557)
+        float3 xformOp:rotateXYZ = (0, 0, 20.3781)
+        float3 xformOp:scale = (1.03442, 0.810403, 1.67911)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def Cube "Pillar21" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-3.01479, -1.36873, 1.05072)
+        float3 xformOp:rotateXYZ = (0, 0, 51.5999)
+        float3 xformOp:scale = (0.543525, 0.676849, 2.10144)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def Cube "Pillar22" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (-1.59932, -2.28475, 1.08138)
+        float3 xformOp:rotateXYZ = (0, 0, 46.397)
+        float3 xformOp:scale = (1.16163, 0.755583, 2.16275)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def Cube "Pillar23" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0.211661, 3.96541, 0.555317)
+        float3 xformOp:rotateXYZ = (0, 0, 79.0369)
+        float3 xformOp:scale = (0.994214, 0.864522, 1.11063)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        rel material:binding = </World/Looks/Prop>
+    }
+
+    def SphereLight "L00_00"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-5.625, -5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L00_01"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-5.625, -4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L00_02"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-5.625, -4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L00_03"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-5.625, -3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L00_04"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-5.625, -2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L00_05"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-5.625, -1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L00_06"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-5.625, -1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L00_07"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-5.625, -0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L00_08"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-5.625, 0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L00_09"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-5.625, 1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L00_10"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-5.625, 1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L00_11"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-5.625, 2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L00_12"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-5.625, 3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L00_13"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-5.625, 4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L00_14"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-5.625, 4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L00_15"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-5.625, 5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L01_00"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-4.875, -5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L01_01"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-4.875, -4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L01_02"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-4.875, -4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L01_03"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-4.875, -3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L01_04"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-4.875, -2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L01_05"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-4.875, -1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L01_06"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-4.875, -1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L01_07"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-4.875, -0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L01_08"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-4.875, 0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L01_09"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-4.875, 1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L01_10"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-4.875, 1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L01_11"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-4.875, 2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L01_12"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-4.875, 3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L01_13"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-4.875, 4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L01_14"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-4.875, 4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L01_15"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-4.875, 5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L02_00"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-4.125, -5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L02_01"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-4.125, -4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L02_02"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-4.125, -4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L02_03"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-4.125, -3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L02_04"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-4.125, -2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L02_05"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-4.125, -1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L02_06"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-4.125, -1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L02_07"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-4.125, -0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L02_08"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-4.125, 0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L02_09"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-4.125, 1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L02_10"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-4.125, 1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L02_11"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-4.125, 2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L02_12"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-4.125, 3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L02_13"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-4.125, 4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L02_14"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-4.125, 4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L02_15"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-4.125, 5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L03_00"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-3.375, -5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L03_01"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-3.375, -4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L03_02"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-3.375, -4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L03_03"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-3.375, -3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L03_04"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-3.375, -2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L03_05"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-3.375, -1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L03_06"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-3.375, -1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L03_07"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-3.375, -0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L03_08"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-3.375, 0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L03_09"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-3.375, 1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L03_10"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-3.375, 1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L03_11"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-3.375, 2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L03_12"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-3.375, 3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L03_13"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-3.375, 4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L03_14"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-3.375, 4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L03_15"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-3.375, 5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L04_00"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-2.625, -5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L04_01"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-2.625, -4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L04_02"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-2.625, -4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L04_03"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-2.625, -3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L04_04"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-2.625, -2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L04_05"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-2.625, -1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L04_06"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-2.625, -1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L04_07"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-2.625, -0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L04_08"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-2.625, 0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L04_09"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-2.625, 1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L04_10"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-2.625, 1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L04_11"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-2.625, 2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L04_12"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-2.625, 3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L04_13"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-2.625, 4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L04_14"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-2.625, 4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L04_15"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-2.625, 5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L05_00"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-1.875, -5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L05_01"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-1.875, -4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L05_02"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-1.875, -4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L05_03"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-1.875, -3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L05_04"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-1.875, -2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L05_05"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-1.875, -1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L05_06"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-1.875, -1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L05_07"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-1.875, -0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L05_08"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-1.875, 0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L05_09"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-1.875, 1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L05_10"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-1.875, 1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L05_11"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-1.875, 2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L05_12"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-1.875, 3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L05_13"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-1.875, 4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L05_14"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-1.875, 4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L05_15"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-1.875, 5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L06_00"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-1.125, -5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L06_01"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-1.125, -4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L06_02"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-1.125, -4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L06_03"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-1.125, -3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L06_04"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-1.125, -2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L06_05"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-1.125, -1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L06_06"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-1.125, -1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L06_07"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-1.125, -0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L06_08"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-1.125, 0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L06_09"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-1.125, 1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L06_10"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-1.125, 1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L06_11"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-1.125, 2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L06_12"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-1.125, 3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L06_13"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-1.125, 4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L06_14"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-1.125, 4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L06_15"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-1.125, 5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L07_00"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-0.375, -5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L07_01"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-0.375, -4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L07_02"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-0.375, -4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L07_03"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-0.375, -3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L07_04"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-0.375, -2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L07_05"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-0.375, -1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L07_06"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-0.375, -1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L07_07"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-0.375, -0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L07_08"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-0.375, 0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L07_09"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-0.375, 1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L07_10"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-0.375, 1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L07_11"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-0.375, 2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L07_12"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-0.375, 3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L07_13"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-0.375, 4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L07_14"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (-0.375, 4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L07_15"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (-0.375, 5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L08_00"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (0.375, -5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L08_01"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (0.375, -4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L08_02"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (0.375, -4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L08_03"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (0.375, -3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L08_04"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (0.375, -2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L08_05"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (0.375, -1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L08_06"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (0.375, -1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L08_07"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (0.375, -0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L08_08"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (0.375, 0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L08_09"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (0.375, 1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L08_10"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (0.375, 1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L08_11"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (0.375, 2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L08_12"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (0.375, 3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L08_13"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (0.375, 4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L08_14"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (0.375, 4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L08_15"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (0.375, 5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L09_00"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (1.125, -5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L09_01"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (1.125, -4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L09_02"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (1.125, -4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L09_03"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (1.125, -3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L09_04"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (1.125, -2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L09_05"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (1.125, -1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L09_06"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (1.125, -1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L09_07"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (1.125, -0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L09_08"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (1.125, 0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L09_09"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (1.125, 1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L09_10"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (1.125, 1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L09_11"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (1.125, 2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L09_12"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (1.125, 3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L09_13"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (1.125, 4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L09_14"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (1.125, 4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L09_15"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (1.125, 5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L10_00"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (1.875, -5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L10_01"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (1.875, -4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L10_02"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (1.875, -4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L10_03"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (1.875, -3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L10_04"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (1.875, -2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L10_05"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (1.875, -1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L10_06"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (1.875, -1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L10_07"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (1.875, -0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L10_08"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (1.875, 0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L10_09"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (1.875, 1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L10_10"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (1.875, 1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L10_11"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (1.875, 2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L10_12"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (1.875, 3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L10_13"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (1.875, 4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L10_14"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (1.875, 4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L10_15"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (1.875, 5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L11_00"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (2.625, -5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L11_01"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (2.625, -4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L11_02"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (2.625, -4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L11_03"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (2.625, -3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L11_04"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (2.625, -2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L11_05"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (2.625, -1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L11_06"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (2.625, -1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L11_07"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (2.625, -0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L11_08"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (2.625, 0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L11_09"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (2.625, 1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L11_10"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (2.625, 1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L11_11"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (2.625, 2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L11_12"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (2.625, 3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L11_13"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (2.625, 4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L11_14"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (2.625, 4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L11_15"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (2.625, 5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L12_00"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (3.375, -5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L12_01"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (3.375, -4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L12_02"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (3.375, -4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L12_03"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (3.375, -3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L12_04"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (3.375, -2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L12_05"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (3.375, -1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L12_06"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (3.375, -1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L12_07"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (3.375, -0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L12_08"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (3.375, 0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L12_09"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (3.375, 1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L12_10"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (3.375, 1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L12_11"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (3.375, 2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L12_12"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (3.375, 3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L12_13"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (3.375, 4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L12_14"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (3.375, 4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L12_15"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (3.375, 5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L13_00"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (4.125, -5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L13_01"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (4.125, -4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L13_02"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (4.125, -4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L13_03"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (4.125, -3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L13_04"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (4.125, -2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L13_05"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (4.125, -1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L13_06"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (4.125, -1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L13_07"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (4.125, -0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L13_08"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (4.125, 0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L13_09"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (4.125, 1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L13_10"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (4.125, 1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L13_11"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (4.125, 2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L13_12"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (4.125, 3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L13_13"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (4.125, 4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L13_14"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (4.125, 4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L13_15"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (4.125, 5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L14_00"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (4.875, -5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L14_01"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (4.875, -4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L14_02"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (4.875, -4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L14_03"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (4.875, -3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L14_04"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (4.875, -2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L14_05"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (4.875, -1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L14_06"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (4.875, -1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L14_07"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (4.875, -0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L14_08"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (4.875, 0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L14_09"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (4.875, 1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L14_10"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (4.875, 1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L14_11"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (4.875, 2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L14_12"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (4.875, 3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L14_13"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (4.875, 4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L14_14"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (4.875, 4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L14_15"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (4.875, 5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L15_00"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (5.625, -5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L15_01"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (5.625, -4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L15_02"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (5.625, -4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L15_03"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (5.625, -3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L15_04"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (5.625, -2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L15_05"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (5.625, -1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L15_06"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (5.625, -1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L15_07"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (5.625, -0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L15_08"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (5.625, 0.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L15_09"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (5.625, 1.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L15_10"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (5.625, 1.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L15_11"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (5.625, 2.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L15_12"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (5.625, 3.375, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L15_13"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (1, 0.85, 0.65)
+        double3 xformOp:translate = (5.625, 4.125, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L15_14"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (5.625, 4.875, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "L15_15"
+    {
+        float inputs:radius = 0.02
+        float inputs:intensity = 15915.5
+        color3f inputs:color = (0.75, 0.85, 1)
+        double3 xformOp:translate = (5.625, 5.625, 2.85)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Camera "View0"
+    {
+        matrix4d xformOp:transform = ((0.707107, -0.707107, 0, 0), (0.075947, 0.075947, 0.994215, 0), (-0.703016, -0.703016, 0.107405, 0), (-5.2, -5.2, 1.7, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 28.0083
+        float verticalAperture = 28.0083
+        float2 clippingRange = (0.01, 100000)
+    }
+
+    def Camera "View1"
+    {
+        matrix4d xformOp:transform = ((1, 0, 0, 0), (0, 0.413803, 0.910366, 0), (0, -0.910366, 0.413803, 0), (0, -5.5, 2.5, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 30.6931
+        float verticalAperture = 30.6931
+        float2 clippingRange = (0.01, 100000)
+    }
+}

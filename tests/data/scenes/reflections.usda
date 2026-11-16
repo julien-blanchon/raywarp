@@ -1,0 +1,348 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+    doc = """Mirror, glossy floor, rough metal strips and emissive panels seen in the reflections."""
+)
+
+def Xform "World"
+{
+    def Scope "Looks"
+    {
+        def Material "GlossyFloor"
+        {
+            token outputs:surface.connect = </World/Looks/GlossyFloor/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.05, 0.05, 0.05)
+                float inputs:roughness = 0.12
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+
+        def Material "Wall"
+        {
+            token outputs:surface.connect = </World/Looks/Wall/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.5, 0.5, 0.5)
+                float inputs:roughness = 0.9
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+
+        def Material "Mirror"
+        {
+            token outputs:surface.connect = </World/Looks/Mirror/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.95, 0.95)
+                float inputs:roughness = 0
+                float inputs:metallic = 1
+                token outputs:surface
+            }
+        }
+
+        def Material "Ball"
+        {
+            token outputs:surface.connect = </World/Looks/Ball/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.8, 0.3, 0.1)
+                float inputs:roughness = 0.4
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }
+
+        def Material "Metal0"
+        {
+            token outputs:surface.connect = </World/Looks/Metal0/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.9, 0.9, 0.92)
+                float inputs:roughness = 0.05
+                float inputs:metallic = 1
+                token outputs:surface
+            }
+        }
+
+        def Material "Metal1"
+        {
+            token outputs:surface.connect = </World/Looks/Metal1/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.9, 0.9, 0.92)
+                float inputs:roughness = 0.2
+                float inputs:metallic = 1
+                token outputs:surface
+            }
+        }
+
+        def Material "Metal2"
+        {
+            token outputs:surface.connect = </World/Looks/Metal2/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.9, 0.9, 0.92)
+                float inputs:roughness = 0.35
+                float inputs:metallic = 1
+                token outputs:surface
+            }
+        }
+
+        def Material "Metal3"
+        {
+            token outputs:surface.connect = </World/Looks/Metal3/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.9, 0.9, 0.92)
+                float inputs:roughness = 0.5
+                float inputs:metallic = 1
+                token outputs:surface
+            }
+        }
+
+        def Material "Glow0"
+        {
+            token outputs:surface.connect = </World/Looks/Glow0/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0, 0, 0)
+                float inputs:roughness = 0.5
+                float inputs:metallic = 0
+                color3f inputs:emissiveColor = (1500, 150, 150)
+                token outputs:surface
+            }
+        }
+
+        def Material "Glow1"
+        {
+            token outputs:surface.connect = </World/Looks/Glow1/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0, 0, 0)
+                float inputs:roughness = 0.5
+                float inputs:metallic = 0
+                color3f inputs:emissiveColor = (150, 1500, 300)
+                token outputs:surface
+            }
+        }
+
+        def Material "Glow2"
+        {
+            token outputs:surface.connect = </World/Looks/Glow2/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0, 0, 0)
+                float inputs:roughness = 0.5
+                float inputs:metallic = 0
+                color3f inputs:emissiveColor = (225, 450, 1500)
+                token outputs:surface
+            }
+        }
+    }
+
+    def Cube "Floor" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, 0.5, -0.025)
+        float3 xformOp:scale = (6, 5, 0.05)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/GlossyFloor>
+    }
+
+    def Cube "Back" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, 2.05, 1.25)
+        float3 xformOp:scale = (6, 0.1, 2.5)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Wall>
+    }
+
+    def Cube "MirrorPanel" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (0, 1.925, 1.05)
+        float3 xformOp:scale = (2, 0.05, 1.5)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Mirror>
+    }
+
+    def Cube "MetalStrip0" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (1.45, 1.75, 0.8)
+        float3 xformOp:scale = (0.3, 0.3, 1.6)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Metal0>
+    }
+
+    def Cube "MetalStrip1" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (1.85, 1.75, 0.8)
+        float3 xformOp:scale = (0.3, 0.3, 1.6)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Metal1>
+    }
+
+    def Cube "MetalStrip2" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (2.25, 1.75, 0.8)
+        float3 xformOp:scale = (0.3, 0.3, 1.6)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Metal2>
+    }
+
+    def Cube "MetalStrip3" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double size = 1
+        double3 xformOp:translate = (2.65, 1.75, 0.8)
+        float3 xformOp:scale = (0.3, 0.3, 1.6)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        rel material:binding = </World/Looks/Metal3>
+    }
+
+    def Mesh "Glow0" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.4, 0), (0.2, 0.4, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.4, 0), (0.2, -0.4, 0), (0.2, 0.4, 0), (-0.2, 0.4, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        double3 xformOp:translate = (-1.2, -0.4, 0.6)
+        float3 xformOp:rotateXYZ = (90, 0, 180)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Glow0>
+    }
+
+    def Mesh "Glow1" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.4, 0), (0.2, 0.4, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.4, 0), (0.2, -0.4, 0), (0.2, 0.4, 0), (-0.2, 0.4, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        double3 xformOp:translate = (0, -0.4, 0.6)
+        float3 xformOp:rotateXYZ = (90, 0, 180)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Glow1>
+    }
+
+    def Mesh "Glow2" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.2, -0.4, 0), (0.2, 0.4, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.2, -0.4, 0), (0.2, -0.4, 0), (0.2, 0.4, 0), (-0.2, 0.4, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        double3 xformOp:translate = (1.2, -0.4, 0.6)
+        float3 xformOp:rotateXYZ = (90, 0, 180)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Glow2>
+    }
+
+    def Sphere "Ball" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        double radius = 0.3
+        double3 xformOp:translate = (0, 0.8, 0.3)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Ball>
+    }
+
+    def DomeLight "Sky"
+    {
+        custom int omni:rtx:usdluxVersion = 2411
+        float inputs:intensity = 1
+        asset inputs:texture:file = @./textures/studio.hdr@
+        token inputs:texture:format = "latlong"
+    }
+
+    def Camera "View0"
+    {
+        matrix4d xformOp:transform = ((1, 0, 0, 0), (0, 0.066519, 0.997785, 0), (0, -0.997785, 0.066519, 0), (0, -3.5, 1, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 20.8227
+        float verticalAperture = 20.8227
+        float2 clippingRange = (0.01, 100000)
+    }
+
+    def Camera "View1"
+    {
+        matrix4d xformOp:transform = ((0.993533, -0.113547, 0, 0), (-0.0080378, -0.0703308, 0.997491, 0), (-0.113262, -0.99104, -0.0707886, 0), (0.8, -2, 0.25, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 20.8227
+        float verticalAperture = 20.8227
+        float2 clippingRange = (0.01, 100000)
+    }
+}

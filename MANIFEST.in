@@ -1,0 +1,13 @@
+# The sdist: setuptools' defaults (the raywarp package, README, LICENSE, pyproject.toml) plus the
+# native build hook and its patch, the code-memo hook; never what the hooks write into a source tree.
+include tools/native/hook.py tools/native/mdl/pymdlsdk_logging.patch tools/release/__init__.py tools/release/code_memo.py
+prune raywarp/_native/optix
+prune raywarp/_native/mdl/lib
+prune raywarp/_native/mdl/mdl
+prune raywarp/_native/mdl/licenses
+prune raywarp/_native/mdl/cuda_stub
+exclude raywarp/_native/BUILD.json raywarp/_native/mdl/pymdlsdk.py raywarp/_native/mdl/_pymdlsdk*
+# Never in the sdist: the development tree and the repository's scripts.
+prune internal
+prune benchmarks
+prune tests

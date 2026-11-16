@@ -1,0 +1,10 @@
+{
+ "bucket": "blanchon/warp-pbr-kernels",
+ "bundles": {
+  "120": {
+   "content": "ba2ddf28db7190bf",
+   "files": "63017777025e9d0a8abf8d2f12c67fe25164032f8acd7af0f1fcf49a66de05f3",
+   "warp": "1.18.0"
+  }
+ }
+}

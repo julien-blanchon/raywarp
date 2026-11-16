@@ -1,0 +1,590 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+    doc = """Texture maps: base color, normal, ORM, emissive, cutout opacity, repeat, sRGB vs raw, mip LOD."""
+)
+
+def Xform "World"
+{
+    def Scope "Looks"
+    {
+        def Material "Checker"
+        {
+            token outputs:surface.connect = </World/Looks/Checker/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor.connect = </World/Looks/Checker/Tex_diffuseColor.outputs:rgb>
+                float inputs:roughness = 0.7
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+
+            def Shader "St"
+            {
+                uniform token info:id = "UsdPrimvarReader_float2"
+                string inputs:varname = "st"
+                float2 outputs:result
+            }
+
+            def Shader "Tile"
+            {
+                uniform token info:id = "UsdTransform2d"
+                float2 inputs:in.connect = </World/Looks/Checker/St.outputs:result>
+                float2 inputs:scale = (40, 40)
+                float2 outputs:result
+            }
+
+            def Shader "Tex_diffuseColor"
+            {
+                uniform token info:id = "UsdUVTexture"
+                asset inputs:file = @./textures/checker.png@
+                float2 inputs:st.connect = </World/Looks/Checker/Tile.outputs:result>
+                token inputs:wrapS = "repeat"
+                token inputs:wrapT = "repeat"
+                token inputs:sourceColorSpace = "auto"
+                float3 outputs:rgb
+            }
+        }
+
+        def Material "BaseColor"
+        {
+            token outputs:surface.connect = </World/Looks/BaseColor/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor.connect = </World/Looks/BaseColor/Tex_diffuseColor.outputs:rgb>
+                float inputs:roughness = 0.6
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+
+            def Shader "St"
+            {
+                uniform token info:id = "UsdPrimvarReader_float2"
+                string inputs:varname = "st"
+                float2 outputs:result
+            }
+
+            def Shader "Tex_diffuseColor"
+            {
+                uniform token info:id = "UsdUVTexture"
+                asset inputs:file = @./textures/uvgrid.png@
+                float2 inputs:st.connect = </World/Looks/BaseColor/St.outputs:result>
+                token inputs:wrapS = "repeat"
+                token inputs:wrapT = "repeat"
+                token inputs:sourceColorSpace = "auto"
+                float3 outputs:rgb
+            }
+        }
+
+        def Material "Normal"
+        {
+            token outputs:surface.connect = </World/Looks/Normal/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.7, 0.7, 0.7)
+                float inputs:roughness = 0.35
+                float inputs:metallic = 0
+                normal3f inputs:normal.connect = </World/Looks/Normal/Tex_normal.outputs:rgb>
+                token outputs:surface
+            }
+
+            def Shader "St"
+            {
+                uniform token info:id = "UsdPrimvarReader_float2"
+                string inputs:varname = "st"
+                float2 outputs:result
+            }
+
+            def Shader "Tex_normal"
+            {
+                uniform token info:id = "UsdUVTexture"
+                asset inputs:file = @./textures/bumps_normal.png@
+                float2 inputs:st.connect = </World/Looks/Normal/St.outputs:result>
+                token inputs:wrapS = "repeat"
+                token inputs:wrapT = "repeat"
+                token inputs:sourceColorSpace = "raw"
+                float4 inputs:scale = (2, 2, 2, 1)
+                float4 inputs:bias = (-1, -1, -1, 0)
+                float3 outputs:rgb
+            }
+        }
+
+        def Material "ORM"
+        {
+            token outputs:surface.connect = </World/Looks/ORM/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.9, 0.6, 0.3)
+                float inputs:roughness.connect = </World/Looks/ORM/Tex_roughness.outputs:g>
+                float inputs:metallic.connect = </World/Looks/ORM/Tex_metallic.outputs:b>
+                float inputs:occlusion.connect = </World/Looks/ORM/Tex_occlusion.outputs:r>
+                token outputs:surface
+            }
+
+            def Shader "St"
+            {
+                uniform token info:id = "UsdPrimvarReader_float2"
+                string inputs:varname = "st"
+                float2 outputs:result
+            }
+
+            def Shader "Tex_occlusion"
+            {
+                uniform token info:id = "UsdUVTexture"
+                asset inputs:file = @./textures/orm.png@
+                float2 inputs:st.connect = </World/Looks/ORM/St.outputs:result>
+                token inputs:wrapS = "repeat"
+                token inputs:wrapT = "repeat"
+                token inputs:sourceColorSpace = "raw"
+                float outputs:r
+            }
+
+            def Shader "Tex_roughness"
+            {
+                uniform token info:id = "UsdUVTexture"
+                asset inputs:file = @./textures/orm.png@
+                float2 inputs:st.connect = </World/Looks/ORM/St.outputs:result>
+                token inputs:wrapS = "repeat"
+                token inputs:wrapT = "repeat"
+                token inputs:sourceColorSpace = "raw"
+                float outputs:g
+            }
+
+            def Shader "Tex_metallic"
+            {
+                uniform token info:id = "UsdUVTexture"
+                asset inputs:file = @./textures/orm.png@
+                float2 inputs:st.connect = </World/Looks/ORM/St.outputs:result>
+                token inputs:wrapS = "repeat"
+                token inputs:wrapT = "repeat"
+                token inputs:sourceColorSpace = "raw"
+                float outputs:b
+            }
+        }
+
+        def Material "Emissive"
+        {
+            token outputs:surface.connect = </World/Looks/Emissive/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.05, 0.05, 0.05)
+                float inputs:roughness = 0.5
+                float inputs:metallic = 0
+                color3f inputs:emissiveColor.connect = </World/Looks/Emissive/Tex_emissiveColor.outputs:rgb>
+                token outputs:surface
+            }
+
+            def Shader "St"
+            {
+                uniform token info:id = "UsdPrimvarReader_float2"
+                string inputs:varname = "st"
+                float2 outputs:result
+            }
+
+            def Shader "Tex_emissiveColor"
+            {
+                uniform token info:id = "UsdUVTexture"
+                asset inputs:file = @./textures/emissive_stripes.png@
+                float2 inputs:st.connect = </World/Looks/Emissive/St.outputs:result>
+                token inputs:wrapS = "repeat"
+                token inputs:wrapT = "repeat"
+                token inputs:sourceColorSpace = "auto"
+                float4 inputs:scale = (8000, 8000, 8000, 1)
+                float3 outputs:rgb
+            }
+        }
+
+        def Material "Cutout"
+        {
+            token outputs:surface.connect = </World/Looks/Cutout/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor.connect = </World/Looks/Cutout/Tex_diffuseColor.outputs:rgb>
+                float inputs:roughness = 0.7
+                float inputs:metallic = 0
+                float inputs:opacityThreshold = 0.5
+                float inputs:opacity.connect = </World/Looks/Cutout/Tex_opacity.outputs:a>
+                token outputs:surface
+            }
+
+            def Shader "St"
+            {
+                uniform token info:id = "UsdPrimvarReader_float2"
+                string inputs:varname = "st"
+                float2 outputs:result
+            }
+
+            def Shader "Tex_diffuseColor"
+            {
+                uniform token info:id = "UsdUVTexture"
+                asset inputs:file = @./textures/leaf.png@
+                float2 inputs:st.connect = </World/Looks/Cutout/St.outputs:result>
+                token inputs:wrapS = "repeat"
+                token inputs:wrapT = "repeat"
+                token inputs:sourceColorSpace = "auto"
+                float3 outputs:rgb
+            }
+
+            def Shader "Tex_opacity"
+            {
+                uniform token info:id = "UsdUVTexture"
+                asset inputs:file = @./textures/leaf.png@
+                float2 inputs:st.connect = </World/Looks/Cutout/St.outputs:result>
+                token inputs:wrapS = "repeat"
+                token inputs:wrapT = "repeat"
+                token inputs:sourceColorSpace = "raw"
+                float outputs:a
+            }
+        }
+
+        def Material "Repeat"
+        {
+            token outputs:surface.connect = </World/Looks/Repeat/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor.connect = </World/Looks/Repeat/Tex_diffuseColor.outputs:rgb>
+                float inputs:roughness = 0.6
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+
+            def Shader "St"
+            {
+                uniform token info:id = "UsdPrimvarReader_float2"
+                string inputs:varname = "st"
+                float2 outputs:result
+            }
+
+            def Shader "Tile"
+            {
+                uniform token info:id = "UsdTransform2d"
+                float2 inputs:in.connect = </World/Looks/Repeat/St.outputs:result>
+                float2 inputs:scale = (3, 3)
+                float2 outputs:result
+            }
+
+            def Shader "Tex_diffuseColor"
+            {
+                uniform token info:id = "UsdUVTexture"
+                asset inputs:file = @./textures/uvgrid.png@
+                float2 inputs:st.connect = </World/Looks/Repeat/Tile.outputs:result>
+                token inputs:wrapS = "repeat"
+                token inputs:wrapT = "repeat"
+                token inputs:sourceColorSpace = "auto"
+                float3 outputs:rgb
+            }
+        }
+
+        def Material "RampSRGB"
+        {
+            token outputs:surface.connect = </World/Looks/RampSRGB/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor.connect = </World/Looks/RampSRGB/Tex_diffuseColor.outputs:rgb>
+                float inputs:roughness = 1
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+
+            def Shader "St"
+            {
+                uniform token info:id = "UsdPrimvarReader_float2"
+                string inputs:varname = "st"
+                float2 outputs:result
+            }
+
+            def Shader "Tex_diffuseColor"
+            {
+                uniform token info:id = "UsdUVTexture"
+                asset inputs:file = @./textures/ramp.png@
+                float2 inputs:st.connect = </World/Looks/RampSRGB/St.outputs:result>
+                token inputs:wrapS = "repeat"
+                token inputs:wrapT = "repeat"
+                token inputs:sourceColorSpace = "sRGB"
+                float3 outputs:rgb
+            }
+        }
+
+        def Material "RampRaw"
+        {
+            token outputs:surface.connect = </World/Looks/RampRaw/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor.connect = </World/Looks/RampRaw/Tex_diffuseColor.outputs:rgb>
+                float inputs:roughness = 1
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+
+            def Shader "St"
+            {
+                uniform token info:id = "UsdPrimvarReader_float2"
+                string inputs:varname = "st"
+                float2 outputs:result
+            }
+
+            def Shader "Tex_diffuseColor"
+            {
+                uniform token info:id = "UsdUVTexture"
+                asset inputs:file = @./textures/ramp.png@
+                float2 inputs:st.connect = </World/Looks/RampRaw/St.outputs:result>
+                token inputs:wrapS = "repeat"
+                token inputs:wrapT = "repeat"
+                token inputs:sourceColorSpace = "raw"
+                float3 outputs:rgb
+            }
+        }
+    }
+
+    def Mesh "Ground" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-100, -100, 0), (100, 100, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-100, -100, 0), (100, -100, 0), (100, 100, 0), (-100, 100, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        double3 xformOp:translate = (0, 90, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        rel material:binding = </World/Looks/Checker>
+    }
+
+    def Mesh "Panel_BaseColor" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.3, -0.3, 0), (0.3, 0.3, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.3, -0.3, 0), (0.3, -0.3, 0), (0.3, 0.3, 0), (-0.3, 0.3, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (-1.05, 0, 1.05)
+        float3 xformOp:rotateXYZ = (90, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/BaseColor>
+    }
+
+    def Mesh "Panel_Normal" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.3, -0.3, 0), (0.3, 0.3, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.3, -0.3, 0), (0.3, -0.3, 0), (0.3, 0.3, 0), (-0.3, 0.3, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (-0.35, 0, 1.05)
+        float3 xformOp:rotateXYZ = (90, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Normal>
+    }
+
+    def Mesh "Panel_ORM" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.3, -0.3, 0), (0.3, 0.3, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.3, -0.3, 0), (0.3, -0.3, 0), (0.3, 0.3, 0), (-0.3, 0.3, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (0.35, 0, 1.05)
+        float3 xformOp:rotateXYZ = (90, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/ORM>
+    }
+
+    def Mesh "Panel_Emissive" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.3, -0.3, 0), (0.3, 0.3, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.3, -0.3, 0), (0.3, -0.3, 0), (0.3, 0.3, 0), (-0.3, 0.3, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (1.05, 0, 1.05)
+        float3 xformOp:rotateXYZ = (90, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Emissive>
+    }
+
+    def Mesh "Panel_Cutout" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.3, -0.3, 0), (0.3, 0.3, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.3, -0.3, 0), (0.3, -0.3, 0), (0.3, 0.3, 0), (-0.3, 0.3, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (-1.05, 0, 0.4)
+        float3 xformOp:rotateXYZ = (90, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Cutout>
+    }
+
+    def Mesh "Panel_Repeat" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.3, -0.3, 0), (0.3, 0.3, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.3, -0.3, 0), (0.3, -0.3, 0), (0.3, 0.3, 0), (-0.3, 0.3, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (-0.35, 0, 0.4)
+        float3 xformOp:rotateXYZ = (90, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/Repeat>
+    }
+
+    def Mesh "Panel_RampSRGB" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.3, -0.3, 0), (0.3, 0.3, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.3, -0.3, 0), (0.3, -0.3, 0), (0.3, 0.3, 0), (-0.3, 0.3, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (0.35, 0, 0.4)
+        float3 xformOp:rotateXYZ = (90, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/RampSRGB>
+    }
+
+    def Mesh "Panel_RampRaw" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.3, -0.3, 0), (0.3, 0.3, 0)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.3, -0.3, 0), (0.3, -0.3, 0), (0.3, 0.3, 0), (-0.3, 0.3, 0)]
+        normal3f[] normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)] (
+    interpolation = "vertex"
+)
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+    interpolation = "vertex"
+)
+        uniform token subdivisionScheme = "none"
+        uniform bool doubleSided = 1
+        double3 xformOp:translate = (1.05, 0, 0.4)
+        float3 xformOp:rotateXYZ = (90, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+        rel material:binding = </World/Looks/RampRaw>
+    }
+
+    def DistantLight "Sun"
+    {
+        bool inputs:normalize = 1
+        float inputs:intensity = 40000
+        float inputs:angle = 0.53
+        float3 xformOp:rotateXYZ = (60, 0, -35)
+        uniform token[] xformOpOrder = ["xformOp:rotateXYZ"]
+    }
+
+    def DomeLight "Sky"
+    {
+        custom int omni:rtx:usdluxVersion = 2411
+        float inputs:intensity = 3000
+        color3f inputs:color = (0.8, 0.9, 1)
+    }
+
+    def Camera "View0"
+    {
+        matrix4d xformOp:transform = ((1, 0, 0, 0), (0, 0.0192272, 0.999815, 0), (0, -0.999815, 0.0192272, 0), (0, -2.6, 0.8, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 18.6523
+        float verticalAperture = 18.6523
+        float2 clippingRange = (0.01, 100000)
+    }
+
+    def Camera "View1"
+    {
+        matrix4d xformOp:transform = ((1, 0, 0, 0), (0, 0.00731688, 0.999973, 0), (0, -0.999973, 0.00731688, 0), (3, -1, 0.3, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        float focalLength = 20
+        float horizontalAperture = 23.094
+        float verticalAperture = 23.094
+        float2 clippingRange = (0.01, 100000)
+    }
+}
