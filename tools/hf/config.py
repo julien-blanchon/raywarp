@@ -13,7 +13,8 @@ HERE: Final = Path(__file__).resolve().parent
 BUCKET: Final = "blanchon/mujoco-warp-pbr"
 MOUNT: Final = "/data"
 PROJECT_LABEL: Final = "raywarp"
-# Local state (price table copy, fetched runs default under the worktree's internal/results/hf).
+# Local state (price table copy; fetched runs default to the worktree's git-ignored results,
+# cli.FETCH_TO).
 STATE: Final = Path.home() / ".cache" / "raywarp" / "hf"
 
 # Flavors a lane may use (operating manual I18): CPU suites / preparation, the default GPU, headline
@@ -22,7 +23,7 @@ STATE: Final = Path.home() / ".cache" / "raywarp" / "hf"
 # (32 vCPU) runs the full CPU suite (`tools.hf test --full`); it shares cpu-upgrade's cache family.
 FLAVORS: Final = ("cpu-upgrade", "cpu-performance", "l4x1", "l40sx1", "a10g-large", "rtx-pro-6000", "a100-large")
 ENVS: Final = ("project", "mjlab")
-EXTRAS: Final = ("ovrtx",)
+EXTRAS: Final = ("ovrtx", "fillcuda")
 
 # Bucket layout (README "Bucket layout").
 RUNS: Final = "runs"
@@ -35,7 +36,7 @@ CANCELS: Final = f"{SPEND}/cancels"  # <job id>: written when a job is cancelled
 # Cache families and how many snapshots per (environment key, family) a prune keeps. `tests`: the
 # test jobs' own kernel snapshots, one per kernel-code digest (`tests/kernel_snapshot.py`, which
 # keeps the newest `test_cache.KEEP`; a prune leaves those).
-FAMILIES: Final = ("apt", "uv", "warp", "cuda", "wpbr", "ovrtx", "hyperlux", "tests")
+FAMILIES: Final = ("apt", "uv", "warp", "cuda", "raywarp", "ovrtx", "hyperlux", "tests")
 KEEP_SNAPSHOTS: Final = 2
 KEEP_BY_FAMILY: Final = {"tests": 6}
 # A `.partial` upload older than this belongs to a killed job.

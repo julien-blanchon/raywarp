@@ -310,7 +310,7 @@ class TexturePool:
     image, wrap and storage (LIN_REC709 and DATA are stored alike).
 
     Raises:
-      ValueError: for a stored color space code that is unknown or output-only (a corrupt `.wpbr`).
+      ValueError: for a stored color space code that is unknown or output-only (a corrupt `.rayw`).
     """
     textures = scene.textures
     first: dict[tuple[int, int, int, int], TextureId] = {}

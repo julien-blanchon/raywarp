@@ -606,13 +606,15 @@ def test_collect_stores_ptx_by_content_with_the_census_records(tmp_path: Path) -
   module.mkdir(parents=True)
   (module / "wp_mod.sm120.cubin").write_bytes(b"c")
   (module / "wp_mod.sm89.cubin").write_bytes(b"other")
-  (root / "wpbr" / "ptx").mkdir(parents=True)
+  (root / "raywarp" / "ptx").mkdir(parents=True)
   other = _PTX + b"\n.entry f()\n{\n}\n"
   for key, ptx in (("k1", _PTX), ("k2", _PTX), ("k3", other), ("stale", other), ("bare", other)):
-    (root / "wpbr" / "ptx" / f"{key}.ptx").write_bytes(ptx)
+    (root / "raywarp" / "ptx" / f"{key}.ptx").write_bytes(ptx)
     groups = {"fast": [_RECORD]} if key in ("k1", "k2") else {}
     if key != "bare":
-      (root / "wpbr" / "ptx" / f"{key}.json").write_text(json.dumps(_entry("", groups, code="old" if key == "stale" else "")))
+      (root / "raywarp" / "ptx" / f"{key}.json").write_text(
+        json.dumps(_entry("", groups, code="old" if key == "stale" else ""))
+      )
   bundle = build.collect(root, 120, tmp_path / "out", workers=2)
   assert sorted(p.name for p in (bundle / "warp" / "wp_mod").iterdir()) == ["wp_mod.sm120.cubin"]
   index = build.read_entries(bundle)
@@ -661,7 +663,7 @@ def test_normalised_ptx_names_do_not_vary_between_fills() -> None:
 
   out = build.normalise(ptx("bdefb90", "f86e48f3"))
   assert out == build.normalise(ptx("22ae3f2", "0a1b2c3d"))
-  assert b"wp_raywarp_optix" not in out and b"_ZN_INTERNAL_wpbr_2wp9SLICE_ENDE" in out
+  assert b"wp_raywarp_optix" not in out and b"_ZN_INTERNAL_rw_2wp9SLICE_ENDE" in out
   names = pipeline.entry_names(out, ["__raygen__probe_ao", "__miss__render"])
   assert names == {"__raygen__probe_ao": "__raygen__probe_ao", "__miss__render": "__miss__render"}
 
@@ -855,23 +857,22 @@ def test_a_seeded_refill_bundles_only_its_listed_keys_and_modules(tmp_path: Path
   build.write_entries(b, index)
   prebuilt.Manifest(arch=120, warp=wp.config.version, content="b").write(b / prebuilt.MANIFEST)
   root = tmp_path / "root"
-  monkeypatch.setenv("RAYWARP_CACHE_DIR", str(root / "wpbr"))
-  (root / "wpbr" / "ptx").mkdir(parents=True)
+  monkeypatch.setenv("RAYWARP_CACHE_DIR", str(root / "raywarp"))
+  (root / "raywarp" / "ptx").mkdir(parents=True)
   build_k = cast(
     "fill.Build", types.SimpleNamespace(key="k", features=None, flags=None, supersampled=False, arch=89)
   )  # the fields `_compile` reads
   groups: dict[str, tuple[prebuilt.ModuleRecord, ...]] = {"fast": (prebuilt.ModuleRecord.of(_RECORD),)}
-  assert fill._compile(build_k, [fill.Unit("k", False, groups)], b)[2] == "seeded"
-  assert fill._take(b, "stale", root / "wpbr" / "ptx" / "stale.ptx") is None
-  listed = [types.SimpleNamespace(get_module_identifier=lambda: "wp_mod_abc")]
+  assert fill._compile(build_k, [fill.Unit("k", False, groups)], str(b), None)[2] == "seeded"
+  assert fill._take(fill.seed_bundle(str(b)), "stale", root / "raywarp" / "ptx" / "stale.ptx") is None
   cache = root / "warp" / wp.config.version
-  assert fill._take_modules(b / "warp", cache, listed, 120) == 1  # pyrefly: ignore[bad-argument-type]
+  assert fill._take_modules(fill.seed_bundle(str(b)), cache, {"wp_mod_abc"}, 120) == 1
   bundle = build.collect(root, 120, tmp_path / "out", workers=1)
   out = build.read_entries(bundle)
   assert list(out) == ["k"] and out["k"]["groups"] == {"fast": [_RECORD]}
   assert lzma.decompress((bundle / "ptx" / str(out["k"]["ptx"])).read_bytes()) == build.normalise(_PTX)
   assert [p.name for p in (bundle / "warp").iterdir()] == ["wp_mod_abc"]
-  assert fill._compile(build_k, [fill.Unit("k", False, groups)], b)[2] == "kept"  # a resumed shard
+  assert fill._compile(build_k, [fill.Unit("k", False, groups)], str(b), None)[2] == "kept"  # a resumed shard
 
 
 _FILL_ALL = Path(__file__).resolve().parents[2] / "tools" / "prebuilt" / "fill_all.sh"
@@ -894,13 +895,39 @@ def test_the_fill_watch_rides_out_a_failed_job_list(tmp_path: Path) -> None:
   stub.chmod(0o755)
   state = tmp_path / "state"
   state.write_text("day 2026-11-10\np0 2026-11-10-t-p0\n")
-  env = {**os.environ, "PY": str(stub), "STATE": str(state), "WATCH_EVERY": "0", "SEED": ""}
+  env = {**os.environ, "PY": str(stub), "STATE": str(state), "WATCH_EVERY": "0", "SEED": "", "HF_CLI": "true"}
   done = subprocess.run(
     ["bash", str(_FILL_ALL), "watch", "t"], env=env, capture_output=True, text=True, timeout=60, check=False
   )
   assert done.returncode == 0, done.stdout + done.stderr
   assert "job list failed" in done.stdout and "p0 ok" in done.stdout
   assert (tmp_path / "state.done").read_text() == "p0\n"
+
+
+def test_interactively_a_job_out_of_relaunches_leaves_the_others_running(tmp_path: Path) -> None:
+  """FAIL_FAST=0 (no CI): a job out of relaunches is reported, nothing is killed, the watch follows
+  the others to their end and then fails (the operator fixes that job; the waiting ones resume)."""
+  calls = tmp_path / "calls"
+  stub = tmp_path / "py"
+  stub.write_text(
+    "#!/usr/bin/env bash\n"
+    f'echo "$3 $4" >> {calls}\n'
+    "case $3 in\n"
+    f'  ps) [ "$(grep -c ^ps {calls})" -gt 2 ] || echo "x 2026-11-10-t-p1" ;;\n'
+    '  status) [ "$4" = 2026-11-10-t-p1 ] && echo \'{"exit": 0}\' || echo \'{"exit": 1}\' ;;\n'
+    "esac\n"
+  )
+  stub.chmod(0o755)
+  state = tmp_path / "state"
+  state.write_text("day 2026-11-10\np0 2026-11-10-t-p0-r2\np1 2026-11-10-t-p1\n")
+  (tmp_path / "state.tries").write_text("p0 a\np0 b\n")
+  env = {k: v for k, v in os.environ.items() if k != "CI"}
+  env |= {"PY": str(stub), "STATE": str(state), "WATCH_EVERY": "0", "SEED": "", "HF_CLI": "true"}
+  done = subprocess.run(
+    ["bash", str(_FILL_ALL), "watch", "t", "p0", "p1"], env=env, capture_output=True, text=True, timeout=60, check=False
+  )
+  assert done.returncode == 1 and "p0: 2026-11-10-t-p0-r2 failed after 2 relaunches" in done.stdout
+  assert "p1 ok" in done.stdout and "FILL FAILED" not in done.stdout and "kill" not in calls.read_text()
 
 
 def test_the_refill_job_commands_hand_over_archives(tmp_path: Path) -> None:
@@ -921,6 +948,8 @@ def test_the_refill_job_commands_hand_over_archives(tmp_path: Path) -> None:
     "WARP": "1",
     "CENSUS_JOBS": "1",
     "SEED": "",
+    "HF_CLI": "true",  # an empty build cache
+    "CACHE": "/cache",
   }
 
   def spec(job: str) -> tuple[str, str]:
@@ -935,7 +964,8 @@ def test_the_refill_job_commands_hand_over_archives(tmp_path: Path) -> None:
     spec("census-heavy")[0].startswith("cpu-performance") and "tools.prebuilt.word_reach --scenes $s" in spec("census-heavy")[1]
   )
   assert "for s in anymal_c primitives;" in spec("census-0")[1]
-  # A public checkout (no internal/: no benchmark registry) takes the feature-space scenes only.
+  # A public checkout (no development tree: no benchmark registry) takes the feature-space scenes
+  # only.
   scenes.write_text("anymal_c fs_point1_plain_none_mesh_n bistro\n")
   public = subprocess.run(
     ["bash", str(_FILL_ALL), "spec", "t", "census-0"],
@@ -949,17 +979,19 @@ def test_the_refill_job_commands_hand_over_archives(tmp_path: Path) -> None:
   assert "for s in fs_point1_plain_none_mesh_n;" in public.stdout
   scenes.write_text("anymal_c primitives bistro\n")
   head, p0 = spec("sm120-p0")
-  assert head == "cpu-upgrade 75m" and f"{base}-sm120-list/part-*.json" in p0 and f"{base}-sm120-final-p0.tar.partial" in p0
+  assert head == "cpu-upgrade 75m" and "/cache/sm120/list/" in p0 and f"{base}-sm120-final-p0.tar.partial" in p0
+  assert "--cache /cache" in p0  # the build cache: taken from, kept in
   assert "cp -r" not in p0 and "--workers 4 --shard /tmp/lists/ptx-0.json" in p0
   assert "lens" not in p0  # lens-camera PTX is not filled (user, 2026-11-11): first use / warm
   env["FILL_ARGS"] = "--exclude-x"  # the fill's exclusions reach the listing and every shard
   assert spec("sm120-p0")[1].count("--exclude-x") == 1 and "--exclude-x --out /tmp/list" in spec("sm120-list-0")[1]
   merge = spec("sm120-merge")[1]
   assert "-ge 3 ]" in merge and "--census /tmp/census/sm120/*.json" in merge and f"{base}-sm120-merged-ptx.tar" in merge
+  assert "plan-pack" in merge and "--keep /cache/sm120/optix/580.178.04" in merge
   head, pack = spec("sm120-pack-0")
   assert head == "rtx-pro-6000 35m" and "580.178.04" in pack and "--shard 0/9" in pack
   assert "--groups quality:own,fast+default:own" in pack
-  assert "--workers 32" in pack and "--deadline $((HF_DEADLINE - 600))" in pack
+  assert "--workers 32" in pack and "--deadline $((HF_DEADLINE - 600))" in pack and "--keep /cache/sm120/optix/$drv" in pack
   assert "--seed" not in pack
   env |= {"SEED": "c0@r0", "SEED_GUARD": ""}  # the published pack of bundle c0 (driver 580.178.04) seeds every pack
   seeded = "--seed https://huggingface.co/buckets/blanchon/raywarp-kernels/resolve/sm120/c0/optix/580.178.04 "

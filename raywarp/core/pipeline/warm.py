@@ -18,7 +18,7 @@ what the configuration's first frame would, keeping every result in the caches:
   megakernel among them), fetched from the bundle or compiled into Warp's kernel cache.
 
 The scene's own preparation is the setup's usual code, run before: an adapter's load converts a
-USD stage into the `.wpbr` cache (`raywarp.formats.usd.load(..., cache=True)`), `upload` encodes
+USD stage into the `.rayw` cache (`raywarp.formats.usd.load(..., cache=True)`), `upload` encodes
 the material textures into the texture cache.
 
 Concurrency: `warm` returns a `concurrent.futures.Future` at once (`asyncio.wrap_future` for an

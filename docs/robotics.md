@@ -117,6 +117,9 @@ Automatic exposure (the default; `exposure.mode="manual"` turns it off) also wri
 HDR image it meters (float16 sqrt-encoded, 6 B per pixel and world; the `hdr` output when
 requested). An output costs little more than its stores.
 
+<!-- SHOWCASE: robotics/outputs.webp (docs/assets/SHOTS.md) -->
+![Every output of one frame](assets/robotics/outputs.webp)
+
 ```python
 outputs = rw.Outputs(
   rgb=rw.settings.ColorOutput(),  # display sRGB, (nworld, ncam, H, W) vec4ub
@@ -208,8 +211,7 @@ assert not r.features.any_rgb  # the geometry-only kernel
 
 **What they cost.** Each output added alone to `rgb`, RTX PRO 6000, OptiX, ms per step (every
 camera of every world) and renderer memory; G1 = the Unitree G1 scene of the benchmarks, 32
-worlds x 2 cameras at 512 x 512 (64 cameras); Office = the Isaac Office, 16 cameras at 1024 x 1024
-(`internal/results/history/post_release/outputs/`, all rows and the 16 / 256-camera and 64 x 64 runs):
+worlds x 2 cameras at 512 x 512 (64 cameras); Office = the Isaac Office, 16 cameras at 1024 x 1024:
 
 | output | G1 512², `FAST` (rgb 1.29 ms) | G1 512², default (rgb 4.05 ms) | Office 1024², `FAST` (rgb 8.87 ms) | memory (G1 / Office) |
 |---|---|---|---|---|
@@ -259,6 +261,9 @@ cloud = r.point_cloud(256, labels="seg", keep=ball, seed=0)
 assert cloud.points.shape == (NWORLD, 256) and (cloud.count.numpy() > 0).all()  # (nworld, N) vec3 [m]
 cloud = r.point_cloud(256, labels="seg", keep=ball, seed=0, out=cloud)  # written in place
 ```
+
+<!-- SHOWCASE: robotics/point_cloud.webp (docs/assets/SHOTS.md) -->
+![A fused point cloud of two cameras, coloured by segment](assets/robotics/point_cloud.webp)
 
 `npoints=N` resamples deterministically (stratified over the kept pixels, one random offset per
 world from `seed`; a world keeping fewer than N repeats its points, `count` says how many are
@@ -336,7 +341,7 @@ assert r.features == features  # nothing recompiled
 ```
 
 What each kind of declaration costs (`core/pipeline/worlds/sharing.py`; 4096 worlds: every table at
-once +10-13 % frame time on an RTX PRO 6000, +2-5 % on an L4, `internal/results/checkpoint/gpu4-r1/report.md`):
+once +10-13 % frame time on an RTX PRO 6000, +2-5 % on an L4):
 
 | per world | declare | cost |
 | --- | --- | --- |
@@ -353,8 +358,7 @@ Rules worth knowing:
 
 - **Colors are RGB tints.** A declared `base_color` / instance `color` varies RGB only; the
   alpha stays the scene's, so no translucency is compiled in. `PerWorld(..., alpha=True)` varies
-  the alpha too and compiles the translucent layer loop in (about +6 % on the CPU, measured with
-  the M5 tints, `internal/results/history/m5/remaining/`). To hide an object, use `visible`, not alpha 0.
+  the alpha too and compiles the translucent layer loop in (about +6 % on the CPU). To hide an object, use `visible`, not alpha 0.
 - **Patterns** are `fnmatch` globs on `scene.instance_names` (MuJoCo geom names, Newton shape
   labels, USD prim paths) or instance indices; a pattern that matches nothing raises.
 - **Static props posed per world**: `PerWorld(pose=["crate*"])`, then
@@ -476,6 +480,12 @@ sim2real = (
 - **Cost**: one pass over the color (8 B per pixel of state) and/or one row pass over the depth (4
   B per pixel), only while the effect is on.
 
+<!-- SHOWCASE: robotics/sensor_noise.webp (docs/assets/SHOTS.md) -->
+![Sensor effects: clean, noise, vignette + response, stereo depth](assets/robotics/sensor_noise.webp)
+
+<!-- SHOWCASE: robotics/rolling_shutter.webp (docs/assets/SHOTS.md) -->
+[![Rolling shutter and motion blur on a fast-moving camera](assets/robotics/rolling_shutter.webp)](assets/robotics/rolling_shutter.mp4)
+
 ## Step and render in one CUDA graph
 
 `r.render(sim)` already replays its own CUDA graph from the second frame with repeated inputs
@@ -539,6 +549,9 @@ r.render(d, active=ids)  # even worlds rendered, odd worlds keep their last imag
 r.render(d, active=wp.array([3], dtype=wp.int32))  # world 3 alone: a one-world launch
 r.render(d)  # every world again
 ```
+
+<!-- SHOWCASE: robotics/batch_mask.webp (docs/assets/SHOTS.md) -->
+[![render(active=ids): odd worlds paused, even worlds rendered](assets/robotics/batch_mask.webp)](assets/robotics/batch_mask.mp4)
 
 - **No recompile, no host round trip.** The ids are read on the device. A fixed `(nworld,)` array
   written in place every step (`torch.where(done, -1, arange)`, also inside a captured graph:

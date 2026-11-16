@@ -1,7 +1,7 @@
 """ViewerRaywarpHeadless (no window, no OpenGL) and the PBR frames on the Warp CPU device.
 
 The windowed ViewerRaywarp (a ViewerGL + `BackgroundHook`, CUDA-GL texture copies) needs a display:
-checked by hand / on the GPU checkpoint (see `internal/results/history/m4/newton/README.md`).
+checked by hand / on the GPU checkpoint.
 """
 
 import math
@@ -16,7 +16,7 @@ pytest.importorskip("pyglet")  # Newton's viewer camera (vector maths only)
 from conftest import recipe
 
 import raywarp as rw
-import raywarp.integrations.newton as newton_pbr
+import raywarp.integrations.newton as rw_newton
 from raywarp.integrations.newton.binding import NewtonBinding
 from raywarp.integrations.newton.headless import ViewerRaywarpHeadless
 from raywarp.integrations.newton.headless.look import GL_SKY_LOWER
@@ -64,7 +64,7 @@ def test_headless_frame_matches_sensor_camera(device):
       width=_W,
       height=_H,
       num_frames=2,
-      lighting=rw.Lighting(newton_pbr.default_lights()),
+      lighting=rw.Lighting(rw_newton.default_lights()),
       gi=recipe("fast").gi,
     )
     frame = _run(viewer, model, state)
@@ -255,7 +255,7 @@ def test_frames_follow_the_viewer_camera_near_plane():
   from raywarp.integrations.newton.headless.frames import PbrFrames
 
   model, state = _model()
-  frames = PbrFrames(rw.Lighting(newton_pbr.default_lights()), {}, owner="test", particles="-")
+  frames = PbrFrames(rw.Lighting(rw_newton.default_lights()), {}, owner="test", particles="-")
   frames.set_model(model)
   camera = Camera(width=_W, height=_H)
   camera.near, camera.far = 0.25, 40.0
@@ -282,7 +282,7 @@ def test_frames_close_the_renderers_they_drop(monkeypatch):
 
   monkeypatch.setattr(rw.Renderer, "close", close)
   model, state = _model()
-  frames = PbrFrames(rw.Lighting(newton_pbr.default_lights()), {}, owner="test", particles="-")
+  frames = PbrFrames(rw.Lighting(rw_newton.default_lights()), {}, owner="test", particles="-")
   frames.set_model(model)
   camera = Camera(width=_W, height=_H)
 

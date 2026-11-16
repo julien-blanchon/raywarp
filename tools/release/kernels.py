@@ -2,7 +2,7 @@
 (`raywarp/core/build/kernel_cache/prebuilt.py`, `store.py`), the package's pins, the upload.
 
   python -m tools.release.kernels layout BUNDLE OUT [--pack DIR] [--workers N]
-  python -m tools.release.kernels pin OUT [--to F] [--bucket OWNER/NAME]
+  python -m tools.release.kernels pin OUT [--to F] [--bucket OWNER/NAME] [--keys K.json]
   python -m tools.release.kernels publish OUT [--bucket OWNER/NAME] [--prefix P]  # user-approved
 
 `layout`: a complete bundle directory (`tools/prebuilt/build.py merge` / `collect`: manifest.json,
@@ -13,7 +13,8 @@ decompressed). A driver's OptiX module pack (`build.py pack` / `merge-packs` out
 with the driver, optix7cache.db) becomes `.../optix/<driver>/` the same way. A layout is
 content-addressed and the remote is a mutable storage bucket, so the versioning is the layout
 itself: `publish` uploads each bundle (its files minus `optix/`) and each pack as a unit, and
-refuses a unit whose `files.json` the bucket already holds (a published content key or pack is never
+skips a unit whose `files.json` the bucket already holds byte for byte (a fill that made the same
+bundle again) and refuses one it holds with other bytes (a published content key or pack is never
 written again; a new fill is a new content key, a later pack of an existing bundle is a new unit).
 `--prefix P`: under `P/` of the bucket instead of its root (a dry run's scratch place; the package
 reads the root).
@@ -21,10 +22,14 @@ reads the root).
 `pin`: the release's pins (default: raywarp/core/build/kernel_cache/kernels.json), naming the
 bucket the bundles are published to, then one per architecture laid out in OUT (its content, the
 sha256 of its files.json, the Warp release it was built with and its OptiX module packs: driver ->
-the sha256 of the pack's files.json; none on the software-path architectures sm_80 / sm_90): the
-package then accepts exactly those bytes, and the release pins that Warp
-(`tools/release/pin_warp.py`). A multi-architecture release (`tools/prebuilt/fill_all.sh`, ARCHS)
-lays every architecture out into one OUT, then pins once.
+the sha256 of the pack's files.json; none on the software-path architectures sm_80 / sm_90) and,
+with `--keys` (architecture -> the key of the inputs it was built from: tools/prebuilt/buildkey.py),
+its `key`: the package then accepts exactly those bytes, the release pins that Warp
+(`tools/release/pin_warp.py`), and the next fill skips an architecture whose key is unchanged. An
+architecture of `--keys` that OUT does not lay out keeps its entry of the pins file it replaces
+(`--to`: an unchanged architecture the fill skipped; refused unless that entry has the same key
+and bucket). A multi-architecture release (`tools/prebuilt/fill_all.sh`, ARCHS) lays every
+architecture out into one OUT, then pins once.
 """
 
 from __future__ import annotations
@@ -44,8 +49,9 @@ from raywarp.core.build.kernel_cache import prebuilt, store
 
 # The pins' format version (`pin`; research/kb/lanes/K-ARCH.md "Pins format for lane P"): 2 adds
 # `format` and each bundle's `packs` (NVIDIA driver -> sha256 of that pack's files.json); 3 the
-# `bucket` the bundles were published to (the runtime's remote: `store.pinned_bucket`).
-PINS_FORMAT = 3
+# `bucket` the bundles were published to (the runtime's remote: `store.pinned_bucket`); 4 each
+# bundle's `key` (`tools/prebuilt/buildkey.py`: what the fill skips on).
+PINS_FORMAT = 4
 
 
 def _compress(src: Path, dst: Path) -> None:
@@ -101,10 +107,23 @@ def layout(bundle: Path, out: Path, *, pack: Path | None, workers: int) -> Path:
   return target
 
 
-def pin(out: Path, to: Path | None = None, bucket: str = store.BUCKET) -> dict[str, dict[str, object]]:
+def pin(
+  out: Path, to: Path | None = None, bucket: str = store.BUCKET, keys: dict[str, str] | None = None
+) -> dict[str, dict[str, object]]:
   """The pins of the bundles laid out in `out` (one per architecture, `PINS_FORMAT`; published to
-  storage bucket `bucket`, which the pins name: the runtime downloads from it) written to `to`
-  (default `store.PIN`, the package's)."""
+  storage bucket `bucket`, which the pins name: the runtime downloads from it; each with its key
+  of `keys`) and of the architectures of `keys` that `out` lacks (kept from the pins they
+  replace), written to `to` (default `store.PIN`, the package's).
+
+  Raises:
+    SystemExit: an architecture to keep whose pins entry is absent, of another key or bucket.
+  """
+  to = to or store.PIN
+  keys = keys or {}
+  try:
+    old = json.loads(to.read_text())
+  except (OSError, ValueError):
+    old = {}
   bundles: dict[str, dict[str, object]] = {}
   for files in sorted(out.glob(f"sm*/*/{store.FILES}")):
     arch = files.parent.parent.name.removeprefix("sm")
@@ -114,14 +133,22 @@ def pin(out: Path, to: Path | None = None, bucket: str = store.BUCKET) -> dict[s
     packs = {
       p.parent.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(files.parent.glob(f"optix/*/{store.FILES}"))
     }
-    bundles[arch] = {
+    entry: dict[str, object] = {
       "content": files.parent.name,
       "files": hashlib.sha256(files.read_bytes()).hexdigest(),
       "warp": str(manifest["warp"]),
       "packs": packs,
     }
-  pins = {"format": PINS_FORMAT, "bucket": bucket, "bundles": bundles}
-  (to or store.PIN).write_text(json.dumps(pins, indent=1, sort_keys=True) + "\n")
+    if arch in keys:
+      entry["key"] = keys[arch]
+    bundles[arch] = entry
+  for arch in sorted(set(keys) - set(bundles)):
+    kept = old.get("bundles", {}).get(arch)
+    if not isinstance(kept, dict) or kept.get("key") != keys[arch] or old.get("bucket") != bucket:
+      raise SystemExit(f"sm{arch} is not laid out and {to} pins no bundle of key {keys[arch]} on {bucket}")
+    bundles[arch] = kept
+  pins = {"format": PINS_FORMAT, "bucket": bucket, "bundles": dict(sorted(bundles.items()))}
+  to.write_text(json.dumps(pins, indent=1, sort_keys=True) + "\n")
   return bundles
 
 
@@ -136,32 +163,47 @@ def units(out: Path) -> list[Path]:
   return bundles + packs
 
 
-def _published(bucket: str, rel: str) -> bool:
-  """Whether the bucket holds unit `rel` (its files.json).
+def _published(bucket: str, rel: str) -> bytes | None:
+  """The files.json of unit `rel` the bucket holds (None: it holds none).
 
   Raises:
-    SystemExit: the bucket cannot be listed (never upload blind).
+    SystemExit: the bucket cannot be listed or read (never upload blind).
   """
   done = subprocess.run(
     ["hf", "buckets", "list", f"{bucket}/{rel}/{store.FILES}", "--json"], capture_output=True, text=True, check=False
   )
   if done.returncode:
     raise SystemExit(f"cannot list {bucket}/{rel}: {done.stderr.strip()}")
-  return store.FILES in done.stdout
+  if store.FILES not in done.stdout:
+    return None
+  got = subprocess.run(
+    ["hf", "buckets", "cp", f"hf://buckets/{bucket}/{rel}/{store.FILES}", "-"], capture_output=True, check=False
+  )
+  if got.returncode:
+    raise SystemExit(f"cannot read {bucket}/{rel}/{store.FILES}: {got.stderr.decode().strip()}")
+  return got.stdout
 
 
 def publish(out: Path, bucket: str = BUCKET, prefix: str = "") -> None:
   """Uploads the units of layout `out` to storage bucket `bucket` (under `prefix`/ when given),
-  each one's files.json last (a unit is listed once complete).
+  each one's files.json last (a unit is listed once complete); a unit the bucket holds with the
+  same files.json is skipped (the same bytes, published by an earlier fill).
 
   Raises:
-    SystemExit: a unit is already published (a content key or pack is never written again).
+    SystemExit: a unit is published with other bytes (a content key or pack is never written again).
   """
-  todo = units(out)
   root = f"{bucket}/{prefix.strip('/')}" if prefix.strip("/") else bucket
-  taken = [u.relative_to(out).as_posix() for u in todo if _published(root, u.relative_to(out).as_posix())]
+  todo, taken = [], []
+  for unit in units(out):
+    held = _published(root, unit.relative_to(out).as_posix())
+    if held is None:
+      todo.append(unit)
+    elif held != (unit / store.FILES).read_bytes():
+      taken.append(unit.relative_to(out).as_posix())
+    else:
+      print(f"unchanged, already published: {unit.relative_to(out).as_posix()}")
   if taken:
-    raise SystemExit(f"already published, never overwritten (a new fill is a new content key): {taken}")
+    raise SystemExit(f"already published with other bytes, never overwritten (a new fill is a new content key): {taken}")
   for unit in todo:
     rel = unit.relative_to(out).as_posix()
     dest = f"hf://buckets/{root}/{rel}"
@@ -186,6 +228,7 @@ def main(argv: list[str] | None = None) -> None:
   pin_p.add_argument("out", type=Path)
   pin_p.add_argument("--to", type=Path, default=None, help="the pins file (default: the package's kernels.json)")
   pin_p.add_argument("--bucket", default=BUCKET, help="the bucket the bundles are published to (the pins name it)")
+  pin_p.add_argument("--keys", type=Path, default=None, help="JSON: architecture -> its inputs' key (buildkey.py)")
   pub = sub.add_parser("publish")
   pub.add_argument("out", type=Path)
   pub.add_argument("--bucket", default=BUCKET)
@@ -194,7 +237,8 @@ def main(argv: list[str] | None = None) -> None:
   if args.cmd == "layout":
     layout(args.bundle, args.out, pack=args.pack, workers=args.workers)
   elif args.cmd == "pin":
-    print(json.dumps(pin(args.out, args.to, args.bucket), indent=1))
+    keys = json.loads(args.keys.read_text()) if args.keys is not None else None
+    print(json.dumps(pin(args.out, args.to, args.bucket, keys), indent=1))
   else:
     publish(args.out, args.bucket, args.prefix)
 

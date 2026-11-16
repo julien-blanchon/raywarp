@@ -279,10 +279,10 @@ def test_the_runtime_finds_a_fill_s_modules_by_the_pack_s_names(
   def fill_root(root: Path, module: str, suffix: str) -> Path:
     sym = f"_ZN58_INTERNAL_00000000_27_wp_raywarp_optix_{module}_cu_8d30c1fb2wp9SLICE_ENDE"
     ptx = f"// NVRTC\n.version 9.0\n.global .align 4 .u32 {sym} = 1;\n.visible .entry __raygen__render_{suffix}()\n{{\n}}\n"
-    (root / "wpbr" / "ptx").mkdir(parents=True)
-    (root / "wpbr" / "ptx" / "k0.ptx").write_text(ptx)
+    (root / "raywarp" / "ptx").mkdir(parents=True)
+    (root / "raywarp" / "ptx" / "k0.ptx").write_text(ptx)
     entry = prebuilt.Entry(ptx="", code=kernel_code.version(), reach=kernel_code.ALL, groups={"fast": (_record(1),)})
-    (root / "wpbr" / "ptx" / "k0.json").write_text(json.dumps(entry.json()))
+    (root / "raywarp" / "ptx" / "k0.json").write_text(json.dumps(entry.json()))
     return build.collect(root, 120, root.parent / f"{root.name}_out", workers=1)
 
   bundles = [fill_root(tmp_path / "a", "bdefb90", "f86e48f3"), fill_root(tmp_path / "b", "22ae3f2", "0a1b2c3d")]

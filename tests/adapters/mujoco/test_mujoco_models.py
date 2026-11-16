@@ -4,7 +4,7 @@ Each model is compiled by MuJoCo, put on the CPU by MuJoCo Warp, turned into a s
 once (one world, 24 x 16, a free camera on the model's centre). A model MuJoCo or MuJoCo Warp
 cannot load is skipped with the reason (a file included by others, a missing plugin, an
 unsupported MuJoCo Warp feature); every model they load must render finite pixels, and see
-something. Fetch the gallery with `internal/tools/fetch_assets.py --only mujoco`.
+something. Skipped without the MuJoCo model gallery (`$MJPBR_ASSET_DIR/mujoco/model`).
 """
 
 from __future__ import annotations
@@ -57,7 +57,7 @@ def _load(path: Path) -> tuple[mujoco.MjModel, mjw.Model, mjw.Data]:
   return mjm, m, d
 
 
-@pytest.mark.skipif(not FILES, reason=f"no MuJoCo model gallery under {MODELS} (internal/tools/fetch_assets.py --only mujoco)")
+@pytest.mark.skipif(not FILES, reason=f"no MuJoCo model gallery under {MODELS}")
 @pytest.mark.parametrize("path", FILES, ids=[str(p.relative_to(MODELS)) for p in FILES])
 def test_model_renders(path: Path):
   """The example loads into a scene and renders finite pixels showing something."""

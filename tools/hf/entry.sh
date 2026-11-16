@@ -35,7 +35,7 @@ NO_SAVE=" ${HF_NO_SAVE:-} "; NO_SAVE=${NO_SAVE//,/ }
 # its own root and a test job restores its own kernel cache (`tests/kernel_snapshot.py`); the CPU `warp`
 # family is ~25 GB (1.5-13 min) of other trees' modules. Not restored is not saved either.
 NO_RESTORE=" ${HF_NO_RESTORE:-} "; NO_RESTORE=${NO_RESTORE//,/ }
-WPBR_CACHE_MB=${HF_WPBR_CACHE_MB:-6144}  # the wpbr family's cap (the oldest files go first)
+RAYWARP_CACHE_MB=${HF_RAYWARP_CACHE_MB:-6144}  # the raywarp family's cap (the oldest files go first)
 # The CPU `warp` family's cap: every tree's modules accumulate there (a 25 GB family, 122 snapshots
 # before the save-time prune: BUG-289); the oldest modules go first, a miss recompiles.
 WARP_CPU_CACHE_MB=${HF_WARP_CPU_CACHE_MB:-12288}
@@ -86,14 +86,14 @@ cache_dir() {  # FAMILY -> the local directory of that cache
     uv) echo "$WORK/cache/uv" ;;
     warp) echo "$WORK/cache/warp" ;;
     cuda) echo "$WORK/cache/cuda" ;;
-    wpbr) echo "$WORK/cache/wpbr" ;;
+    raywarp) echo "$WORK/cache/raywarp" ;;
     hyperlux) echo "$WORK/cache/hyperlux" ;;
     apt) echo "$WORK/cache/apt" ;;  # lists/ + archives/: the system packages' indexes and .deb files
     ovrtx) "$PY" -c 'import sysconfig; print(sysconfig.get_paths()["purelib"] + "/ovrtx/bin/cache")' ;;
   esac
 }
-# Never in a snapshot: prepared `.wpbr` scenes (bucket prepared/, staged per job) and in-flight writes.
-SKIP=(! -name '*.wpbr' ! -name '*.tmp*' ! -name '*.partial')
+# Never in a snapshot: prepared `.rayw` scenes (bucket prepared/, staged per job) and in-flight writes.
+SKIP=(! -name '*.rayw' ! -name '*.tmp*' ! -name '*.partial')
 # Saved but not a reason for a new snapshot: raywarp's per-file code digest memo (it changes with
 # every commit; a job recomputes what it lacks in about a second).
 QUIET=(! -name 'code-digests-*')
@@ -151,7 +151,7 @@ save_caches() {  # every restored family whose listing changed: local tar -> .pa
   for stamp in "$WORK"/stamps/*.key; do
     [[ -e "$stamp" ]] || continue
     family=$(basename "$stamp" .key); key=$(cat "$stamp"); dir=$(cache_dir "$family")
-    [[ "$family" != wpbr ]] || cap_dir "$dir" "$WPBR_CACHE_MB"
+    [[ "$family" != raywarp ]] || cap_dir "$dir" "$RAYWARP_CACHE_MB"
     [[ "$family" != warp || "$ARCH" != cpu ]] || cap_dir "$dir" "$WARP_CPU_CACHE_MB"
     if [[ "$NO_SAVE" == *" $family "* ]]; then
       result="skipped (scratch: --no-cache-save)"
@@ -248,12 +248,12 @@ export_common() {
   # Both resolve to $WORK/cache/warp/<warp version>.
   export WARP_CACHE_PATH=$WORK/cache/warp WARP_KERNEL_CACHE_DIR=$WORK/cache/warp
   # raywarp's cache directory: textures, bakes, MDL conversions and OptiX's module cache (`optix/`).
-  export CUDA_CACHE_PATH=$WORK/cache/cuda RAYWARP_CACHE_DIR=$WORK/cache/wpbr
+  export CUDA_CACHE_PATH=$WORK/cache/cuda RAYWARP_CACHE_DIR=$WORK/cache/raywarp
   export HYPERLUX_CACHE_DIR=$WORK/cache/hyperlux
   # The native build hook (tools/native/hook.py, run by the editable install): the pinned NVIDIA
   # artifacts from the bucket (no download), the compiled MDL binding shared by every job.
   export RAYWARP_NATIVE_ARCHIVES=$NATIVE_ARCHIVES RAYWARP_NATIVE_CACHE=$NATIVE_CACHE
-  export MJPBR_ASSET_DIR=$DATA/assets MJPBR_HOST_CACHE=$WORK/wpbr_cache
+  export MJPBR_ASSET_DIR=$DATA/assets MJPBR_HOST_CACHE=$WORK/raywarp_cache
   export MUJOCO_GL=$([[ "$ARCH" == cpu ]] && echo osmesa || echo egl)
   mkdir -p "$MJPBR_HOST_CACHE"
 }
@@ -273,6 +273,10 @@ env_project() {
   if [[ "$WITH" == *" ovrtx "* ]]; then
     # shellcheck disable=SC2086  # the pinned package list
     uv pip install -q --python "$PY" --extra-index-url "$OVRTX_INDEX" $OVRTX_PACKAGES pyglet
+  fi
+  if [[ "$WITH" == *" fillcuda "* ]]; then
+    # shellcheck disable=SC2086  # the pinned package list
+    uv pip install -q --python "$PY" $FILL_CUDA_PACKAGES
   fi
 }
 
@@ -307,7 +311,7 @@ bootstrap() {  # the environment and its caches; sets PY
   export_common
   if [[ "$DRY" == 1 ]]; then
     PY=$(command -v python3)
-    restore "dry" warp wpbr
+    restore "dry" warp raywarp
     return 0
   fi
   [[ "$ENV_NAME" == project || "$ENV_NAME" == mjlab ]] || { echo "unknown HF_ENV $ENV_NAME"; return 2; }
@@ -321,8 +325,8 @@ bootstrap() {  # the environment and its caches; sets PY
   local warp key families=(warp)
   warp=$("$PY" -c 'import importlib.metadata as m; print(m.version("warp-lang"))')
   key="$ENV_NAME-$ARCH-warp$warp"
-  # wpbr on GPUs: what a warm start reads (CPU jobs run suites, whose files are throwaway).
-  [[ "$ARCH" == cpu ]] || families+=(cuda wpbr)
+  # raywarp on GPUs: what a warm start reads (CPU jobs run suites, whose files are throwaway).
+  [[ "$ARCH" == cpu ]] || families+=(cuda raywarp)
   [[ "$ENV_NAME" != mjlab ]] || families+=(hyperlux)
   [[ "$WITH" != *" ovrtx "* ]] || families+=(ovrtx)
   restore "$key" "${families[@]}"

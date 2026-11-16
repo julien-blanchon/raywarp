@@ -4,7 +4,7 @@ on first use (`raywarp/core/build/kernel_cache/prebuilt.py`), timed, every compi
   python -I first_frame.py --out DIR --repo REPO [--scene franka_showroom] [--base fast]
     [--size 512] [--worlds 4] [--expect-zero-compiles]
 
-REPO: a checkout, for the scene registry only (internal/benchmarks/scenes.py: an MJCF scene with
+REPO: a development checkout, for the scene registry only (an MJCF scene with
 MuJoCo Warp, or a host / code scene; assets under $MJPBR_ASSET_DIR); raywarp is the installed one
 (-I, run from another directory). Fresh caches are the caller's (first_frame.sh). Writes
 DIR/<scene>-<base>.json (stage times, the kernel store's bytes and files after the frame, the
@@ -93,7 +93,7 @@ def _count_compiles() -> None:
 def _renderer(name: str, settings: RenderSettings, size: int, worlds: int) -> tuple[Renderer, Callable[[], RenderOutputs]]:
   """(renderer, render-one-frame) of registry scene `name`."""
   import numpy as np
-  import scenes  # internal/benchmarks/scenes.py
+  import scenes  # the development checkout's scene registry
 
   import raywarp as rw
 

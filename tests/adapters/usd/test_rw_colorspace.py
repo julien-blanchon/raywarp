@@ -399,7 +399,7 @@ def test_copied_channels_never_alias_the_source():
 
 
 def test_stored_output_space_code_is_rejected():
-  """A Textures row holding srgb_rec709_display (a corrupt .wpbr) fails at upload."""
+  """A Textures row holding srgb_rec709_display (a corrupt .rayw) fails at upload."""
   b = rw.SceneBuilder()
   b.add_texture(np.zeros((2, 2, 4), np.uint8))
   scene = b.build()

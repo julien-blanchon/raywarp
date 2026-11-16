@@ -77,8 +77,8 @@ def test_with_lighting_appends_without_copying_the_mapped_blob(tmp_path):
   """Lighting a memory-mapped scene appends the rig's images after its texel blob without copying
   it (a multi-GB scene would double in RAM), twice in a row; the result still saves and loads."""
   host = _host(textured=True)
-  host.save(tmp_path / "host.wpbr")
-  mapped = rw.Scene.load(tmp_path / "host.wpbr")
+  host.save(tmp_path / "host.rayw")
+  mapped = rw.Scene.load(tmp_path / "host.rayw")
   lit = mapped.with_lighting(rw.Lighting(envmap=np.full((8, 16, 3), 0.25, np.float32)))
   lit = lit.with_lighting(rw.Lighting(envmap=np.full((4, 8, 3), 0.5, np.float32), replace=True))
   assert lit.images.data is mapped.images.data and lit.nimage == 3
@@ -87,8 +87,8 @@ def test_with_lighting_appends_without_copying_the_mapped_blob(tmp_path):
   np.testing.assert_array_equal(lit.images.level(0), host.images.level(0))
   np.testing.assert_allclose(lit.images.level(1)[..., :3], 0.25)
   np.testing.assert_allclose(lit.images.level(2)[..., :3], 0.5)
-  lit.save(tmp_path / "lit.wpbr")
-  again = rw.Scene.load(tmp_path / "lit.wpbr")
+  lit.save(tmp_path / "lit.rayw")
+  again = rw.Scene.load(tmp_path / "lit.rayw")
   for i in range(3):
     np.testing.assert_array_equal(again.images.level(i), lit.images.level(i))
 

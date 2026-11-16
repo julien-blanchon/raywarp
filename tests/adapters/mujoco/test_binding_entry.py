@@ -31,13 +31,13 @@ def _model(worlds: int) -> "newton.Model":
 
 
 def test_newton_binding_from_a_cached_scene(tmp_path):
-  """`rw.integrations.newton.binding(scene, model)` of a scene saved to `.wpbr` and loaded back
+  """`rw.integrations.newton.binding(scene, model)` of a scene saved to `.rayw` and loaded back
   renders as the binding of `rw.integrations.newton.load(model)` before the cache (the source
   column holds each instance's shape)."""
   model = _model(3)
   host = rw.integrations.newton.load(model)
   gpu = rw.upload(host, model.device, binding=rw.integrations.newton.binding(host, model))
-  path = tmp_path / "s.wpbr"
+  path = tmp_path / "s.rayw"
   host.save(path)
   loaded = rw.Scene.load(path)
   assert np.array_equal(loaded.instances.source, host.instances.source) and np.all(loaded.instances.source >= 0)

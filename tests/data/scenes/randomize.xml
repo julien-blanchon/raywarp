@@ -1,6 +1,6 @@
 <mujoco model="randomize">
   <!-- A table-top scene for N worlds: static crates (posed per world), distractors (shown per world), an arm, three lights. -->
-  <!-- Written by internal/benchmarks/scenes/generate.py; cameras: internal/benchmarks/feature_scenes.py. -->
+  <!-- Written by the scene generator of the development repository (deterministic: do not edit by hand). -->
   <compiler angle="degree"/>
   <visual>
     <headlight active="0" ambient="0 0 0" diffuse="0 0 0" specular="0 0 0"/>

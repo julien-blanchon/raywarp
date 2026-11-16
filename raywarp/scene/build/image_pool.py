@@ -17,7 +17,7 @@ import numpy as np
 from raywarp.scene.images import blob, files
 from raywarp.scene.images import decode as imaging
 from raywarp.scene.images.mips import Transfer
-from raywarp.scene.model import wpbr
+from raywarp.scene.model import rayw
 from raywarp.scene.model.report import LoadReport
 from raywarp.scene.model.tables import Images
 from raywarp.scene.model.types import NO_IMAGE, Array, ImageId
@@ -102,7 +102,7 @@ class ImagePool:
       key, imaging.ImageSource(transfer="srgb" if derived.encoding == "srgb" else "linear", derived=derived)
     )
 
-  def read_states(self) -> dict[str, wpbr.Dependency]:
+  def read_states(self) -> dict[str, rayw.Dependency]:
     """`SceneBuilder.read_states`."""
     return {p.state.path: p.state for p in self._ahead.results() if p.state is not None}
 

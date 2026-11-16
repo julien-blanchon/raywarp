@@ -22,6 +22,7 @@
   | Newton | `ViewerPbrHeadless` | `ViewerRaywarpHeadless` |
   | Material extension | `wpr.scene.WarpPbrExt` | `rw.scene.RaywarpExt` |
   | Prebuilt kernels bucket | `blanchon/warp-pbr-kernels` | `blanchon/raywarp-kernels` (a release's pins name its bucket) |
+  | Scene files | `.wpbr` (`wpr.scene.model.wpbr`, magic `WPBR`) | `.rayw` (`rw.scene.model.rayw`, magic `RAYW`): format 15, older files are refused (prepare again) |
 
 - **Distinct class names:** the host scene's environment light `wpr.scene.Environment` is
   `rw.scene.EnvironmentLight`; the internal GPU-scene `Environment` / `Headlight` are
@@ -46,21 +47,18 @@
 - **The generated API reference is gone:** docs/api.md, `tools/api_doc.py` and the static audit
   `tools/audit.py` (and their tests) are removed; the docstrings and the user guide are the
   reference.
-- **The repository is split into the public tree and `internal/`:** the large benchmark suite
-  (`benchmarks/` -> `internal/benchmarks/`), the knowledge base (`research/` ->
-  `internal/research/`), the archived results (`internal/results/`), the dev web UI
-  (`internal/webui/`, docs/webui.md -> `internal/docs/webui.md`), their tests (`internal/tests/`)
-  and the development tools move under `internal/`: `tools/autotune`, `tools/dev`,
-  `tools/mitsuba_usd`, `tools/mdl_corpus*`, `tools/viewer` (its stream client and delay proxy:
-  `tests/fixtures/`), `tools/fetch_assets.py`, `tools/intel_samples.py`,
-  `tools/polyhaven_apartment.py`, `tools/video/bench.py` and the dev parts of `tools/hf` (`sandbox`, `test`: `python -m
-  internal.tools.hf`, a superset of `python -m tools.hf`). `internal/` stays in the repository
-  (worktrees and HF jobs see it; `tools/hf/runs.py` ships it) but never in the wheel, the sdist or
-  the public export (`.gitattributes` `export-ignore`). The committed fixture scenes moved from
-  `benchmarks/scenes/` to `tests/data/scenes/`; `tests/conftest.py` is the root `conftest.py`
-  (it serves `tests/` and `internal/tests/`); `tools/test_cache.py` / `tools/test_precompile.py`
-  are `tests/kernel_snapshot.py` / `tests/precompile.py`. Module and path renames:
-  `internal/tools/dev/internal_split.py` (the generated move, re-runnable).
+- **The development-only parts leave the public tree:** the large benchmark suite (scene
+  registry, regression suite, references, gallery), the knowledge base, the archived results, the
+  dev web UI (docs/webui.md) with their tests, and the development tools (`tools/autotune`,
+  `tools/dev`, `tools/mitsuba_usd`, `tools/mdl_corpus*`, `tools/viewer`, `tools/fetch_assets.py`,
+  `tools/intel_samples.py`, `tools/polyhaven_apartment.py`, `tools/video/bench.py`, and the dev
+  sandboxes and test runs of `tools/hf`) are no longer part of the public repository, the wheel or
+  the sdist. The public tree keeps the library, its tests, `benchmarks/run.py` (benchmarks/README.md)
+  and the release and HF job tooling (`python -m tools.hf`). The viewer's stream client and delay
+  proxy test helpers are in `tests/fixtures/`. The committed fixture scenes moved from
+  `benchmarks/scenes/` to `tests/data/scenes/`; `tests/conftest.py` is the root `conftest.py`;
+  `tools/test_cache.py` / `tools/test_precompile.py` are `tests/kernel_snapshot.py` /
+  `tests/precompile.py`.
 - **`tools/video` is the library module `raywarp.video`** (`from raywarp.video import
   recorder`, unchanged API; NVENC through the new `video` extra); `tools/gltf_to_usd.py` and
   `tools/gltf_to_mjcf.py` are `raywarp convert` and the module `raywarp.integrations.mujoco.from_gltf`.
@@ -85,8 +83,7 @@
   (the megakernel and its `abi`); `scene/` is `model`, `images`, `lighting`, `build`, and the leaf
   packages are `raywarp._base` (shared types) and `raywarp.cache` (the disk caches).
   `rw.settings` is the one settings package (`raywarp.core.settings` is gone) and also exports
-  `RenderSettings`, `FAST` and `Outputs`. Every module, old -> new: research/kb/RESTRUCTURE_MAP.md
-  (one table per restructure). The paths the docs cited, from 0.3.0:
+  `RenderSettings`, `FAST` and `Outputs`. The paths the docs cited, from 0.3.0:
 
   | Old (0.3.0) | New |
   |---|---|
@@ -109,11 +106,11 @@
   | `raywarp.core.semantics` | `raywarp.core.outputs.semantic_classes` |
   | `raywarp.core.prebuilt` | `raywarp.core.build.kernel_cache.prebuilt` |
   | `raywarp.scene.lighting` (`with_lighting`) | `raywarp.scene.lighting.rig` |
-  | `raywarp.scene.cache` (`.wpbr` files) | `raywarp.scene.model.wpbr` |
+  | `raywarp.scene.cache` (`.wpbr` files) | `raywarp.scene.model.rayw` (`.rayw` files) |
   | `raywarp.scene.cache.cache_dir` / `CACHE_ENV` | `raywarp.cache.paths` |
   | `raywarp.scene.prune` (`python -m`) | `raywarp.cache.prune` |
 
-  Caches: `.wpbr` scene files, prepared scenes and the MDL conversion memo stay valid; bakes,
+  Caches: the MDL conversion memo stays valid (scene files: `.rayw` format 15, below); bakes,
   textures and emissive fits miss once; the prebuilt kernel bundle is refilled (the Warp module
   names changed; until then the kernels compile at run time).
 - **`Renderer.set_world_skip` is removed: `render(sim, active=ids)` / `capture(..., active=ids)`
@@ -142,8 +139,8 @@
   writes s R (the column's initial values hold it); a plain R renders the mesh at scale 1.
   Non-uniform, sheared and mirrored scales are still baked into a mesh copy (one per distinct
   shape). Bindings that write rigid rotations (Newton, Isaac Lab) keep every scale baked.
-- **`.wpbr` format 14, scene converter 13: prepare scenes again.** A file of format 13 is refused,
-  never read wrongly: a `rw.usd.load` cache is rebuilt from its sources on the next load,
+- **`.rayw` format 15 (was `.wpbr` format 13), scene converter 13: prepare scenes again.** An
+  older file is refused, never read wrongly: a `rw.usd.load` cache is rebuilt from its sources on the next load,
   prepared scenes must be prepared again (`rw.usd.bake`, `python -m tools.hf prepare`). Images of
   equal content are stored once and the second UV set's / vertex colors' corner indices only for
   the meshes that have them (smaller files). An MDL parameter without a default and without an
@@ -342,6 +339,13 @@
 
 ### Added
 
+- **Documentation for first-time readers:** a minimal README (install and two getting-started
+  snippets: MuJoCo Warp with MJCF, Newton with a USD stage), docs/features.md, docs/concepts.md
+  (scene, renderer, worlds, cameras, settings recipes, per-world randomisation, kernels and first
+  use), docs/about.md (citation, licence, credits), supported GPUs in docs/install.md,
+  docs/README.md as an index, the web viewer's reference in docs/cli.md, a readback-ring sketch in
+  docs/datagen.md, and images and clips beside each feature they show (docs/assets/SHOTS.md). The
+  docs no longer cite development-only paths.
 - **`raywarp`**, a small command over the Python API (docs/cli.md): `view` (the web viewer),
   `record SCENE OUT.mp4` (an MP4 of a scene file, the camera orbiting; several worlds in one
   mosaic), `convert IN.gltf OUT.usdc|OUT.xml` (glTF -> USD / MJCF), `prepare IN.usd -o OUT.wpbr`
@@ -480,7 +484,7 @@
   go through `core.device.to_host` (Warp 1.18's `array.numpy()` swaps the device's current stream,
   so threads interleaving could leave the null stream current), the texture pool and the OptiX PTX
   compile thread pass devices explicitly instead of entering `wp.ScopedDevice` (process-wide
-  default device). Upstream report draft: `research/upstream/warp_numpy_thread_safety.md`.
+  default device).
 
 ### Changed
 
@@ -513,12 +517,11 @@
   `<cache dir>/bakes/` (`~/.cache/raywarp` by default) by hand if an old version left any.
 - **`quality`: 2 shadow samples instead of 8** (user decision after the post-release preset study;
   spp 2, the fine GI grid and the rest unchanged): the same FLIP vs `reference` (Office 0.083 =
-  0.083, Sponza 0.062 vs 0.059) for 44 % less frame time on the Office and 27 % on Sponza
-  (`results/history/post_release/presets/` item 3, `results/history/post_release/quality_preset/`).
+  0.083, Sponza 0.062 vs 0.059) for 44 % less frame time on the Office and 27 % on Sponza.
   `reference` is unchanged (its values are now explicit instead of inherited from `quality`).
 - **`balanced` (the `RenderSettings()` default) tone maps with PBR Neutral again** (user decision,
   robotics defaults): `aces_rtx` turned every HDRI-lit tabletop milky (+0.3..+0.9 EV, FLIP
-  0.39-0.48 vs PBR Neutral, `results/history/review_c/robotics_fit/`). Only `omniverse` keeps
+  0.39-0.48 vs PBR Neutral). Only `omniverse` keeps
   `post.tone_mapper="aces_rtx"`; every other preset now shares one tone curve.
 - **`lighting.light_grid` defaults to `"auto"`: the light grid is built from 8 lights** (user
   decision, robotics defaults; generalises the single-sun rule). With fewer lights the grid's
@@ -529,8 +532,8 @@
 - **`balanced` (the `RenderSettings()` default) renders without probe GI** (user decision,
   robotics defaults): against a Mitsuba path tracer at 512 px, after the probe-placement fix, GI
   off is closer on the robotics tabletops (pick table FLIP 0.09 vs 0.17, with the Panda 0.13 vs
-  0.18, env-lit bin 0.46 vs 0.56; G1 outdoors 0.061 vs 0.053) and 12-27 % cheaper per frame
-  (`results/history/post_release/robotics_defaults/`). `gi.enabled` defaults to False; the grid
+  0.18, env-lit bin 0.46 vs 0.56; G1 outdoors 0.061 vs 0.053) and 12-27 % cheaper per frame.
+  `gi.enabled` defaults to False; the grid
   fields keep the 1 m / 64 rays / 8 updates opt-in for interiors lit through their windows
   (`settings.replace(**{"gi.enabled": True})`). `quality`, `omniverse` and `reference` keep GI.
 

@@ -9,7 +9,7 @@ from conftest import required
 newton = pytest.importorskip("newton")
 
 import raywarp as rw
-import raywarp.integrations.newton as newton_pbr
+import raywarp.integrations.newton as rw_newton
 from raywarp.core.pipeline.gpu_scene.deformables import CLOSED_SURFACE, THICK_SURFACE
 from raywarp.integrations.newton.deformables import particle_meshes
 from raywarp.integrations.newton.types import NewtonState
@@ -20,7 +20,7 @@ HEIGHT = 3.0  # the camera's height, looking straight down (-Z)
 
 def _depth(model: newton.Model, state: NewtonState, nworld: int = 1) -> np.ndarray:
   """(nworld, 9, 9) planar depth of a camera at (0, 0, HEIGHT) looking down."""
-  scene = newton_pbr.scene(model)
+  scene = rw_newton.scene(model)
   settings = rw.RenderSettings(outputs=rw.Outputs.of("depth"), performance=rw.settings.Performance(traversal="software"))
   r = rw.Renderer(scene, nworld=nworld, cameras=[rw.CameraSpec(fovy=20.0)], resolution=(9, 9), settings=settings)
   r.camera_pose.assign(np.tile(np.array([0.0, 0.0, HEIGHT, 0.0, 0.0, 0.0, 1.0], np.float32), (nworld, 1, 1)))
@@ -51,7 +51,7 @@ def test_worlds_of_different_height_fields_each_show_their_own():
     world.add_shape_heightfield(heightfield=field)
     scene.add_world(world)
   model = scene.finalize(device="cpu")
-  assert newton_pbr.scene(model).ninstance == 2
+  assert rw_newton.scene(model).ninstance == 2
   depth = _depth(model, model.state(), nworld=3)
   np.testing.assert_allclose(depth[:, 4, 4], [HEIGHT - 0.5, HEIGHT - 0.9, HEIGHT - 0.5], atol=1e-3)
 
@@ -106,7 +106,7 @@ def test_each_render_world_shows_its_newton_worlds_particles():
   model, state = _two_worlds()
   depth = _depth(model, state, nworld=3)[:, 4, 4]
   np.testing.assert_allclose(depth, [HEIGHT - 1.01, HEIGHT - 1.51, HEIGHT - 1.01], atol=1e-3)
-  view = newton_pbr.StateView(state, world_indices=wp.array([1, 1, 0], dtype=wp.int32, device="cpu"))
+  view = rw_newton.StateView(state, world_indices=wp.array([1, 1, 0], dtype=wp.int32, device="cpu"))
   depth = _depth(model, view, nworld=3)[:, 4, 4]
   np.testing.assert_allclose(depth, [HEIGHT - 1.51, HEIGHT - 1.51, HEIGHT - 1.01], atol=1e-3)
 
@@ -153,6 +153,6 @@ def test_a_soft_body_skin_is_a_closed_surface_and_loose_particles_are_reported()
   model = builder.finalize(device="cpu")
   meshes = required(particle_meshes(model, LoadReport(), merge_worlds=False))
   assert [p.dim for p in meshes.parts] == [CLOSED_SURFACE]
-  report = newton_pbr.load(model).report
+  report = rw_newton.load(model).report
   assert report.dropped["newton.particles(unrendered)"] == 2  # the grid's centre particle and the loose one
   assert _depth(model, model.state())[0, 4, 4] == pytest.approx(HEIGHT - 0.9, abs=1e-3)  # the top at 0.5 + 0.4

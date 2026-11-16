@@ -28,7 +28,7 @@ the bundle covers it and what a miss costs; `tests/contracts/test_compile_trigge
 the code has a trigger the table lacks (a new compile-key input never slips in silently) or the
 table one the code no longer has.
 
-  python -m tools.prebuilt.triggers report internal/research/kb/COMPILE_TRIGGERS.md
+  python -m tools.prebuilt.triggers report OUT.md   # the inventory as a Markdown table
 """
 
 from __future__ import annotations

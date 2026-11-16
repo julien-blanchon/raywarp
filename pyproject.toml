@@ -91,7 +91,7 @@ url = "https://pypi.nvidia.com/"
 explicit = true
 
 [dependency-groups]
-# The gates, the test runner and the developer tooling (webui dev server, wpbr-dev, tools.hf).
+# The gates, the test runner and the developer tooling (webui dev server, rw-dev, tools.hf).
 # Not the `mujoco` extra: a default group holding an extra that conflicts with newton-sim makes
 # `uv sync --group newton-sim` install both MuJoCo pairs; `--extra mujoco` (or `--all-extras`) adds it.
 dev = [
@@ -115,7 +115,7 @@ dev = [
     "huggingface_hub>=2.3",
     "uvicorn",
 ]
-# Reference renderers, asset IO and image metrics of internal/benchmarks/.
+# Reference renderers, asset IO and image metrics of the development benchmark suite.
 bench = [
     "flip-evaluator",
     "gitpython",  # Newton's asset downloader (newton.utils.download_asset)
@@ -128,7 +128,7 @@ bench = [
 ]
 # Newton's SolverMuJoCo needs the MuJoCo / MuJoCo Warp pins of Newton's `[sim]` extra (Newton 1.7:
 # ~=3.15; MuJoCo Warp 3.17 dropped the `Model.stat` it reads), older than the pair the `mujoco`
-# extra locks: a separate fork of the lock (internal/benchmarks/loop.py).
+# extra locks: a separate fork of the lock.
 newton-sim = ["newton[sim]"]
 
 [tool.uv]

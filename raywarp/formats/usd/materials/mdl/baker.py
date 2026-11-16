@@ -130,7 +130,7 @@ class SdkBaker:
   def dependencies(self) -> list[str]:
     """The .mdl modules read and the texture files their materials read (a packaged one: its
     package on disk), except the files of raywarp's MDL library and of the bundled SDK: code, which
-    the `.wpbr` key versions (`api.cache_key`: library digest, SDK version), at other paths on
+    the `.rayw` key versions (`api.cache_key`: library digest, SDK version), at other paths on
     every machine."""
     found = {files.container(s) for s in self.sources}
     code = (str(load.LIBRARY), str(self.generated), *(sdk.api().system_paths if found else ()))

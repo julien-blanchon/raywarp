@@ -7,7 +7,7 @@ a clear message. Meshes are deduplicated by content hash (`mesh_pool`), images b
 cap, transfer), textures by (image, color space, wrap) and materials by value. Images are read and
 decoded on a thread pool as they are registered, while the adapter still reads its source
 (`blob.Ahead`); `build` writes them (and decodes the rest) straight into the texel blob (in
-memory, or in the `.wpbr` file).
+memory, or in the `.rayw` file).
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ from raywarp.scene.images import decode as imaging
 from raywarp.scene.images.colorspace import ColorSpace, code, texel_transfer, texture_space
 from raywarp.scene.images.mips import Transfer
 from raywarp.scene.lighting import checks as light_checks
-from raywarp.scene.model import checks, lights, wpbr
+from raywarp.scene.model import checks, lights, rayw
 from raywarp.scene.model.lights import Cameras, Environments, Lights
 from raywarp.scene.model.material import Displacement, Material, OpenPbrExtras
 from raywarp.scene.model.report import LoadReport
@@ -369,8 +369,8 @@ class SceneBuilder:
     """Number of instances."""
     return len(self._instances)
 
-  def read_states(self) -> dict[str, wpbr.Dependency]:
-    """The state of every image file read so far (fstat when read: `wpbr.record` reuses them),
+  def read_states(self) -> dict[str, rayw.Dependency]:
+    """The state of every image file read so far (fstat when read: `rayw.record` reuses them),
     once the reads ahead are done."""
     return self._images.read_states()
 
@@ -412,7 +412,7 @@ class SceneBuilder:
     """Assembles the scene and decodes its images.
 
     Args:
-      path: write the scene to this `.wpbr` file while decoding (images are decoded straight
+      path: write the scene to this `.rayw` file while decoding (images are decoded straight
         into the file) and return it memory-mapped from there.
       mips: store full mip chains (box filter; sRGB filtered in linear space).
       threads: image decode threads, at least 1 (None: the CPU count, at most 32).
@@ -471,7 +471,7 @@ class SceneBuilder:
       scene.images.data = data
       return scene
 
-    def write_blob(writer: wpbr.Writer) -> None:
+    def write_blob(writer: rayw.Writer) -> None:
       """Decodes the images straight into the file's blob, then stores each content once."""
       decode(layout.sink(lambda offset, level: writer.write("images.data", level, offset)))
       writer.shrink("images.data", compact(lambda s, d, n: writer.move("images.data", s, d, n)))

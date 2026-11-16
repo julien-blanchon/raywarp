@@ -111,7 +111,7 @@ class Meshes(Table):
   color_idx: Rows[np.int32, 3]
 
   def stored_rows(self) -> dict[str, Rows[np.int32, 3]]:
-    """The optional corner-index tables (`SPARSE_ROWS`) as a `.wpbr` stores them: the rows of the
+    """The optional corner-index tables (`SPARSE_ROWS`) as a `.rayw` stores them: the rows of the
     meshes with the attribute only (`expanded_rows` restores them).
 
     Raises:
@@ -131,7 +131,7 @@ class Meshes(Table):
 
   @staticmethod
   def expanded_rows(arrays: dict[str, Array]) -> dict[str, Array]:
-    """`arrays` (a `.wpbr`'s mesh columns) with the optional corner-index tables of `stored_rows`
+    """`arrays` (a `.rayw`'s mesh columns) with the optional corner-index tables of `stored_rows`
     restored to one row per triangle (-1 for the meshes without the attribute). A table no mesh
     has is a read-only broadcast of -1 (no memory: 12 B a triangle otherwise, ~110 MB on a 9 M
     triangle stage); a partial one is expanded."""
@@ -169,7 +169,7 @@ class Meshes(Table):
     )
 
 
-# Corner-index tables of optional attributes -> their per-mesh count column: a `.wpbr` stores the
+# Corner-index tables of optional attributes -> their per-mesh count column: a `.rayw` stores the
 # rows of the meshes with the attribute only (`Meshes.stored_rows`).
 SPARSE_ROWS: Final = {"uv1_idx": "uv1_num", "color_idx": "color_num"}
 

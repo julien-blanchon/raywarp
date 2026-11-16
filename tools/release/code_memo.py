@@ -24,7 +24,7 @@ from setuptools.command.build_py import build_py
 
 def _code_digest(path: Path) -> ModuleType:
   """`raywarp/cache/code_digest.py` at `path`, imported alone (standard library only)."""
-  spec = importlib.util.spec_from_file_location("_wpbr_code_digest", path)
+  spec = importlib.util.spec_from_file_location("_raywarp_code_digest", path)
   if spec is None or spec.loader is None:
     raise RuntimeError(f"cannot load {path}")
   module = importlib.util.module_from_spec(spec)

@@ -51,7 +51,7 @@ def test_a_stage_without_mdl_needs_no_sdk(tmp_path, no_wheel):
 
 
 def test_the_cache_key_names_the_mdl_sdk_and_the_mdl_paths(tmp_path, monkeypatch):
-  """A .wpbr read with another bundled MDL SDK, or with other MDL search paths, is not reused."""
+  """A .rayw read with another bundled MDL SDK, or with other MDL search paths, is not reused."""
   stage = tmp_path / "s.usda"
   monkeypatch.delenv("MDL_USER_PATH", raising=False)
   base = rw.formats.usd.cache_key(stage)
@@ -65,7 +65,7 @@ def test_the_cache_key_names_the_mdl_sdk_and_the_mdl_paths(tmp_path, monkeypatch
 
 def test_code_modules_are_not_dependencies(tmp_path, monkeypatch):
   """raywarp's MDL library and the bundled SDK's modules are code (versioned by the cache key), at
-  another path on every machine: never `.wpbr` dependencies (a prepared scene went stale on every
+  another path on every machine: never `.rayw` dependencies (a prepared scene went stale on every
   other machine); the stage's own modules and textures are."""
   from types import SimpleNamespace
 

@@ -3,7 +3,7 @@ class census.
 
   python -m tools.prebuilt.classes --census A.json [--census B.json ...] [--axes C.json] [--write]
 
-Each census is a `internal/benchmarks/lab/scene_keys.py --untiered` output (every row's `class`: the
+Each census is an untiered scene-key census (development repository only; every row's `class`: the
 `tiers.CLASSES` flags of the scene's own build, then its loop and plane forms). The sets:
 every class combination a scene uses, then up to a budget their one-class neighbours (one class
 added or removed: what a new scene most likely uses) in order of what they save, kept consistent

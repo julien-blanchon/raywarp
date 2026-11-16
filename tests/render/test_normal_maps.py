@@ -1,6 +1,6 @@
 """Tangent-space normal maps (scene/model/normal_map.py): the canonical convention (+Y along
 +dp/dv), the per-axis transform in the binding's scale / bias, the device's texel map, the gated
-unclamped decode, validation and the `.wpbr` round trip."""
+unclamped decode, validation and the `.rayw` round trip."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ from raywarp.core.kernels import pixel
 from raywarp.core.kernels.abi.features import Features
 from raywarp.core.pipeline.upload.materials import normal_rows, scaled_normal_maps
 from raywarp.core.trace.rays.primary import PINHOLE
-from raywarp.scene.model import normal_map, wpbr
+from raywarp.scene.model import normal_map, rayw
 from raywarp.scene.model.types import TextureId
 
 # A tilt of 30 degrees towards +x and 30 towards +y (both tangent axes, so a flip of one shows).
@@ -227,15 +227,15 @@ def test_inward_normal_maps_are_rejected():
   )
 
 
-def test_wpbr_round_trip_keeps_the_per_axis_transform(tmp_path):
+def test_rayw_round_trip_keeps_the_per_axis_transform(tmp_path):
   b = rw.SceneBuilder()
   tex = b.add_texture(encode(TILT), colorspace="linear")
   scale, bias = normal_map.unpack((0.5, -2.0))
   ref = rw.scene.TextureRef(tex, scale=scale, bias=bias)
   mat = b.add_material(rw.Material(textures=((rw.scene.Slot.GEOMETRY_NORMAL, ref),)))
   b.add_instance("mesh", mesh=b.add_mesh(QUAD, np.array([[0, 1, 2], [0, 2, 3]]), uvs=UV_UP), material=mat)
-  b.build().save(tmp_path / "n.wpbr")
-  loaded = rw.Scene.load(tmp_path / "n.wpbr")
-  assert wpbr.VERSION >= 9 and "ext_normal_scale" not in loaded.materials.SCHEMA
+  b.build().save(tmp_path / "n.rayw")
+  loaded = rw.Scene.load(tmp_path / "n.rayw")
+  assert rayw.VERSION >= 9 and "ext_normal_scale" not in loaded.materials.SCHEMA
   np.testing.assert_array_equal(loaded.materials.tex_scale[0, rw.scene.Slot.GEOMETRY_NORMAL], scale)
   np.testing.assert_array_equal(loaded.materials.tex_bias[0, rw.scene.Slot.GEOMETRY_NORMAL], bias)

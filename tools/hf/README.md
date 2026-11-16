@@ -1,26 +1,25 @@
 # HF compute and bucket: `python -m tools.hf`
 
 The one way to run work on Hugging Face Jobs, manage the bucket caches and prepared scenes, and
-track spend (the kernel-build pipeline launches its jobs with it: tools/prebuilt). The development
-repository's `python -m internal.tools.hf` adds the dev sandboxes and the test runs
-(internal/tools/hf/README.md). Developer tooling outside the library (standard library + the
-`hf` CLI, logged in on the machine; the benchmark registry's prepared scenes, `check-prepared` /
-`prepare` / `run --needs-prepared`, are `python -m internal.tools.hf`'s: they import
-`internal/benchmarks/scenes.py`, so use the project venv). Run it from the worktree whose HEAD you want to ship:
+track spend (the kernel-build pipeline launches its jobs with it: tools/prebuilt). Developer
+tooling outside the library (standard library + the `hf` CLI, logged in on the machine). The
+maintainers' development repository extends this CLI with dev sandboxes, test runs and the
+preparation of its benchmark scenes; those parts are not in the public repository. Run it from the
+worktree whose HEAD you want to ship:
 
 ```sh
 PYTHONPATH=. python -m tools.hf --help
 ```
 
-## Rules (operating manual R9, I18)
+## Rules
 
 - **One job per question**, batched, from a **committed** tree (the run uploads `HEAD`; uncommitted
   edits are not shipped and a warning says so). Dry-run on `cpu-upgrade` first.
 - **Flavors:** `cpu-upgrade` ($0.03/h: CPU suites, scene preparation, compile census), `l4x1`
   ($0.80/h: the default GPU: correctness, diagnostics, image diffs, relative A/B, dev sandbox),
   `rtx-pro-6000` ($2.75/h: headline numbers, RTX/OptiX-sensitive checks), `a100-large` ($2.50/h:
-  the Warp path without RT cores), `cpu-performance` ($1.90/h, 32 vCPU: the full CPU suite,
-  `internal.tools.hf test --full`), and two L4 overflows when no L4 is free: `l40sx1` (sm_89, the L4's warm
+  the Warp path without RT cores), `cpu-performance` ($1.90/h, 32 vCPU: the full CPU suite),
+  and two L4 overflows when no L4 is free: `l40sx1` (sm_89, the L4's warm
   cache family) and `a10g-large` (sm_86, a colder family of its own). Nothing else is accepted
   (`config.FLAVORS`).
 - Every job has a **hard timeout** (`--timeout`, the HF job cap) and a **stall watchdog** (`--stall`:
@@ -34,18 +33,18 @@ PYTHONPATH=. python -m tools.hf --help
 ```sh
 python -m tools.hf run --tag fix-env-cpu --flavor cpu-upgrade --timeout 30m --wait -- \
   'python -m pytest -q -n 8 tests/render/test_envmap.py'
-python -m internal.tools.hf run --tag fix-env-l4 --flavor l4x1 --timeout 20m --needs-prepared office_usd,bistro --wait -- \
-  'python -m internal.tools.hf.smoke --scene office_usd --out $HF_OUT/smoke && python internal/benchmarks/my_eval.py --out $HF_OUT'
+python -m tools.hf run --tag fix-env-l4 --flavor l4x1 --timeout 20m --wait -- \
+  'python -m pytest -q -n 2 tests/optix_backend && python -m benchmarks.run --scene franka --png $HF_OUT/franka.png'
 python -m tools.hf ps [-a]            # running (all) raywarp jobs + sandboxes, minutes and $
 python -m tools.hf logs <run> [-f]    # <run> = <date>-<tag> or a job id
 python -m tools.hf status <run>       # status.json
 python -m tools.hf wait <run>         # follow, auto-kill on a stall, fetch
-python -m tools.hf fetch <run>        # runs/<run>/ -> internal/results/hf/<run>/ (no code)
+python -m tools.hf fetch <run>        # runs/<run>/ -> a local results directory (--to; no code)
 python -m tools.hf kill <run>...
 ```
 
 What a run does:
-1. `git archive HEAD` of the worktree (no `internal/results/`, `internal/research/`) → `runs/<YYYY-MM-DD>-<tag>/code.tgz`
+1. `git archive HEAD` of the worktree (without the development repository's results and notes) → `runs/<YYYY-MM-DD>-<tag>/code.tgz`
    + `code.sha256` + `cmd.json`; `--source NAME=REF` adds `sources/NAME.tgz` (that ref's committed
    tree, same exclusions, extracted to `$HF_SOURCES/NAME/` with `COMMIT`: A/B trees).
 2. The command reaches the job base64-encoded (`HF_CMD_B64`; HF parses `--env` values as dotenv lines,
@@ -67,7 +66,7 @@ What a run does:
 Command environment: `HF_OUT` (results: mirrored), `HF_SRC` (the tree), `HF_PY` (the env's python),
 `HF_DEADLINE` (the epoch second the command is stopped at: a command keeps time for its last step),
 `HF_SOURCES`, `HF_ARCH` (`cpu`, `sm89`, `sm120`, ...), `HF_RT` (1: RT cores), `MJPBR_ASSET_DIR=/data/assets`,
-`MJPBR_HOST_CACHE=/work/wpbr_cache` (prepared scenes staged to local disk), the cache variables below,
+`MJPBR_HOST_CACHE=/work/raywarp_cache` (prepared scenes staged to local disk), the cache variables below,
 `MUJOCO_GL` (`egl` on GPUs, `osmesa` on CPU).
 
 `status.json`: `exit`, `reason` (`ok`, `failed`, `timeout`, `stalled`, `terminated`, `bootstrap-failed`,
@@ -80,7 +79,8 @@ every GPU of capability ≥ 7.5 except the compute-only GV100 / GA100 / GH100 / 
 
 **Environments** (`--env`): `project` (default: this repository's lock) and `mjlab` (the pinned mjlab +
 HyperLux plugin competitor environment from `pins/hyperlux-office-v1`, with this tree installed in it;
-HyperLux pinned to `HYPERLUX_VERSION`). `--with ovrtx` adds Omniverse RTX (ovrtx/ovstage pins + its
+HyperLux pinned to `HYPERLUX_VERSION`). `--with fillcuda` adds the kernel fill's NVRTC / nvJitLink wheels (`FILL_CUDA_PACKAGES`: every Warp
+shard of tools/prebuilt/fill_all.sh). `--with ovrtx` adds Omniverse RTX (ovrtx/ovstage pins + its
 shader cache).
 
 **Pins**: [`pins.env`](pins.env) is the only place versions and bucket paths of pinned inputs are
@@ -96,7 +96,7 @@ or save; the entry is [`isolated.sh`](isolated.sh), not `entry.sh`.
 
 ```sh
 python -m tools.hf run --tag alloy-x --flavor rtx-pro-6000 --isolated --timeout 20m \
-  --input scenes=/path/to/scenes --input uv=/path/to/uv --wait -- 'bash internal/benchmarks/competitors/alloy/isolated_job.sh'
+  --input scenes=/path/to/scenes --input uv=/path/to/uv --wait -- 'bash competitor/isolated_job.sh'
 ```
 
 - Inputs: `--input NAME=PATH` (a local file or directory, repeatable) ships in the run directory as
@@ -116,7 +116,7 @@ python -m tools.hf run --tag alloy-x --flavor rtx-pro-6000 --isolated --timeout 
 | Path | Content |
 |---|---|
 | `assets/` | scene sources only (isaac51, showcase, omniverse, unreal, mjcf, menagerie, mujoco, mujoco_warp, hdri) |
-| `prepared/v<format>-c<converter>-l<libraries>/` | prepared `.wpbr` scenes + sidecar JSON + `mdl/` bakes; key = `.wpbr` VERSION + `raywarp.formats.usd.version.CONVERTER` + digest of the job environment's `LIBRARIES` versions |
+| `prepared/v<format>-c<converter>-l<libraries>/` | prepared `.rayw` scenes + sidecar JSON + `mdl/` bakes; key = `.rayw` VERSION + `raywarp.formats.usd.version.CONVERTER` + digest of the job environment's `LIBRARIES` versions |
 | `refs/<renderer>-<version>/` | immutable reference renders |
 | `wheels/` | pinned wheels only |
 | `pins/` | pinned environments (`hyperlux-office-v1`: mjlab, plugin bundle, OptiX headers, uv); `native/`: the native build hook's artifacts (`python tools/native/hook.py fetch`) |
@@ -126,7 +126,7 @@ python -m tools.hf run --tag alloy-x --flavor rtx-pro-6000 --isolated --timeout 
 | `runs/<date>-<tag>/` | one per run: code, `cmd.json`, `run.log`, `stages.txt`, `out/`, `evidence.tgz`, `status.json`; deleted after 14 days unless `runs/<id>/keep` exists |
 | `spend/` | `ledger.jsonl` (snapshot of HF's job records), `budgets.json` |
 
-Keep the mount at `/data`: a prepared `.wpbr` records its sources as absolute `/data/assets/...` paths.
+Keep the mount at `/data`: a prepared `.rayw` records its sources as absolute `/data/assets/...` paths.
 
 ## Caches
 
@@ -134,20 +134,22 @@ Keep the mount at `/data`: a prepared `.wpbr` records its sources as absolute `/
 the `apt` family (the system packages' indexes and `.deb` files: a job installs them offline, and only
 a miss reaches the Ubuntu mirror, each step retried with backoff and timed in the log as `apt <step>:`),
 `<env>-uv` for the uv cache (packages + Python) and
-`<env>-<arch>-warp<version>` for the families `warp`, `cuda` (GPUs), `wpbr` (GPUs: raywarp's cache
+`<env>-<arch>-warp<version>` for the families `warp`, `cuda` (GPUs), `raywarp` (GPUs: raywarp's cache
 directory, `RAYWARP_CACHE_DIR`: texture levels, bakes, MDL conversions and OptiX's module cache,
 which raywarp keeps in its `optix/`), `hyperlux` (mjlab), `ovrtx` (`--with ovrtx`). A job restores the
 newest 2 snapshots of each family (uv: the newest only) into ONE directory set (`UV_CACHE_DIR`,
 `WARP_KERNEL_CACHE_DIR`, `CUDA_CACHE_PATH`, `RAYWARP_CACHE_DIR`, `HYPERLUX_CACHE_DIR` under
 `/work/cache/`) and saves one new snapshot per family that grew: a tar streamed to `<name>.partial`
 on the bucket → rename, so a killed job never leaves a truncated archive (no local copy: a second
-copy of the 16 GB CPU `warp` family filled fill shards' disks). `run --no-cache-save warp,cuda,wpbr`
+copy of the 16 GB CPU `warp` family filled fill shards' disks). `run --no-cache-save warp,cuda,raywarp`
 skips families whose growth is scratch (fill, listing and census jobs); `run --no-cache-restore
-warp,cuda,wpbr` does not restore families the job does not read (a fill compiles into its own root,
-a pack into a fresh OptiX cache; the CPU `warp` family is ~25 GB, 1.5-6 min), and does not save them either. `status.json` is written
-before the save (`"saved": {"all": "pending"}`) and again after it; every `STAGE` line logs the disk use. `wpbr` never saves `.wpbr`
+warp,cuda,raywarp` does not restore families the job does not read (a fill compiles into its own root,
+a pack into a fresh OptiX cache; the CPU `warp` family is ~25 GB, 1.5-6 min), and does not save them either.
+`run --mount OWNER/NAME:PATH` mounts another storage bucket read-write at PATH (the kernel fill's build
+cache at `/cache`: tools/prebuilt/build_cache.py; the job gets no token, the mount is the access). `status.json` is written
+before the save (`"saved": {"all": "pending"}`) and again after it; every `STAGE` line logs the disk use. `raywarp` never saves `.rayw`
 scenes (they live in `prepared/`), a changed code-digest memo alone makes no snapshot, and above
-`HF_WPBR_CACHE_MB` (6 GB) the oldest files (modification time) are dropped before the save.
+`HF_RAYWARP_CACHE_MB` (6 GB) the oldest files (modification time) are dropped before the save.
 
 ```sh
 python -m tools.hf cache show                 # per key/family: snapshots, size, newest; legacy files
@@ -157,23 +159,11 @@ python -m tools.hf cache prune --dry-run      # newest 2 per family; partials > 
 
 ## Prepared scenes
 
-`internal/benchmarks/scenes.py:prepared_dir()` is `/data/prepared/v<VERSION>-c<CONVERTER>-l<libraries>/` in a
-job (`internal/tools/hf/prepared.py:prepared_dir`, next to `$MJPBR_ASSET_DIR`), named from the imported library's
-code and the installed library versions, so a converter or library change points at a new, empty
-directory instead of a stale file, and two environments never share a file. `MJPBR_PREPARED_DIR`
-overrides it. Jobs stage the
-`.wpbr` to local disk before memory-mapping it.
-
-```sh
-python -m internal.tools.hf check-prepared [scene...] [--deps]   # header range reads: format, key, (sources)
-python -m internal.tools.hf prepare office_usd hospital --wait   # cpu-upgrade job: build + publish (.partial + rename)
-```
-
-`check-prepared` compares each file's format version and cache key (source path, options, MDL SDK,
-importer digest of the tree's **committed** HEAD) with the tree; `--deps` also compares every recorded
-source file's size and mtime with the bucket, and flags dependencies outside `/data` (they make a file
-stale on every other machine). `run --needs-prepared a,b` runs the full check and refuses to launch on
-a stale scene.
+Prepared `.rayw` scenes live in the bucket's `prepared/v<VERSION>-c<CONVERTER>-l<libraries>/`, a
+directory named from the importer's code and the installed library versions, so a converter or
+library change points at a new, empty directory instead of a stale file, and two environments never
+share a file. `MJPBR_PREPARED_DIR` overrides it. Jobs stage the `.rayw` to local disk before
+memory-mapping it. Building and checking them is done by the development repository's tooling.
 
 ## Spend
 

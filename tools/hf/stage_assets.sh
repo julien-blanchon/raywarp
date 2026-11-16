@@ -18,7 +18,7 @@ stage_assets() {
     for d in "$root/$parent"/*; do [ -e "$dst/$parent/$(basename "$d")" ] || ln -sfn "$d" "$dst/$parent/$(basename "$d")"; done
   done
   for d in "$root"/*; do [ -e "$dst/$(basename "$d")" ] || ln -sfn "$d" "$dst/$(basename "$d")"; done
-  # The prepared scenes sit next to the asset root (`internal/benchmarks/scenes.prepared_dir`: <assets>/../prepared).
+  # The prepared scenes sit next to the asset root (<assets>/../prepared, where the scene registry looks).
   [ -e "$(dirname "$dst")/prepared" ] || ln -sfn "$(dirname "$root")/prepared" "$(dirname "$dst")/prepared"
   for src in "$@"; do
     rm -rf "$dst/$src"

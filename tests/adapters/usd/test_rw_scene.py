@@ -1,4 +1,4 @@
-"""Format-neutral scene: SceneBuilder dedupe / tables, .wpbr round trip, images, geometry."""
+"""Format-neutral scene: SceneBuilder dedupe / tables, .rayw round trip, images, geometry."""
 
 from __future__ import annotations
 
@@ -17,10 +17,10 @@ from raywarp.core.pipeline.textures import formats
 from raywarp.core.pipeline.upload.lights import derive_lights
 from raywarp.scene.images import decode as imaging
 from raywarp.scene.images import mips
-from raywarp.scene.model import geometry, wpbr, xform
+from raywarp.scene.model import geometry, rayw, xform
+from raywarp.scene.model.rayw import read_header
 from raywarp.scene.model.table import Table
 from raywarp.scene.model.types import NO_MESH, NO_TEXTURE
-from raywarp.scene.model.wpbr import read_header
 
 TRI = np.array([[0, 1, 2]])
 POINTS = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0]], np.float32)
@@ -128,7 +128,7 @@ def test_instances_and_lights():
   assert derived.flags[rect] & rw.scene.LightFlags.SHAPED and not derived.flags[sphere] & rw.scene.LightFlags.SHAPED
 
 
-def test_wpbr_round_trip(tmp_path):
+def test_rayw_round_trip(tmp_path):
   b = rw.SceneBuilder()
   mesh = b.add_mesh(POINTS, TRI, uvs=POINTS[:, :2])
   tex = b.add_texture(np.arange(4 * 4 * 4).astype(np.uint8).reshape(4, 4, 4))
@@ -147,8 +147,8 @@ def test_wpbr_round_trip(tmp_path):
   b.report.drop("x.y", "/p")
   b.meta["k"] = "v"
   mem = b.build()
-  mem.save(tmp_path / "a.wpbr")
-  loaded = rw.Scene.load(tmp_path / "a.wpbr")
+  mem.save(tmp_path / "a.rayw")
+  loaded = rw.Scene.load(tmp_path / "a.rayw")
   for name, array in mem.arrays().items():
     np.testing.assert_array_equal(loaded.arrays()[name], array, err_msg=name)
   assert isinstance(loaded.images.data, np.memmap)
@@ -158,22 +158,22 @@ def test_wpbr_round_trip(tmp_path):
   assert loaded.report.dropped["x.y"] == 1 and loaded.meta["k"] == "v"
   assert loaded.camera("/cam").fovy == pytest.approx(2 * math.degrees(math.atan(0.5)))
   # build(path) writes the same file directly.
-  direct = b.build(tmp_path / "b.wpbr")
+  direct = b.build(tmp_path / "b.rayw")
   np.testing.assert_array_equal(direct.images.level(0), loaded.images.level(0))
-  arrays = read_header(tmp_path / "b.wpbr")["arrays"]
+  arrays = read_header(tmp_path / "b.rayw")["arrays"]
   assert isinstance(arrays, dict) and "images.data" in arrays
 
 
 @pytest.mark.parametrize("to_file", [False, True])
 def test_images_of_equal_content_share_their_bytes(tmp_path, to_file):
   """Images of equal content (two arrays, two files of one image) are stored once: one offset,
-  the blob of the distinct contents only (in memory and in a `.wpbr`, laid out last), every level
+  the blob of the distinct contents only (in memory and in a `.rayw`, laid out last), every level
   read back as decoded; the build counts them."""
   rng = np.random.default_rng(7)
   a, c = (rng.integers(0, 256, (8, 16, 4), dtype=np.uint8) for _ in range(2))
   b = rw.SceneBuilder()
   ids = [b.add_image(img, max_size=None, transfer="srgb") for img in (a, c, a.copy(), a.copy(), c.copy())]
-  s = b.build(tmp_path / "s.wpbr" if to_file else None, mips=True)
+  s = b.build(tmp_path / "s.rayw" if to_file else None, mips=True)
   img = s.images
   offsets = [int(img.offset[i]) for i in ids]
   assert offsets[0] == offsets[2] == offsets[3] and offsets[1] == offsets[4] and offsets[0] != offsets[1]
@@ -183,13 +183,13 @@ def test_images_of_equal_content_share_their_bytes(tmp_path, to_file):
     assert img.level(i, 4).shape == (1, 1, 4)
   assert s.report.counts["images.shared_content"] == 3
   if to_file:
-    layout = wpbr._layout(read_header(tmp_path / "s.wpbr"))
+    layout = rayw._layout(read_header(tmp_path / "s.rayw"))
     assert max(layout, key=lambda n: layout[n][2]) == "images.data"
     assert layout["images.data"][1] == [img.blob_size]
 
 
-def test_wpbr_keeps_the_optional_corner_rows_of_their_meshes_only(tmp_path):
-  """A `.wpbr` stores the second UV set's and the vertex colors' corner indices of the meshes
+def test_rayw_keeps_the_optional_corner_rows_of_their_meshes_only(tmp_path):
+  """A `.rayw` stores the second UV set's and the vertex colors' corner indices of the meshes
   with them only; the load restores one row per triangle (-1 for the others)."""
   b = rw.SceneBuilder()
   quad = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]], np.float32)
@@ -198,10 +198,10 @@ def test_wpbr_keeps_the_optional_corner_rows_of_their_meshes_only(tmp_path):
   b.add_mesh(quad, tris, uvs1=quad[:, :2], colors=np.ones((4, 3), np.float32))
   b.add_mesh(quad * 3, tris, colors=np.full((4, 4), 0.5, np.float32))
   mem = b.build()
-  mem.save(tmp_path / "m.wpbr")
-  layout = wpbr._layout(read_header(tmp_path / "m.wpbr"))
+  mem.save(tmp_path / "m.rayw")
+  layout = rayw._layout(read_header(tmp_path / "m.rayw"))
   assert layout["meshes.uv1_idx"][1] == [2, 3] and layout["meshes.color_idx"][1] == [4, 3]
-  loaded = rw.Scene.load(tmp_path / "m.wpbr")
+  loaded = rw.Scene.load(tmp_path / "m.rayw")
   for name in ("uv1_idx", "color_idx", "tris"):
     np.testing.assert_array_equal(getattr(loaded.meshes, name), getattr(mem.meshes, name), err_msg=name)
   assert (mem.meshes.uv1_idx[:2] == -1).all() and (mem.meshes.color_idx[2:4] >= 0).all()
@@ -372,9 +372,9 @@ def test_default_material_is_a_dielectric():
 
 
 def test_cache_file_name_survives_code_changes():
-  """The code digest is not part of the `.wpbr` file name (a code change rebuilds the same
+  """The code digest is not part of the `.rayw` file name (a code change rebuilds the same
   file: `fresh` still compares the whole key), the source and options are."""
-  from raywarp.scene.model.wpbr import CacheKey
+  from raywarp.scene.model.rayw import CacheKey
 
   key = CacheKey(adapter="usd", source="/scenes/office.usda", options={"max_texture_size": 2048}, code="code-a")
   assert (
@@ -483,7 +483,7 @@ def test_images_read_ahead_match_a_build_decode(tmp_path, monkeypatch, budget):
   from PIL import Image
 
   from raywarp.scene.images import blob
-  from raywarp.scene.model import wpbr
+  from raywarp.scene.model import rayw
 
   rng = np.random.default_rng(1)
   files = [write_png(tmp_path / "a.png", (rng.random((16, 8, 3)) * 255).astype(np.uint8))]
@@ -497,7 +497,7 @@ def test_images_read_ahead_match_a_build_decode(tmp_path, monkeypatch, budget):
     for f in files:
       b.add_texture(f)
       b.add_texture(f, colorspace="linear", max_size=4)
-    assert b.read_states() == {str(f): wpbr.stat_files([str(f)])[0] for f in files}
+    assert b.read_states() == {str(f): rayw.stat_files([str(f)])[0] for f in files}
     return b.build(mips=True)
 
   ahead, at_build = build(budget), build(0)
@@ -528,7 +528,7 @@ def test_images_decoded_ahead_are_released_after_build(tmp_path, monkeypatch):
   for name in ("a", "b", "c"):
     b.add_texture(write_png(tmp_path / f"{name}.png", (rng.random((8, 8, 3)) * 255).astype(np.uint8)))
   b.add_texture(np.zeros((4, 4, 4), np.uint8))  # an array: probed and decoded at build
-  scene = b.build(tmp_path / "s.wpbr")
+  scene = b.build(tmp_path / "s.rayw")
   gc.collect()
   assert len(refs) == 3 and all(r() is None for r in refs)
   assert scene.nimage == 4 and all(p.base is None for p in b._images._ahead.results())

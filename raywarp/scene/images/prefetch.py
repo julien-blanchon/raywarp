@@ -1,4 +1,4 @@
-"""Background reads of the files a rebuild will read: the dependency list of the stale `.wpbr`.
+"""Background reads of the files a rebuild will read: the dependency list of the stale `.rayw`.
 
 On a network file system (e.g. a bucket mount: ~25 ms per uncached lookup, ~0.2 s per first
 read of a file, ~5 reads in flight) a cold build is mostly waiting: USD opens its layers one
@@ -20,7 +20,7 @@ from collections.abc import Iterable
 from typing import Final, final
 
 from raywarp.scene.images.blob import worker_count
-from raywarp.scene.model.wpbr import Dependency
+from raywarp.scene.model.rayw import Dependency
 
 # Reads in flight (the mount serves ~5 at full speed; more hide its per-file latency).
 THREADS: Final = 32
@@ -59,7 +59,7 @@ class Prefetch:
   def __init__(self, files: Iterable[Dependency], threads: int = THREADS) -> None:
     """Starts reading `files` (smallest first); rejects a worker count below 1."""
     order = sorted(files, key=lambda d: (d.size, d.path))
-    self._pool = concurrent.futures.ThreadPoolExecutor(max(1, min(worker_count(threads), len(order))), "wpbr-prefetch")
+    self._pool = concurrent.futures.ThreadPoolExecutor(max(1, min(worker_count(threads), len(order))), "raywarp-prefetch")
     self._stop = threading.Event()
     self._futures = {d.path: self._pool.submit(_read, d.path, self._stop) for d in order}
 

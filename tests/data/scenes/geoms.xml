@@ -1,6 +1,6 @@
 <mujoco model="geoms">
   <!-- Every MuJoCo geom type with PBR materials, a height field, meshes with and without normals. -->
-  <!-- Written by internal/benchmarks/scenes/generate.py; cameras: internal/benchmarks/feature_scenes.py. -->
+  <!-- Written by the scene generator of the development repository (deterministic: do not edit by hand). -->
   <compiler angle="degree"/>
   <visual>
     <headlight active="0" ambient="0 0 0" diffuse="0 0 0" specular="0 0 0"/>

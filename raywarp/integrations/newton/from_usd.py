@@ -356,7 +356,7 @@ def load_usd(  # noqa: PLR0913  # the model, its stage and keyword-only options
 
   The stage's visuals, materials, lights and cameras, plus the model's shapes not imported from a
   stage (labels not starting with "/", e.g. a ground plane added in code). The stage is read
-  through the `.wpbr` cache when no such shape is added to it. `meta[USD_META]` records the
+  through the `.rayw` cache when no such shape is added to it. `meta[USD_META]` records the
   stage's instance count and copies for the binding.
 
   Args:
@@ -370,7 +370,7 @@ def load_usd(  # noqa: PLR0913  # the model, its stage and keyword-only options
       ones, among those not imported from a stage).
     usd: the USD options of the stage read (`raywarp.formats.usd.Options`).
     lighting: lights, ambient, environment and headlight added to the stage's.
-    cache: `.wpbr` cache of the USD host scene (see `rw.formats.usd.load`; on by default).
+    cache: `.rayw` cache of the USD host scene (see `rw.formats.usd.load`; on by default).
     body_paths: optional canonical USD path per Newton body (same order as body_label).
     world_local_roots: one root prim per world. The first is the ingested prototype subtree;
       its static content follows world placement while content outside stays global. Root

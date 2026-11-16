@@ -1,6 +1,6 @@
 """The viewer's scenes: a built-in demo, scene files and scene directories, and their loading.
 
-A scene file is a prepared `.wpbr` host scene, a USD stage (read through the `.wpbr` cache, the
+A scene file is a prepared `.rayw` host scene, a USD stage (read through the `.rayw` cache, the
 `usd` extra), a glTF asset (converted to USD once and cached; lit by the studio rig) or an MJCF
 model (MuJoCo Warp at its initial state, the `mujoco` extra). Every scene is Z-up. A scene opens on
 its first authored perspective camera, else a view framing its bounds.
@@ -24,11 +24,11 @@ from raywarp.viewer.camera import View, as_view, authored_view, bounds, fit, hom
 if TYPE_CHECKING:
   import mujoco
 
-type Format = Literal["demo", "wpbr", "usd", "gltf", "mjcf"]
+type Format = Literal["demo", "rayw", "usd", "gltf", "mjcf"]
 
 # Scene file suffix -> its format.
 FORMATS: Final[dict[str, Format]] = {
-  ".wpbr": "wpbr",
+  ".rayw": "rayw",
   ".usd": "usd",
   ".usda": "usd",
   ".usdc": "usd",
@@ -148,11 +148,11 @@ def demo_view() -> View:
 
 
 def _host(entry: Entry) -> rw.Scene:
-  """The host scene of a demo, `.wpbr`, USD or glTF entry (adapters imported on use)."""
+  """The host scene of a demo, `.rayw`, USD or glTF entry (adapters imported on use)."""
   path = entry.path
   if path is None:
     return demo()
-  if entry.format == "wpbr":
+  if entry.format == "rayw":
     return rw.Scene.load(path)
   if entry.format == "usd":
     import raywarp.formats.usd  # noqa: PLC0415  # the usd extra, on use

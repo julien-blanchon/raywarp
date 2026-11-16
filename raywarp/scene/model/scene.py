@@ -1,6 +1,6 @@
 """Host-side scene description: its tables (`tables.py`, `lights.py`), a load report and metadata.
 
-Nothing here knows the source format; adapters fill a `SceneBuilder`, the `.wpbr` cache stores
+Nothing here knows the source format; adapters fill a `SceneBuilder`, the `.rayw` cache stores
 the arrays as they are, and a load memory-maps them back without any per-object work.
 `raywarp.core.pipeline.upload` turns a Scene into a GpuScene.
 """
@@ -12,7 +12,7 @@ import os
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Final, final, override
 
-from raywarp.scene.model import wpbr
+from raywarp.scene.model import rayw
 from raywarp.scene.model.lights import Cameras, Environments, Lights
 from raywarp.scene.model.report import LoadReport
 from raywarp.scene.model.table import Table
@@ -22,7 +22,7 @@ from raywarp.scene.model.types import Array, Camera, Json
 if TYPE_CHECKING:
   from raywarp.scene.lighting.rig import Lighting
 
-# The tables of a Scene, by attribute name (the `.wpbr` array prefix).
+# The tables of a Scene, by attribute name (the `.rayw` array prefix).
 # Final[...]: typed as the base class (the inferred type is a union of the nine).
 TABLES: Final[Mapping[str, type[Table]]] = {
   "meshes": Meshes,
@@ -47,7 +47,7 @@ class Scene:
 
   Attributes:
     material_extras: the `OpenPbrExtras` rows of `materials` (`Materials.extras` indexes them).
-    meta: JSON metadata (source, adapter options, the cache record of `wpbr.record`).
+    meta: JSON metadata (source, adapter options, the cache record of `rayw.record`).
   """
 
   meshes: Meshes
@@ -153,29 +153,29 @@ class Scene:
 
     return with_lighting(self, lighting)
 
-  def save(self, path: str | os.PathLike[str], write: Mapping[str, Callable[[wpbr.Writer], None]] | None = None) -> None:
-    """Writes the scene as a `.wpbr` file (see `raywarp.scene.model.wpbr`).
+  def save(self, path: str | os.PathLike[str], write: Mapping[str, Callable[[rayw.Writer], None]] | None = None) -> None:
+    """Writes the scene as a `.rayw` file (see `raywarp.scene.model.rayw`).
 
     `write`: arrays the caller writes itself, name -> `fn(writer)` (e.g. the texel blob, decoded
     straight into the file); the scene holds them as placeholders of their final dtype and shape.
     """
     arrays = self.arrays() | {f"meshes.{name}": rows for name, rows in self.meshes.stored_rows().items()}
-    wpbr.save(path, arrays, lambda: {"report": self.report.to_dict(), "meta": self.meta}, write=write)
+    rayw.save(path, arrays, lambda: {"report": self.report.to_dict(), "meta": self.meta}, write=write)
 
   @staticmethod
   def load(path: str | os.PathLike[str]) -> Scene:
-    """Memory-maps a `.wpbr` file (one mmap, one view per array; no pxr / format code)."""
-    return Scene._of(*wpbr.load(path))
+    """Memory-maps a `.rayw` file (one mmap, one view per array; no pxr / format code)."""
+    return Scene._of(*rayw.load(path))
 
   @staticmethod
-  def load_fresh(path: str | os.PathLike[str], key: wpbr.CacheKey, *, verify: wpbr.Verify = "files") -> Scene | None:
-    """`load` of a `.wpbr` file fresh for `key` (`wpbr.fresh`, `verify`), else None."""
-    found = wpbr.load_fresh(path, key, verify=verify)
+  def load_fresh(path: str | os.PathLike[str], key: rayw.CacheKey, *, verify: rayw.Verify = "files") -> Scene | None:
+    """`load` of a `.rayw` file fresh for `key` (`rayw.fresh`, `verify`), else None."""
+    found = rayw.load_fresh(path, key, verify=verify)
     return None if found is None else Scene._of(*found)
 
   @staticmethod
   def _of(arrays: Mapping[str, Array], header: Mapping[str, Json]) -> Scene:
-    """Scene of a loaded `.wpbr` file's arrays and header (its report and metadata)."""
+    """Scene of a loaded `.rayw` file's arrays and header (its report and metadata)."""
     report, meta = header.get("report"), header.get("meta")
     meshes = Meshes.expanded_rows({k.removeprefix("meshes."): v for k, v in arrays.items() if k.startswith("meshes.")})
     return Scene.from_arrays(

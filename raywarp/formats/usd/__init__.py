@@ -5,7 +5,7 @@ import raywarp as rw
 import raywarp.formats.usd
 
 scene = rw.formats.usd.scene("office.usd", cache="~/.cache/raywarp")  # parse once, then mmap
-rw.formats.usd.bake("office.usd", "office.wpbr")  # explicit offline bake
+rw.formats.usd.bake("office.usd", "office.rayw")  # explicit offline bake
 print(scene.model.report)  # what was dropped / approximated, per phase timings
 settings = rw.formats.usd.settings("office.usd")  # the stage's Omniverse render settings
 ```

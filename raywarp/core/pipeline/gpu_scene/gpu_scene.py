@@ -22,7 +22,7 @@ A `GpuScene` holds
 Contract: a `GpuScene` is a pure typed record. Every field is set and means the same for every
 source: per-instance / per-light extras are always present (zeros or -1 if absent), so consumers
 never branch on a missing field. Its only constructors are `rw.upload` (`core/pipeline/upload/`: a
-host scene, `raywarp.scene.Scene` from `SceneBuilder`, `rw.formats.usd.scene` or a `.wpbr` cache;
+host scene, `raywarp.scene.Scene` from `SceneBuilder`, `rw.formats.usd.scene` or a `.rayw` cache;
 the Newton adapter passes its binding) and the MuJoCo adapter (`raywarp.integrations.mujoco.scene`,
 aliasing MuJoCo Warp).
 """

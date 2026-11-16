@@ -55,12 +55,12 @@ not extrapolate an old speedup or startup time to today's setup.
    or `ColorOutput(channels=3, planar=True, dtype="float16")` writes `(nworld * ncam, 3, H, W)`
    channels-first in the kernel; `r.bind_outputs(rgb=tensor_as_warp_array)` makes it render into
    your buffer. Free on the
-   RTX PRO 6000 (-0.3..+1.9 %, `internal/results/checkpoint/gpu4-r1/report.md`).
+   RTX PRO 6000 (-0.3..+1.9 % frame time).
 6. **Never read back per frame**: `out.torch()` / `wp.to_torch` views, no `.numpy()`.
    Recording a video too? Encode from device memory (NVENC) or read back NV12 into pinned buffers
    on a side stream: [recording video](recording.md).
 7. **Warm up** before training (`Renderer.warm`, below), so the first step does not compile.
-8. **Big scenes**: bake the `.wpbr` once (`rw.formats.usd.bake`), keep it on a local disk.
+8. **Big scenes**: bake the `.rayw` once (`rw.formats.usd.bake`), keep it on a local disk.
 
 ## OptiX
 
@@ -75,8 +75,10 @@ fallback: `traversal="optix"` where OptiX cannot run or cannot trace the scene r
 frame of a configuration, in parallel tasks on every CPU core (cached on disk after);
 the OptiX register cap (an internal constant per tier family, `raywarp/core/pipeline/platform/tuning.py`
 `OPTIX_REGISTERS`: 128 for the default, 96 for `FAST`) trades occupancy for spills (the Office is 2.3x faster
-at 128 than at 64; light scenes 10-22 % faster at 64). `internal/results/rt_backend.md` lists what the
-backend supports.
+at 128 than at 64; light scenes 10-22 % faster at 64).
+
+<!-- SHOWCASE: performance/traversal.webp (docs/assets/SHOTS.md) -->
+![OptiX and the software BVH render the same image](assets/performance/traversal.webp)
 
 ## First frame: prebuilt kernels, caches and warm
 
@@ -136,18 +138,18 @@ entries until they fit (a deleted entry is rebuilt on its next use):
 raywarp cache prune --max-gb 20   # or raywarp.cache.prune.prune(max_bytes); `raywarp cache info`: the sizes
 ```
 
-It covers the bakes, textures, PTX, emissive fits, glTF conversions and the `.wpbr` scenes in
+It covers the bakes, textures, PTX, emissive fits, glTF conversions and the `.rayw` scenes in
 `$RAYWARP_CACHE_DIR`; OptiX's module cache bounds itself, an old release's prebuilt kernels
 (`$RAYWARP_CACHE_DIR/kernels/sm<arch>/<content>`) and Warp's kernel cache
 (`warp.clear_kernel_cache()`) are deleted by hand.
 
 Measured before the prebuilt bundle, so the cold column includes compiles the bundle now removes (RTX PRO 6000,
-`internal/results/checkpoint/gpu4-r1/report.md`, OptiX; cold = empty caches):
+OptiX; cold = empty caches):
 
 | scene | cold first frame | warm first frame | where the cold time goes |
 | --- | ---: | ---: | --- |
 | DamagedHelmet | 30.9 s | 2.55 s | OptiX PTX compile 15.5 s (the light-grid bake waits for it) |
-| Office (Isaac) | 65.6 s | 15.1 s | warm: host load 11.4 s + upload 5.1 s from a cached `.wpbr` |
+| Office (Isaac) | 65.6 s | 15.1 s | warm: host load 11.4 s + upload 5.1 s from a cached `.rayw` |
 
 Fill them ahead of a run with `Renderer.warm`: the constructor's arguments (one word changed
 from the run's setup) plus the state its first frame renders. It returns a
@@ -155,7 +157,7 @@ from the run's setup) plus the state its first frame renders. It returns a
 frame would: the Warp modules load (compiled when missing), the OptiX modules the frame binds are
 created into OptiX's disk cache, the structures are built and the bakes stored. A renderer of the
 same configuration then starts at once, in this process or a later one. The scene's own
-preparation is the setup's usual code: `raywarp.formats.usd.load(path)` converts a stage into the `.wpbr`
+preparation is the setup's usual code: `raywarp.formats.usd.load(path)` converts a stage into the `.rayw`
 cache once (on by default; a second load maps it: 0.4-0.6 s for an Isaac prop that converts in
 3-9 s), `upload` fills the texture cache.
 
@@ -213,8 +215,7 @@ What is guaranteed (OptiX, `performance.kernels="prebuilt"`, the default):
   `Renderer.explain()` names it). The test suite proves it on the CPU through the real
   resolution (`tests/unit/test_zero_compile.py`: 1 236 points, `tools/prebuilt/zero.py`); the
   pairs of changes are walked too (`python -m tools.prebuilt.zero walk 2`, sharded on a CPU job:
-  124 008 points, 30 holes besides the lens cameras, which no longer compile), their remaining holes listed in
-  `internal/research/kb/lanes/W9-HOLES.md` and `internal/research/kb/lanes/W9-PRESET-IMPL.md`. Alpha cut-outs on
+  124 008 points, 30 holes besides the lens cameras, which no longer compile). Alpha cut-outs on
   any geometry kind (meshes, boxes, spheres, capsules, ellipsoids, cylinders, planes) share one
   PTX: the alpha test runs in each kind's hit programs and the plane queries (the 24 pair holes
   of cut-outs on analytic shapes are closed; `test_zero_compile.py` routes every recipe there).
@@ -277,7 +278,7 @@ build, below) and `performance.kernels="scene"` compile by design.
 ## Running on the CPU
 
 The renderer runs unchanged on Warp's CPU device, with images within a few 1/255 of the GPU's
-(`internal/benchmarks/regression.py check --device cuda:0` against the CPU references). A Warp CPU launch
+(the maintainers' regression suite compares the two devices). A Warp CPU launch
 runs on one core; the renderer splits its render launch (the megakernel, in 4 bands of rays per
 core) and the deferred display over every core of the process's affinity, so one renderer uses
 the whole machine and the images are bit-identical to one launch. Several renderers in one
@@ -294,8 +295,7 @@ with wp.ScopedDevice("cpu"):
 Measured against other CPU renderers (32-vCPU EPYC 7R13, Franka in a small room, 512^2, images
 per second): raywarp FAST 22.0 (1 world) to 26.2 (4 worlds), default 21.0 to 24.9 (one core
 before the bands: 1.7 / 1.6), MuJoCo's OpenGL renderer through OSMesa 7.7 (shadow maps on),
-PyBullet's TinyRenderer 3.9, MuJoCo Warp's renderer on the CPU 3.3
-(`internal/benchmarks/specs/w14_kernel/cpu.sh`, `internal/research/kb/lanes/W14-KERNEL.md`). The first CPU frame
+PyBullet's TinyRenderer 3.9, MuJoCo Warp's renderer on the CPU 3.3. The first CPU frame
 compiles the CPU kernels once (~25 s wall on 32 cores).
 
 ## Developing kernel code
@@ -338,9 +338,13 @@ do not scale. Why we ray-trace, and where a rasteriser would still win:
 ## Measuring
 
 ```bash
-python internal/benchmarks/run.py run --spec internal/benchmarks/specs/smoke.json --out internal/results/smoke   # throughput, cold / warm
-python internal/benchmarks/warmstart.py --scenes damaged_helmet --runs cold,warm --out internal/results/start   # start-up stages
+python -m benchmarks.run --scene franka --worlds 64 --res 512   # ms/frame, images/s, first frame, compiles
+python -m benchmarks.run --scene franka --worlds 64 --res 512   # again: the warm first frame
 ```
+
+[Benchmark](benchmark.md) describes the script and its scenes. To time your own scene, time
+`r.render(...)` after one warm-up frame and synchronise the device (`wp.synchronize_device()`)
+before reading the clock; `Renderer.explain()` names the kernel tier and cost class it runs.
 
 For a Renderer created under `raywarp.core.pipeline.platform.tuning.override(counters=True)` (an internal debug
 build), `r.counters()` gives per-pixel means of what the frame did
@@ -356,62 +360,17 @@ counter table uses int64 totals: 13 columns x 8 bytes = 104 bytes/world (52 KiB 
 This includes storage with counters disabled. Large pixel/sample/light products can exceed
 32-bit totals; counter-enabled runs are diagnostic and have no throughput claim.
 
-## Recorded numbers at policy sizes (512^2 and 1024^2)
+## Recorded numbers
 
-16 cameras per launch (16 worlds x 1 camera; the G1: 8 worlds x 2 cameras), OptiX, CUDA graph,
-ms per launch (all 16 images); code of `core-refactor` 0272b41, 2026-10-28
-(`internal/results/history/post_release/preset_512/README.md`), under the presets of the time: "default"
-is the then `balanced` preset, which still had coarse probe GI, `aces_rtx` and adaptive edge AA 2
-(since removed); today's default uses probe GI resampled into the ambient cube, `pbr_neutral` and
-light grid "auto". "unlit" was the `fastest` preset, `FAST` the `training_fast` preset. The
-historical Office measurement attributed 18 % additional frame time to GI at 256^2
-(`internal/results/history/benchmark_matrix/`); it does not establish the current default's net performance.
+<!-- BENCH: 0.4.0 measurements go here (filled by the BENCH lane) -->
 
-| scene | size | GPU | depth + seg | unlit | `FAST` | default | quality |
-| --- | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| Office (Isaac) | 512^2 | RTX PRO 6000 | 0.29 | 0.45 | 2.4 | 12.4 | 68 |
-| Office (Isaac) | 1024^2 | RTX PRO 6000 | 0.85 | 1.4 | 8.8 | 41 | 254 |
-| Hospital (Isaac) | 512^2 | RTX PRO 6000 | 0.30 | 0.46 | 2.2 | 12.7 | 71 |
-| Hospital (Isaac) | 1024^2 | RTX PRO 6000 | 0.90 | 1.4 | 7.8 | 43 | 263 |
-| aloha (MuJoCo Warp) | 512^2 | RTX PRO 6000 | 0.26 | 0.34 | 0.92 | 2.4 | 6.4 |
-| aloha (MuJoCo Warp) | 1024^2 | RTX PRO 6000 | 0.74 | 1.0 | 3.2 | 7.1 | 23 |
-| G1 (Newton) | 512^2 | RTX PRO 6000 | 0.35 | 0.37 | 0.45 | 1.3 | 2.9 |
-| G1 (Newton) | 1024^2 | RTX PRO 6000 | 0.89 | 0.96 | 1.3 | 4.0 | 10.7 |
-| Office (Isaac) | 512^2 | L4 | 0.86 | 1.4 | 11.5 | 52 | 341 |
-| Office (Isaac) | 1024^2 | L4 | 3.9 | 6.2 | 48 | 196 | 1341 |
-| Hospital (Isaac) | 1024^2 | L4 | 4.0 | 6.3 | 46 | 206 | 1486 |
-| aloha (MuJoCo Warp) | 1024^2 | L4 | 3.5 | 5.3 | 18 | 36 | 124 |
-| G1 (Newton) | 1024^2 | L4 | 3.5 | 3.9 | 5.9 | 19 | 58 |
+Measured on raywarp 0.4.0 with `python -m benchmarks.run` (one camera per world, OptiX, prebuilt
+kernels; ms per frame of the whole batch):
 
-Renderer memory (Warp mempool growth, per camera): 1-3 MB at 512^2 and 4-9 MB at 1024^2 for
-depth + seg / unlit / `FAST` (historical, before its GI); the historical default 11-15 / 31-34 MB
-(26 MB of it at 1024^2 the edge buffers of the since removed adaptive AA), quality 20-24 / 69-75
-MB; these historical memory figures do not describe the current default.
-
-**Against Omniverse RTX** (the G1 scene of `internal/benchmarks/rtx_batched.py`, 8 worlds x 2 cameras,
-RTX PRO 6000, ms per step of the 16 images): RTX RealTimePathTracing 15.2 (512^2) / 41.2
-(1024^2), its Minimal mode 2.4 / 8.3; ours `FAST` 0.45 / 1.27, the default 1.32 / 4.04,
-quality 2.95 / 10.7: the default is 10-12x RTX's path tracer, `FAST` 5-7x its Minimal
-mode.
-
-## Recorded numbers at 64^2-256^2 (an earlier checkpoint)
-
-RTX PRO 6000 Blackwell, an earlier version of this code (`internal/results/checkpoint/gpu4-r1/report.md`,
-`internal/results/history/m6/README.md`); camera-frames per second, one camera per world:
-
-| scene | worlds x resolution | settings | software BVH | OptiX |
+| scene | worlds x resolution | GPU | `FAST` | default |
 | --- | --- | --- | ---: | ---: |
-| DamagedHelmet | 4096 x 64^2 | `FAST` | 309k | 1.29M |
-| DamagedHelmet | 4096 x 64^2 | default | 194k | 626k |
-| ANYmal C | 4096 x 64^2 | default | | 1.13M |
-| DamagedHelmet | 1024 x 128^2 | RTX look (GI; measured with 64-frame accumulation, since removed) | | 88.6k |
-| Office (Isaac, 16 x 256^2) | 16 x 256^2 | default | | 4.5k (10.7 ms / frame) |
-| Hospital (Isaac, 16 x 256^2) | 16 x 256^2 | default | | 9.5k (5.1 ms / frame) |
-
-The default rows predate its coarse GI (`internal/results/history/phase_a/decisions/`): on an L4
-GI costs DamagedHelmet 4096 x 64^2 19 % (147k -> 119k frames/s) and Office / Sponza 960 x 540
-+20-22 % per frame; the `FAST` row is unchanged.
-
-On an L4 (M5 fly-through, 960 x 540, OptiX, `internal/results/history/m5/summary/README.md`):
-Office / Warehouse / Hospital, the default, 8.8 / 6.9 / 4.7 ms per frame, `FAST`
-2.0 / 1.5 / 1.3 ms.
+| franka | 64 x 512^2 | RTX PRO 6000 | _to be measured_ | _to be measured_ |
+| franka | 64 x 512^2 | L4 | _to be measured_ | _to be measured_ |
+| showcase | 16 x 1024^2 | RTX PRO 6000 | _to be measured_ | _to be measured_ |
+| sponza | 16 x 1024^2 | RTX PRO 6000 | _to be measured_ | _to be measured_ |
+| franka (software BVH) | 64 x 512^2 | H100 | _to be measured_ | _to be measured_ |

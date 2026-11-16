@@ -285,8 +285,8 @@ def test_exported_fisheye_projects_through_kannala_brandt() -> None:
 
 
 def test_camera_log_writes_the_episode_cameras(tmp_path) -> None:  # pytest fixture
-  """The datagen camera log (internal/benchmarks/datagen/sinks.CameraLog) writes every frame's
-  exported cameras, frame indices and timestamps beside the episode's outputs."""
+  """The datagen camera log (`datagen.sinks.CameraLog`, development repository only) writes every
+  frame's exported cameras, frame indices and timestamps beside the episode's outputs."""
   import json
 
   from conftest import internal_module

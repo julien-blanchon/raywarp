@@ -55,23 +55,25 @@ def test_layout_and_pins(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
 
 
 def test_publish_refuses_a_published_unit(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-  """A content key or pack the bucket holds is never uploaded again; new ones upload, each
-  file list last; a bucket that cannot be listed stops the publish."""
+  """A content key or pack the bucket holds with other bytes is never uploaded again; new ones
+  upload, each file list last; a bucket that cannot be listed stops the publish."""
   kernels.layout(_bundle(tmp_path), tmp_path / "out", pack=tmp_path / "pack", workers=2)
   calls: list[list[str]] = []
   held: set[str] = {"sm120/c0"}
 
-  def fake(cmd: list[str], **_kwargs: object) -> subprocess.CompletedProcess[str]:
+  def fake(cmd: list[str], **_kwargs: object) -> subprocess.CompletedProcess[str | bytes]:
     calls.append(cmd)
     if cmd[:3] == ["hf", "buckets", "list"]:
       rel = cmd[3].split("/", 2)[2].removesuffix(f"/{store.FILES}")
       return subprocess.CompletedProcess(cmd, 0, store.FILES if rel in held else "", "")
+    if cmd[2] == "cp" and cmd[-1] == "-":
+      return subprocess.CompletedProcess(cmd, 0, b"{}", b"")  # another fill's file list
     return subprocess.CompletedProcess(cmd, 0, "", "")
 
   monkeypatch.setattr(kernels.subprocess, "run", fake)
-  with pytest.raises(SystemExit, match="already published"):
+  with pytest.raises(SystemExit, match="already published with other bytes"):
     kernels.publish(tmp_path / "out")
-  assert all(c[2] == "list" for c in calls)
+  assert all(c[2] == "list" or c[-1] == "-" for c in calls)
   held.clear()
   calls.clear()
   kernels.publish(tmp_path / "out")
@@ -93,7 +95,7 @@ def test_publish_refuses_a_published_unit(tmp_path: Path, monkeypatch: pytest.Mo
 
 def test_one_pins_file_for_every_architecture(tmp_path: Path) -> None:
   """A multi-architecture layout (an OptiX bundle with its pack, a software-path bundle without)
-  pins both in one file (format 3): the bucket they are published to, each bundle's content, file
+  pins both in one file (format 4): the bucket they are published to, each bundle's content, file
   list and Warp release, and its packs by driver (the sha256 of the pack's file list); the
   runtime's `store.pin` reads it, and downloads from that bucket (`store.remote`)."""
   kernels.layout(_bundle(tmp_path), tmp_path / "out", pack=tmp_path / "pack", workers=2)
@@ -105,7 +107,7 @@ def test_one_pins_file_for_every_architecture(tmp_path: Path) -> None:
   to = tmp_path / "pins.json"
   kernels.pin(tmp_path / "out", to, bucket="owner/old-kernels")
   pins = json.loads(to.read_text())
-  assert pins["format"] == kernels.PINS_FORMAT == 3 and sorted(pins["bundles"]) == ["120", "80"]
+  assert pins["format"] == kernels.PINS_FORMAT == 4 and sorted(pins["bundles"]) == ["120", "80"]
   assert pins["bucket"] == "owner/old-kernels"
   pack_files = tmp_path / "out" / "sm120" / "c0" / "optix" / "580" / store.FILES
   assert pins["bundles"]["120"]["packs"] == {"580": hashlib.sha256(pack_files.read_bytes()).hexdigest()}

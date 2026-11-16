@@ -51,7 +51,7 @@ def binding(  # noqa: PLR0913  # the scene, the model and keyword-only options
   device: wp.DeviceLike = None,
 ) -> NewtonBinding:
   """Bind: the `NewtonBinding` of a host scene of `load` / `load_usd`, rebuilt from each model
-  shape's Newton shape id (`Instances.source`; e.g. a `.wpbr`-cached scene) and, for a `load_usd`
+  shape's Newton shape id (`Instances.source`; e.g. a `.rayw`-cached scene) and, for a `load_usd`
   scene, the stage's rigid-body prims matched to the model's bodies.
 
   Args:

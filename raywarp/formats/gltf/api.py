@@ -6,7 +6,7 @@ that the USD importer reads (`rw.formats.usd.load`), so a glTF asset renders exa
 conversion does in every renderer of a comparison. With a cache, the conversion is kept under
 `<cache dir>/gltf/<name>-<digest>/` keyed by the content of the glTF and every file it references
 plus the converter's code (a changed texture or converter converts again; renaming or moving the
-asset does not), and the stage's host scene goes through the `.wpbr` cache next to it. Without
+asset does not), and the stage's host scene goes through the `.rayw` cache next to it. Without
 one, the conversion lives in a temporary directory for the duration of the read.
 """
 
@@ -27,7 +27,7 @@ from raywarp.core.pipeline.upload.build import upload
 from raywarp.core.pipeline.upload.options import DEFAULT_SCENE_OPTIONS, SceneOptions
 from raywarp.formats.usd import api as usd_api
 from raywarp.formats.usd.options import DEFAULT_OPTIONS, Options
-from raywarp.scene.model import wpbr
+from raywarp.scene.model import rayw
 
 if TYPE_CHECKING:
   import warp as wp
@@ -125,7 +125,7 @@ def load(  # noqa: PLR0913  # the source and keyword-only options
   cache: str | os.PathLike[str] | bool | None = True,  # a location, True (the cache directory) or None
   mips: bool = False,
   threads: int | None = None,
-  verify: wpbr.Verify = "files",
+  verify: rayw.Verify = "files",
 ) -> Scene:
   """Loads a glTF 2.0 file as a host Scene: its USD conversion read by `rw.formats.usd.load`.
 
@@ -136,7 +136,7 @@ def load(  # noqa: PLR0913  # the source and keyword-only options
     lighting: lights, ambient, environment maps and headlight added to the asset's.
     cache: cache directory, True (the default: the cache directory, as `rw.formats.usd.load`; no
       cache when $RAYWARP_CACHE_DIR is empty) or None (no cache: the conversion is temporary).
-      Holds the conversion (`stage`) and the `.wpbr` host scene.
+      Holds the conversion (`stage`) and the `.rayw` host scene.
     mips: store full mip chains in the scene.
     threads: image decode threads.
     verify: what a cached scene's freshness compares besides its key, as `rw.formats.usd.load`:
@@ -157,7 +157,7 @@ def load(  # noqa: PLR0913  # the source and keyword-only options
       _convert(Path(source), out)
       return usd_api.load(out, cache=None, **read)
   converted = stage(source, cache=cache)
-  return usd_api.load(converted, cache=converted.parent, **read)  # the .wpbr named by its key
+  return usd_api.load(converted, cache=converted.parent, **read)  # the .rayw named by its key
 
 
 def scene(  # noqa: PLR0913  # the source and keyword-only options
@@ -170,7 +170,7 @@ def scene(  # noqa: PLR0913  # the source and keyword-only options
   cache: str | os.PathLike[str] | bool | None = True,  # a location, True (the cache directory) or None
   mips: bool = False,
   threads: int | None = None,
-  verify: wpbr.Verify = "files",
+  verify: rayw.Verify = "files",
 ) -> GpuScene[None]:
   """A glTF 2.0 file as a GpuScene on `device`: `load` (see its arguments), then `rw.upload` with
   `options` (the asset's poses are static)."""

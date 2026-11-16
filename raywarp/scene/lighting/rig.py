@@ -4,7 +4,7 @@ camera headlight, given the same way to every adapter (`Lighting`).
 A source without lights (a Newton model), or one that is too dark to debug, gets them here before
 upload: `rw.integrations.newton.scene(model, lighting=...)`, `rw.formats.usd.scene(path,
 lighting=...)`, `rw.integrations.mujoco.scene(mjm, m, lighting=...)`, or `scene.with_lighting(...)`
-on a host `Scene` that is already built (a `.wpbr` file, say). The display-relative quantities (a
+on a host `Scene` that is already built (a `.rayw` file, say). The display-relative quantities (a
 `Light.sun` / `point` / `spot` made without an intensity, the ambient, the headlight, an envmap
 without an intensity) are calibrated so that a white Lambertian surface shows the given color at
 `ev100`: render with the same `exposure.ev100`.

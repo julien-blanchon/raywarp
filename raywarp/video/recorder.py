@@ -229,7 +229,7 @@ def _ring(shape: tuple[int, int, int, int], device: wp.Device) -> tuple[Ring, by
       raise RuntimeError(f"no CUDA IPC handle for the video ring on {device}")
     return ring, handle, None
   tmp = Path("/dev/shm" if Path("/dev/shm").is_dir() else tempfile.gettempdir())
-  fd, name = tempfile.mkstemp(prefix="wpbr_video_", dir=tmp)
+  fd, name = tempfile.mkstemp(prefix="raywarp_video_", dir=tmp)
   os.close(fd)
   host = np.memmap(name, np.uint8, "w+", shape=shape)
   return wp.array(host, dtype=wp.uint8, device="cpu", copy=False), name, Path(name)

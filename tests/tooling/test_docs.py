@@ -7,7 +7,7 @@ requirements are met:
   # docs: skip (why)        never run (a fragment, a placeholder path, a display)
   # docs: requires cuda     needs a CUDA device (graph capture, OptiX)
   # docs: requires torch    needs the named importable modules (several: space separated)
-  # docs: requires assets   needs downloaded assets (internal/tools/fetch_assets.py): never run here
+  # docs: requires assets   needs downloaded assets ($MJPBR_ASSET_DIR): never run here
 
 A page skipped block must not define what a later runnable block uses. The generated settings
 regions (tools/settings_table.py) must be up to date.
@@ -106,7 +106,7 @@ def test_page_snippets_run(page, tmp_path, monkeypatch):
 
 
 def test_generated_settings_regions_are_current(monkeypatch):
-  """docs/settings.md and README.md list the fields as their metadata says (D1); docs/scenes.md the
+  """docs/settings.md lists the fields as their metadata says (D1); docs/scenes.md the
   OpenPBR coverage and the MuJoCo material mapping as the code has them."""
   library_defaults(monkeypatch)
   assert settings_table.stale() == []

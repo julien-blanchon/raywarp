@@ -55,7 +55,7 @@ def sim_pin_mismatches(requires: list[str], installed: dict[str, str]) -> list[s
 
 @pytest.mark.skipif(shutil.which("uv") is None, reason="needs uv")
 def test_newton_sim_group_locks_newtons_mujoco_pins():
-  """The `newton-sim` fork of the lock (Newton's SolverMuJoCo, internal/benchmarks/loop.py) holds
+  """The `newton-sim` fork of the lock (Newton's SolverMuJoCo) holds
   the MuJoCo / MuJoCo Warp of Newton's `[sim]` extra; the default development fork keeps the
   latest pair (MuJoCo Warp 3.17 dropped the `Model.stat` Newton 1.7's solver reads)."""
   sim = locked("--group", "newton-sim", "--group", "bench", "--extra", "newton")

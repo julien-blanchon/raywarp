@@ -12,7 +12,7 @@ from conftest import required
 newton = pytest.importorskip("newton")
 
 import raywarp as rw
-import raywarp.integrations.newton as newton_pbr
+import raywarp.integrations.newton as rw_newton
 from raywarp._base.types import ShapeType
 from raywarp.core.pipeline.worlds.sharing import Layout
 from raywarp.integrations.newton.binding import NewtonBinding
@@ -23,8 +23,8 @@ from raywarp.settings.fields import DEFAULT_EV100, exposure_from_ev100
 def _gpu(model: newton.Model, lighting: rw.Lighting | None = None) -> rw.GpuScene[NewtonState]:
   """The uploaded scene of `rw.integrations.newton.load(model, lighting=lighting)`, bound to the
   model's bodies."""
-  host = newton_pbr.load(model, lighting=lighting)
-  return rw.upload(host, model.device, binding=newton_pbr.binding(host, model))
+  host = rw_newton.load(model, lighting=lighting)
+  return rw.upload(host, model.device, binding=rw_newton.binding(host, model))
 
 
 def _tetra() -> newton.Mesh:
@@ -91,7 +91,7 @@ def test_worlds_of_different_objects_pool_them_and_show_their_own():
   np.testing.assert_allclose(color, [albedo[k] for k in kinds], atol=1e-4)
   features, executables = r.features, _loaded_executables()
   order = [2, 1, 0, 1]
-  view = newton_pbr.StateView(state, world_indices=wp.array(order, dtype=wp.int32, device="cpu"))
+  view = rw_newton.StateView(state, world_indices=wp.array(order, dtype=wp.int32, device="cpu"))
   depth, color = centre(view)
   np.testing.assert_allclose(depth, [top[kinds[w]] for w in order], atol=1e-3)
   np.testing.assert_allclose(color, [albedo[kinds[w]] for w in order], atol=1e-4)
@@ -280,7 +280,7 @@ def test_binding_poses_follow_bodies_per_world_and_state_swaps():
   np.testing.assert_allclose(pos.numpy()[:, 0], [[0.1, 0.0, 1.0], [0.1, 0.0, 1.0]], atol=1e-6)
   r.render(state_1)  # a swapped state is resolved on the call
   np.testing.assert_allclose(pos.numpy()[:, 0], [[0.1, 0.0, 1.0], [1.1, 2.0, 3.0]], atol=1e-6)
-  r.render(newton_pbr.StateView(state_1, world_indices=wp.array([1, 1], dtype=wp.int32)))
+  r.render(rw_newton.StateView(state_1, world_indices=wp.array([1, 1], dtype=wp.int32)))
   np.testing.assert_allclose(pos.numpy()[:, 0], [[1.1, 2.0, 3.0], [1.1, 2.0, 3.0]], atol=1e-6)
   assert r.layout.nshared == 0  # planes stay per world
   assert np.allclose(pos.numpy()[:, 1], 0.0)  # the ground stays put
@@ -337,8 +337,8 @@ def test_usd_visuals_bind_to_bodies_by_prim_path(tmp_path):
   builder.add_shape_box(b, xform=wp.transform((0.3, 0.0, 0.0), wp.quat_identity()), hx=0.1, hy=0.1, hz=0.1)
   model = builder.finalize(device="cpu")
   stage = str(tmp_path / "body.usda")
-  host = newton_pbr.load_usd(model, stage)
-  scene = rw.upload(host, model.device, binding=newton_pbr.binding(host, model, stage=stage))
+  host = rw_newton.load_usd(model, stage)
+  scene = rw.upload(host, model.device, binding=rw_newton.binding(host, model, stage=stage))
   r = rw.Renderer(
     scene,
     nworld=1,
@@ -598,11 +598,11 @@ def _replicated_usd_model(tmp_path: Path, nworld: int) -> tuple[newton.Model, st
 def test_merged_usd_scene_draws_every_world(tmp_path):
   """B28: with merge_worlds (one render world), the USD visuals of every Newton world are drawn."""
   model, path = _replicated_usd_model(tmp_path, 3)
-  merged = newton_pbr.Options(merge_worlds=True)
-  host = newton_pbr.load_usd(model, path, adapter=merged)
+  merged = rw_newton.Options(merge_worlds=True)
+  host = rw_newton.load_usd(model, path, adapter=merged)
   with pytest.raises(ValueError, match="stage="):
-    newton_pbr.binding(host, model, adapter=merged)
-  bound = newton_pbr.binding(host, model, stage=path, adapter=merged)
+    rw_newton.binding(host, model, adapter=merged)
+  bound = rw_newton.binding(host, model, stage=path, adapter=merged)
   scene = rw.upload(host, model.device, binding=bound)
   assert scene.ninstance == 3  # the stage's cube, once per Newton world
   settings = rw.RenderSettings(outputs=rw.Outputs.of("depth"))
@@ -626,17 +626,17 @@ def test_scene_is_a_host_scene_with_the_headlight_as_lights():
   model = builder.finalize(device="cpu")
   ev100 = 2.0
   headlight = rw.Headlight(ambient=(0.1, 0.2, 0.3), diffuse=(0.4, 0.5, 0.6))
-  host = newton_pbr.load(model, lighting=rw.Lighting(headlight=headlight, ev100=ev100))
+  host = rw_newton.load(model, lighting=rw.Lighting(headlight=headlight, ev100=ev100))
   assert isinstance(host, rw.Scene)
   kinds = host.lights.kind.tolist()
   assert kinds == [int(rw.scene.LightKind.CAMERA), int(rw.scene.LightKind.AMBIENT)]
-  gpu = rw.upload(host, model.device, binding=newton_pbr.binding(host, model))
+  gpu = rw.upload(host, model.device, binding=rw_newton.binding(host, model))
   assert gpu.nlight == 0  # display lights have no light slot
   assert gpu.headlight.active
   np.testing.assert_allclose(gpu.headlight.color, (0.4, 0.5, 0.6), rtol=1e-6)
   exposure = exposure_from_ev100(ev100)
   np.testing.assert_allclose(gpu.environment.ambient, np.array([0.1, 0.2, 0.3]) / exposure, rtol=1e-6)
-  dark = rw.upload(newton_pbr.load(model), model.device)
+  dark = rw.upload(rw_newton.load(model), model.device)
   assert not dark.headlight.active and dark.environment.ambient == (0.0, 0.0, 0.0)
 
 
@@ -647,16 +647,16 @@ def test_short_world_indices_raise_instead_of_reading_past_them():
   settings = rw.RenderSettings(outputs=rw.Outputs.of("depth"))
   r = rw.Renderer(_gpu(model), nworld=2, cameras=[rw.CameraSpec()], resolution=(4, 4), settings=settings)
   with pytest.raises(ValueError, match="world_indices has 1 entries for 2 render worlds"):
-    r.render(newton_pbr.StateView(state, world_indices=wp.array([1], dtype=wp.int32)))
+    r.render(rw_newton.StateView(state, world_indices=wp.array([1], dtype=wp.int32)))
 
 
 def test_merged_scene_bound_per_world_raises():
   """A merge_worlds scene (shapes of every world) bound without merge_worlds: a ValueError, not a
   KeyError from the shape lookup."""
   model, _ = _scenery_model(2)
-  host = newton_pbr.load(model, adapter=newton_pbr.Options(merge_worlds=True))
+  host = rw_newton.load(model, adapter=rw_newton.Options(merge_worlds=True))
   with pytest.raises(ValueError, match="merge_worlds=True"):
-    newton_pbr.binding(host, model)
+    rw_newton.binding(host, model)
 
 
 def test_front_end_options_are_render_settings_keys():
@@ -701,12 +701,12 @@ def test_a_scene_of_explicit_shapes_binds_with_the_same_shapes():
   scene.add_world(world())
   model = scene.finalize(device="cpu")
   every = range(model.shape_count)
-  host = newton_pbr.load(model, adapter=newton_pbr.Options(shapes=every))
+  host = rw_newton.load(model, adapter=rw_newton.Options(shapes=every))
   assert host.ninstance == 2
-  bound = newton_pbr.binding(host, model, adapter=newton_pbr.Options(shapes=every))
+  bound = rw_newton.binding(host, model, adapter=rw_newton.Options(shapes=every))
   assert rw.upload(host, model.device, binding=bound).ninstance == 2
   with pytest.raises(ValueError, match="bind with the `shapes` and merge_worlds the scene was built with"):
-    newton_pbr.binding(host, model)
+    rw_newton.binding(host, model)
 
 
 def test_body_quaternions_are_normalised():
@@ -771,7 +771,7 @@ def test_worlds_render_their_own_shape_colors():
   scene.add_world(world((0.9, 0.1, 0.1)))
   scene.add_world(world((0.1, 0.1, 0.9)))
   model = scene.finalize(device="cpu")
-  gpu = newton_pbr.scene(model)
+  gpu = rw_newton.scene(model)
   assert gpu.report.dropped.get("newton.shape_color(per world: world 0's shown)", 0) == 0
   settings = rw.RenderSettings(outputs=rw.Outputs.of("albedo"), gi=rw.settings.GI(enabled=False))
   cam = rw.CameraSpec(fovy=30.0)
@@ -809,7 +809,7 @@ def test_world_colors_off_keeps_world_0s_and_reports_it():
   scene.add_world(world((1.0, 0.0, 0.0)))
   scene.add_world(world((0.0, 0.0, 1.0)))
   model = scene.finalize(device="cpu")
-  adapter = newton_pbr.Options(world_colors=False)
-  gpu = newton_pbr.scene(model, adapter=adapter)
+  adapter = rw_newton.Options(world_colors=False)
+  gpu = rw_newton.scene(model, adapter=adapter)
   assert gpu.report.dropped["newton.shape_color(per world: world 0's shown)"] == 1
-  assert newton_pbr.build.WORLD_COLORS_META not in newton_pbr.load(model, adapter=adapter).meta
+  assert rw_newton.build.WORLD_COLORS_META not in rw_newton.load(model, adapter=adapter).meta

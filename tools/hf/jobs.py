@@ -118,17 +118,18 @@ def launch(
   image: str,
   command: list[str],
   *,
-  volume: str,
+  volumes: list[str],
   flavor: str,
   timeout_s: int,
   env: dict[str, str],
   labels: dict[str, str],
   name: str,
 ) -> str:
-  """Starts a detached job with one volume (`runs.volume`: the bucket, or a run directory);
-  returns its id."""
+  """Starts a detached job with its volumes (`runs.volumes`: the bucket or a run directory, and
+  any other bucket mounted); returns its id."""
   args = ["jobs", "run", "--detach", "--flavor", flavor, "--timeout", f"{timeout_s}s", "--attempts", "1", "--name", name]
-  args += ["--volume", volume]
+  for volume in volumes:
+    args += ["--volume", volume]
   for key, value in env.items():
     args += ["--env", f"{key}={value}"]
   for key, value in {"project": PROJECT_LABEL, **labels}.items():

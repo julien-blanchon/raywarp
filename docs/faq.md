@@ -31,6 +31,9 @@ A room lit through a window, a ceiling above downlights, the inside of a cabinet
 reaches directly. raywarp never adds light behind your back (no hidden per-scene constants):
 these are your knobs, from the most physical to the plainest fill. They combine.
 
+<!-- SHOWCASE: faq/dark_interior.webp (docs/assets/SHOTS.md) -->
+![A dark interior: no fill, lighting.fill, GI](assets/faq/dark_interior.webp)
+
 1. **GI on** (`gi.enabled`, on by default and in `FAST`, off under unlit shading): the light that comes in through the windows or falls on the
    floor bounces around the room, from a probe grid baked on the first frame (per group of
    worlds with equal materials and lights; under continuous per-world randomisation one shared
@@ -134,7 +137,7 @@ back up to 16 worlds once; no later frame is read back.
 Print the load report (`host.report` for USD and host scenes, [scenes](scenes.md#the-load-report)):
 every dropped or approximated attribute is counted with the first prim path that hit it.
 Common causes: a texture path that does not resolve (`DomeLight.texture:file.unresolved`, ...),
-an MDL module that was not downloaded (`internal/tools/fetch_assets.py` follows MDL imports), a UV set
+an MDL module that was not downloaded beside the stage (download the modules its materials import), a UV set
 other than the first two. `surfaces.textures="auto"` turns textures on only when a material
 binds one. MuJoCo: a geom with a material and a non-default `rgba` shows the `rgba` (MuJoCo's
 rule), not the material's color.
@@ -149,7 +152,7 @@ warning that a prebuilt file could not be fetched means a compile (no network: s
 [prebuilt kernels](performance.md#first-frame-prebuilt-kernels-caches-and-warm)); on the CPU the kernels compile
 once (tens of seconds per megakernel, then cached). Warm up before training (`Renderer.warm`)
 with the run's world count, cameras and resolution. A big USD stage spends most of its first load parsing:
-its `.wpbr` is kept on the first load (the default `cache=True`; `rw.formats.usd.bake` ahead of time).
+its `.rayw` is kept on the first load (the default `cache=True`; `rw.formats.usd.bake` ahead of time).
 
 ## A change did not take effect
 
@@ -238,8 +241,7 @@ it does not turn this renderer into a recursive path tracer or physical ground t
   for each view;
 - depth, segmentation, shadows and reflections come from the same rays: no shadow-map or
   G-buffer pass per view and per light;
-- the cost is nearly flat in triangle count (OptiX: 0.53 -> 0.66 ms from 10k to 10M triangles,
-  `internal/results/history/benchmark_matrix`).
+- the cost is nearly flat in triangle count (OptiX: 0.53 -> 0.66 ms from 10k to 10M triangles).
 
 **What research and industry use:**
 
@@ -251,10 +253,9 @@ it does not turn this renderer into a recursive path tracer or physical ground t
 - ManiSkill3 / SAPIEN, Habitat, Genesis, PyBatchRender: GL / Vulkan rasterisers; their
   ray-traced modes render one environment at a time.
 
-The field moved from raster batching (bps3d) to ray tracing (Madrona, MJWarp, Newton). Sources
-and numbers: `internal/results/history/research/survey_2026_10_28`.
+The field moved from raster batching (bps3d) to ray tracing (Madrona, MJWarp, Newton).
 
-**Measured (one RTX PRO 6000; `internal/results/history/research/raster_vs_rt`):** against MuJoCo's
+**Measured (one RTX PRO 6000):** against MuJoCo's
 OpenGL rasteriser (EGL on the GPU), at the training resolutions 512^2 and 1024^2:
 
 | scene | cameras x res | ours unlit | ours `FAST` | MuJoCo EGL (no readback) |

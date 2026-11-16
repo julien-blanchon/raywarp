@@ -20,12 +20,12 @@ from raywarp.core.build.kernel_cache import policy, store
 def test_every_command_parses() -> None:
   p = cli.parser()
   assert p.parse_args(["view", "a.usd", "--port", "0"]).run.__module__ == "raywarp.viewer.command"
-  args = p.parse_args(["record", "s.wpbr", "o.mp4", "--size", "64x32", "--worlds", "4", "--settings", "fast"])
+  args = p.parse_args(["record", "s.rayw", "o.mp4", "--size", "64x32", "--worlds", "4", "--settings", "fast"])
   assert args.size == (64, 32) and args.worlds == 4 and args.run is record.run
   assert p.parse_args(["convert", "a.glb", "a.xml", "--normalize", "0.3"]).normalize == 0.3
   assert p.parse_args(["kernels", "fetch", "--arch", "86"]).arch == 86
   assert p.parse_args(["cache", "prune", "--max-gb", "2"]).max_gb == 2.0
-  assert p.parse_args(["prepare", "a.usd", "-o", "b.wpbr"]).out == Path("b.wpbr")
+  assert p.parse_args(["prepare", "a.usd", "-o", "b.rayw"]).out == Path("b.rayw")
   for bad in (["warm"], ["explain"], ["record", "s", "o", "--size", "0x3"], ["cache", "prune"]):
     with pytest.raises(SystemExit):
       p.parse_args(bad)
@@ -36,8 +36,8 @@ def test_cache_info_and_prune(tmp_path: Path, capsys: pytest.CaptureFixture[str]
   (tmp_path / "bakes" / "old.npz").write_bytes(b"x" * 4096)
   (tmp_path / "kernels").mkdir()
   (tmp_path / "kernels" / "k").write_bytes(b"k" * 100)
-  (tmp_path / "scene.wpbr").write_bytes(b"s" * 10)
-  assert prune.sizes(tmp_path) == {"bakes": 4096, "kernels": 100, "wpbr": 10}
+  (tmp_path / "scene.rayw").write_bytes(b"s" * 10)
+  assert prune.sizes(tmp_path) == {"bakes": 4096, "kernels": 100, "rayw": 10}
   assert cli.main(["cache", "info", "--root", str(tmp_path)]) == 0
   assert "bakes" in capsys.readouterr().out
   assert cli.main(["cache", "prune", "--root", str(tmp_path), "--max-gb", "0"]) == 0
@@ -143,7 +143,7 @@ def test_record_renders_and_writes_each_frame(tmp_path: Path, monkeypatch: pytes
   monkeypatch.setattr(raywarp.video, "recorder", fake_recorder)
   assert (
     cli.main(
-      ["record", "s.wpbr", str(tmp_path / "o.mp4"), "--frames", "3", "--worlds", "2", "--size", "64x32", "--device", "cpu"]
+      ["record", "s.rayw", str(tmp_path / "o.mp4"), "--frames", "3", "--worlds", "2", "--size", "64x32", "--device", "cpu"]
     )
     == 0
   )

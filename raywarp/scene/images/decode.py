@@ -22,8 +22,8 @@ import numpy as np
 
 from raywarp.scene.images import exr, files, hdr, mips
 from raywarp.scene.images.mips import Transfer, ceil_div, decode_lut
+from raywarp.scene.model.rayw import Dependency
 from raywarp.scene.model.types import PIXEL_DTYPES, Array, LinearRGBA, PixelType, Texels, pixel_itemsize
-from raywarp.scene.model.wpbr import Dependency
 
 # Extensions decoded with Pillow, Radiance HDR (hdr.py) and OpenEXR (exr.py).
 PIL_EXTENSIONS: Final = frozenset({".png", ".jpg", ".jpeg", ".tga", ".bmp", ".tif", ".tiff", ".gif", ".webp"})

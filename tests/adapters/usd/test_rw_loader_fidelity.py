@@ -1,5 +1,5 @@
 """Loader fidelity: image formats, EXR, second UV sets, vertex colors, UV transforms, baked
-specular-glossiness and MDL outputs, opacityMode, the .wpbr writer on rename-copying mounts."""
+specular-glossiness and MDL outputs, opacityMode, the .rayw writer on rename-copying mounts."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ import raywarp.formats.usd
 from raywarp.cache import paths
 from raywarp.scene.images import decode as imaging
 from raywarp.scene.images import mips
-from raywarp.scene.model import wpbr
+from raywarp.scene.model import rayw
 
 S = rw.scene.Slot
 _RES = 32
@@ -348,7 +348,7 @@ def test_mdl_non_affine_outputs_are_baked(tmp_path, desaturation):
   assert s.materials.specular_roughness[mid] == 1.0 and s.materials.base_metalness[mid] == 0.0
 
 
-# The .wpbr writer --------------------------------------------------------------------------------
+# The .rayw writer --------------------------------------------------------------------------------
 
 
 def _small_scene() -> rw.SceneBuilder:
@@ -358,7 +358,7 @@ def _small_scene() -> rw.SceneBuilder:
   return b
 
 
-def test_wpbr_writer_leaves_no_temporary_file_when_rename_copies(tmp_path, monkeypatch):
+def test_rayw_writer_leaves_no_temporary_file_when_rename_copies(tmp_path, monkeypatch):
   """A rename that copies and leaves its source behind (some network mounts): the writer still
   removes its temporary file."""
   real_replace = os.replace
@@ -369,12 +369,12 @@ def test_wpbr_writer_leaves_no_temporary_file_when_rename_copies(tmp_path, monke
     shutil.copyfile(src, dst)  # the source stays
 
   monkeypatch.setattr(os, "replace", copying_replace)
-  path = tmp_path / "s.wpbr"
+  path = tmp_path / "s.rayw"
   scene = _small_scene().build(path)
   monkeypatch.setattr(os, "replace", real_replace)
   assert len(scene.instances) == 1
-  assert sorted(p.name for p in tmp_path.iterdir()) == ["s.wpbr"]
-  wpbr.read_header(path)
+  assert sorted(p.name for p in tmp_path.iterdir()) == ["s.rayw"]
+  rayw.read_header(path)
 
 
 def test_failed_rename_does_not_close_a_reused_file_descriptor(tmp_path, monkeypatch):
@@ -388,18 +388,18 @@ def test_failed_rename_does_not_close_a_reused_file_descriptor(tmp_path, monkeyp
 
   monkeypatch.setattr(os, "replace", failing_replace)
   with pytest.raises(OSError, match="rename failed"):
-    wpbr.save(tmp_path / "s.wpbr", {"a": np.zeros(4, np.uint8)}, dict)
+    rayw.save(tmp_path / "s.rayw", {"a": np.zeros(4, np.uint8)}, dict)
   os.fstat(reused[0])  # still open (the writer did not close it twice)
   os.close(reused[0])
   assert list(tmp_path.iterdir()) == []
 
 
 def test_stale_temporary_files_are_removed(tmp_path):
-  path = tmp_path / "s.wpbr"
-  dead = tmp_path / f"s.wpbr.tmp-{paths._host()}-999999999-a1"
-  live = tmp_path / f"s.wpbr.tmp-{paths._host()}-{os.getpid()}-a2"
-  old = tmp_path / "s.wpbr.tmp-otherhost-12-a3"
-  fresh = tmp_path / "s.wpbr.tmp-otherhost-13-a4"
+  path = tmp_path / "s.rayw"
+  dead = tmp_path / f"s.rayw.tmp-{paths._host()}-999999999-a1"
+  live = tmp_path / f"s.rayw.tmp-{paths._host()}-{os.getpid()}-a2"
+  old = tmp_path / "s.rayw.tmp-otherhost-12-a3"
+  fresh = tmp_path / "s.rayw.tmp-otherhost-13-a4"
   for p in (dead, live, old, fresh):
     p.write_bytes(b"x")
   os.utime(old, (0, 0))
@@ -411,24 +411,24 @@ def test_stale_temporary_files_are_removed(tmp_path):
 def test_old_temporary_file_of_a_reused_pid_is_removed(tmp_path):
   """A temporary file of this pid space whose pid now names another, live process (pid reuse)
   is stale once it was last written STALE_SECONDS ago: it is not kept forever."""
-  path = tmp_path / "s.wpbr"
-  reused = tmp_path / f"s.wpbr.tmp-{paths._host()}-{os.getpid()}-a1"
+  path = tmp_path / "s.rayw"
+  reused = tmp_path / f"s.rayw.tmp-{paths._host()}-{os.getpid()}-a1"
   reused.write_bytes(b"x")
   os.utime(reused, (0, 0))
   assert paths.remove_stale(path) == [reused]
 
 
 def test_concurrent_writers_of_one_file_use_their_own_temporary_file(tmp_path):
-  """Two writers of the same `.wpbr` in one process (threads) never share a temporary file."""
+  """Two writers of the same `.rayw` in one process (threads) never share a temporary file."""
   import concurrent.futures
 
-  path = tmp_path / "s.wpbr"
+  path = tmp_path / "s.rayw"
   arrays = {"a": np.zeros(4, np.uint8)}
-  first, second = wpbr.Writer(path, arrays), wpbr.Writer(path, arrays)
+  first, second = rayw.Writer(path, arrays), rayw.Writer(path, arrays)
   assert first.tmp != second.tmp
   first.abort()
   second.abort()
   with concurrent.futures.ThreadPoolExecutor(4) as pool:
     scenes = list(pool.map(lambda _: _small_scene().build(path), range(8)))
   assert all(len(s.instances) == 1 for s in scenes)
-  assert sorted(p.name for p in tmp_path.iterdir()) == ["s.wpbr"]
+  assert sorted(p.name for p in tmp_path.iterdir()) == ["s.rayw"]

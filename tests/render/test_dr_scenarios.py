@@ -43,7 +43,7 @@ from raywarp.scene.images.mips import linear_to_srgb_u8
 from raywarp.scene.model.types import MaterialId, Slot, TextureId, TextureRef
 from raywarp.settings.fields import exposure_from_ev100
 
-# The test resolution (internal/benchmarks/specs/w9_dr.py renders the scenarios larger: not Final).
+# The test resolution (the benchmarks render the scenarios larger: not Final).
 RES: tuple[int, int] = (32, 24)
 NWORLD: Final = 4
 # A per-world value table: (nworld, ...) for `per_world[field]`, (nworld, ncolumn) for a

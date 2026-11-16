@@ -1,6 +1,6 @@
 """The converter version guard: fixture stages convert to the checked-in golden digests.
 
-`raywarp.formats.usd.version.CONVERTER` is the `.wpbr` cache key's converter version (no
+`raywarp.formats.usd.version.CONVERTER` is the `.rayw` cache key's converter version (no
 source-code hash: a refactor keeps every cache). Any change of what a stage converts to (the USD
 adapter, the scene builder, the core modules the build imports, a library) changes a digest here:
 bump CONVERTER and regenerate the golden with

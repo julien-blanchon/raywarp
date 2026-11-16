@@ -1,7 +1,7 @@
 """`python -m tools.hf`: HF jobs, caches and spend (README.md).
 
-The development repository's `python -m internal.tools.hf` adds the dev sandboxes and the test
-selection (`sandbox`, `test`) on top of this parser (`main(extend=...)`).
+The development repository adds the dev sandboxes and the test selection (`sandbox`, `test`) on
+top of this parser (`main(extend=...)`).
 """
 
 from __future__ import annotations
@@ -36,9 +36,9 @@ def worktree(path: str | None) -> Path:
 def cmd_run(a: argparse.Namespace) -> int:
   """`run`: package the committed tree, launch, and with `--wait` follow and fetch."""
   tree = worktree(a.tree)
-  if a.isolated and (a.source or a.extra or a.env != "project" or a.no_cache_save):
+  if a.isolated and (a.source or a.extra or a.env != "project" or a.no_cache_save or a.mount):
     print(
-      "--isolated runs without the bucket, environment and caches: drop --source / --with / --env / --no-cache-save",
+      "--isolated runs without the bucket, environment and caches: drop --source / --with / --env / --no-cache-save / --mount",
       file=sys.stderr,
     )
     return 2
@@ -60,6 +60,7 @@ def cmd_run(a: argparse.Namespace) -> int:
     no_restore=tuple(f for f in a.no_cache_restore.split(",") if f),
     isolated=a.isolated,
     inputs=tuple(tuple(i.split("=", 1)) for i in a.input),
+    mounts=tuple(tuple(m.split(":", 1)) for m in a.mount),
   )
   rid, job = runs.launch(request, dry_run=a.dry_run, force_budget=a.over_budget)
   if not job or not a.wait:
@@ -227,7 +228,7 @@ def _run_parser(sub: Sub) -> None:
     "--no-cache-save",
     default="",
     metavar="FAMILIES",
-    help="cache families not saved at the end (scratch), e.g. warp,cuda,wpbr",
+    help="cache families not saved at the end (scratch), e.g. warp,cuda,raywarp",
   )
   r.add_argument(
     "--no-cache-restore",
@@ -246,6 +247,13 @@ def _run_parser(sub: Sub) -> None:
     default=[],
     metavar="NAME=PATH",
     help="isolated runs: a local file or directory ($HF_INPUTS/NAME)",
+  )
+  r.add_argument(
+    "--mount",
+    action="append",
+    default=[],
+    metavar="OWNER/NAME:PATH",
+    help="another storage bucket mounted read-write at PATH (e.g. the kernel build cache at /cache)",
   )
   r.add_argument("command", nargs=argparse.REMAINDER)
   r.set_defaults(fn=cmd_run)

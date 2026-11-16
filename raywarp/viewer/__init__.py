@@ -2,7 +2,7 @@
 browser (over an SSH port forward from another machine).
 
 * pick a scene: the built-in demo, scene files and directories given on the command line, or any
-  `.wpbr` / USD / glTF / MJCF path typed in the page;
+  `.rayw` / USD / glTF / MJCF path typed in the page;
 * change any setting (every `RenderSettings` field, grouped, from the default or `rw.FAST`): the
   renderer switches between frames, on the prebuilt kernels (`performance.kernels="prebuilt"`,
   downloaded on first use);

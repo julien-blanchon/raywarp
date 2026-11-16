@@ -1,4 +1,4 @@
-"""Render a USD stage: a tiny stage written here, read once into a cached `.wpbr`, then uploaded.
+"""Render a USD stage: a tiny stage written here, read once into a cached `.rayw`, then uploaded.
 
 python examples/usd_scene.py [--device cpu] [--size 128] [--stage office.usd]
 """
@@ -55,7 +55,7 @@ def main(device: str | None, size: int, stage: Path | None) -> None:
     if stage is None:
       stage = Path(tmp) / "demo.usda"
       stage.write_text(STAGE)
-    scene = rw.formats.usd.scene(stage, cache=Path(tmp) / "cache")  # a second run of a real stage maps its .wpbr
+    scene = rw.formats.usd.scene(stage, cache=Path(tmp) / "cache")  # a second run of a real stage maps its .rayw
     print(scene.report)  # what was dropped or approximated, counts, timings
     r = rw.Renderer(scene, nworld=1, cameras=None, resolution=(size, size))  # None: the stage's cameras
     out = r.render()  # a static stage: no simulator state

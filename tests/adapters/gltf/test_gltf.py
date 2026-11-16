@@ -46,7 +46,7 @@ def test_color_0_multiplies_the_base_color(tmp_path):
 
 def test_the_cache_converts_once_per_content(tmp_path):
   """The conversion is reused while the asset's content is unchanged (also after a move) and
-  redone when it changes; the host scene goes through the .wpbr cache next to it."""
+  redone when it changes; the host scene goes through the .rayw cache next to it."""
   import raywarp.formats.gltf
 
   (tmp_path / "a").mkdir()
@@ -55,7 +55,7 @@ def test_the_cache_converts_once_per_content(tmp_path):
   first = raywarp.formats.gltf.stage(tmp_path / "a" / "quad.glb", cache=cache)
   host = raywarp.formats.gltf.load(tmp_path / "a" / "quad.glb", cache=cache)
   assert host.ninstance == 1 and host.materials.tex[int(host.instances.material[0]), rw.scene.Slot.BASE_COLOR] >= 0
-  assert list(first.parent.glob("*.wpbr"))  # the host scene cached next to the stage
+  assert list(first.parent.glob("*.rayw"))  # the host scene cached next to the stage
   (tmp_path / "b").mkdir()
   (tmp_path / "a" / "quad.glb").rename(tmp_path / "b" / "quad.glb")
   assert raywarp.formats.gltf.stage(tmp_path / "b" / "quad.glb", cache=cache) == first  # same content: no conversion

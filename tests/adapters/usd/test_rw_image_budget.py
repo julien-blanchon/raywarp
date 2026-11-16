@@ -13,8 +13,8 @@ import pytest
 
 from raywarp.scene.images import blob
 from raywarp.scene.images import decode as imaging
+from raywarp.scene.model.rayw import Dependency
 from raywarp.scene.model.types import PixelType, Texels
-from raywarp.scene.model.wpbr import Dependency
 
 
 def encoded_reads() -> None:

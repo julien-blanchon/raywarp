@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 def register(sub: Sub) -> None:
   """Adds `record`."""
   p = sub.add_parser("record", help="record an MP4 of a scene file, the camera orbiting", description=__doc__)
-  p.add_argument("scene", type=Path, help="a scene file: .wpbr, USD, glTF or MJCF")
+  p.add_argument("scene", type=Path, help="a scene file: .rayw, USD, glTF or MJCF")
   p.add_argument("out", type=Path, help="the MP4 file")
   p.add_argument("--frames", type=int, default=150, help="frames (default: 150)")
   p.add_argument("--fps", type=int, default=30, help="frame rate (default: 30)")

@@ -25,7 +25,7 @@ def test_the_least_recently_used_entries_go_first(tmp_path: Path) -> None:
   ptx = _file(tmp_path / "ptx" / "k.ptx", 100, 2000.0)
   ptx_entry = _file(tmp_path / "ptx" / "k.json", 10, 2000.0)
   gltf = _file(tmp_path / "gltf" / "duck-1" / "duck.usda", 100, 3000.0)
-  scene = _file(tmp_path / "office-1.wpbr", 100, 4000.0)
+  scene = _file(tmp_path / "office-1.rayw", 100, 4000.0)
   kept = [
     _file(tmp_path / "optix" / "optix7cache.db", 1000, 1.0),
     _file(tmp_path / "kernels" / "sm120" / "d0" / "files.json", 1000, 1.0),

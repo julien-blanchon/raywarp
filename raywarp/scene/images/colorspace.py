@@ -7,7 +7,7 @@ the interop IDs that OCIO 2.4+ configs and MaterialX's `*_scene` names use.
 
 Storage: `Textures.colorspace` (uint8) holds `code(space)`, the index in `COLOR_SPACES`, a frozen
 order: SRGB_REC709 is 0 and LIN_REC709 1, the values of the former SRGB / LINEAR enum, so the
-`.wpbr` bytes of existing scenes are unchanged. New members go at the end.
+`.rayw` bytes of existing scenes are unchanged. New members go at the end.
 
 A space's transfer applies to every texel, 8-bit codes and float values alike (one rule, whatever
 the primaries, as OCIO and MaterialX convert): a float texture explicitly tagged with an sRGB or
@@ -413,7 +413,7 @@ def linear_rec709(texels: Texels, space: ColorSpace) -> LinearRGBA:
 
 
 def stored_space(value: int, *, where: str) -> ColorSpace:
-  """The space of a stored texture code (`Textures.colorspace`, e.g. read from a `.wpbr`).
+  """The space of a stored texture code (`Textures.colorspace`, e.g. read from a `.rayw`).
 
   Raises:
     ValueError: for a code outside COLOR_SPACES or of an output-only space.

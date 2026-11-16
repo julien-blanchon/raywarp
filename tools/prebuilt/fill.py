@@ -27,13 +27,14 @@ the rows to OUT.json.gz and each distinct build's Features to OUT.builds.json.gz
   python -m tools.prebuilt.fill fill --root R --workers 32 [--census C.json ...]
 
 compiles the PTX of every distinct OptiX build (and its GI programs) on the CPU, NVRTC only, into
-`R/wpbr/ptx`, one per true code split, each with the module records the census reaches per tier
+`R/raywarp/ptx`, one per true code split, each with the module records the census reaches per tier
 (`<key>.json`, a `prebuilt.Entry`; `prebuilt.ModuleRecord`, one per class-bits value: the module
 pack's rows, `build.py pack`). The
-census: `internal/benchmarks/lab/scene_keys.py` outputs (registry, feature-space scenes), each row's
-`units` (PTX key, tier, record), most used first. `fill --warp`, a job of its own, the Warp modules
-the frames launch (`warmup.first_frame`) into `R/warp`; for `build.py collect --root R`. A root
-seeded with an earlier run's output resumes (what it holds is not compiled).
+census: the scene-key census outputs (registry, feature-space scenes; development repository
+only), each row's `units` (PTX key, tier, record), most used first. `fill --warp`, a job of its
+own, the Warp modules the frames launch (`warmup.first_frame`) into `R/warp`; for `build.py
+collect --root R`. A root seeded with an earlier run's output resumes (what it holds is not
+compiled).
 
   python -m tools.prebuilt.fill list --backend optix --part I/N --out D   # N processes, one each
   python -m tools.prebuilt.fill spread --ptx-shards 48 --warp-shards 4 --out D
@@ -74,10 +75,12 @@ from collections.abc import Callable, Iterable, Iterator
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
 
+from tools.prebuilt.build_cache import BuildCache
+
 if TYPE_CHECKING:
   import warp as wp
 
-  from raywarp.core.build.kernel_cache.prebuilt import Entry, ModuleRecord
+  from raywarp.core.build.kernel_cache.prebuilt import Bundle, Entry, ModuleRecord
   from raywarp.core.build.variants.resolve import Resolution
   from raywarp.core.kernels.abi.features import Features
   from raywarp.core.kernels.abi.output_layout import OutputLayout
@@ -601,20 +604,26 @@ def _owner(module: wp.Module) -> str:
   return software.group_key(module) if software.words_of(module) else module.name
 
 
-def _compile_warp(root: Path, arch: int, workers: int, names: frozenset[str] | None, seed: Path | None) -> int:
+def _compile_warp(
+  root: Path, arch: int, workers: int, names: frozenset[str] | None, seed: str | None, kept: BuildCache | None
+) -> int:
   """The modules of `_MODULES` named in `names` (None: all; a listed shard's, `listing`), compiled
   for sm_`arch` into the fill's Warp kernel cache (`root`/warp/<Warp release>/<module id>/, the
   layout a load reads; `build.py collect` takes it), each reported as it ends; the module count.
-  Skipped: the modules whose entry the cache holds (a resumed shard's snapshot) or the previous
-  bundle's Warp cache `seed` holds (copied in: same id, same code). The software word modules
-  first (`software.fill_group`: one LTO-IR per group, a link per word), then the others (NVRTC),
-  never both at once (a group's capture swaps Warp's binary step)."""
+  Skipped: the modules whose entry the cache holds (a resumed shard's snapshot), the previous
+  bundle `seed` holds (`seed_bundle`; copied in: same id, same code) or the build cache `kept`
+  holds; each module compiled here is kept there. The software word modules first
+  (`software.fill_group`: one LTO-IR per group, a link per word), then the others (NVRTC), never
+  both at once (a group's capture swaps Warp's binary step). Compiled: their count."""
   import warp as wp
 
   cache = root / "warp" / wp.config.version
   wanted = [m for m in _MODULES.values() if names is None or m.name in names]
+  ids = {m.get_module_identifier() for m in wanted}
   if seed is not None:
-    print(f"FILL seeded {_take_modules(seed, cache, wanted, arch)} Warp modules from {seed}", flush=True)
+    print(f"FILL seeded {_take_modules(seed_bundle(seed), cache, ids, arch)} Warp modules from {seed}", flush=True)
+  if kept is not None:
+    print(f"FILL cached {len(kept.take_warp(wp.config.version, ids, cache))} Warp modules from {kept.root}", flush=True)
   held = _held(cache, arch)
   groups: dict[str, list[wp.Module]] = {}
   plain: list[wp.Module] = []
@@ -627,25 +636,73 @@ def _compile_warp(root: Path, arch: int, workers: int, names: frozenset[str] | N
     else:
       groups.setdefault(key, []).append(module)
   t0 = time.perf_counter()
-  n = _run(workers, [functools.partial(_fill_group, ms, arch, cache) for ms in groups.values()], "group", t0)
-  return n + _run(workers, [functools.partial(_compile_module, m, arch, cache) for m in plain], "module", t0)
+
+  def keep() -> None:
+    """Keeps the modules compiled so far in the build cache (`held`: those found, not compiled)."""
+    if kept is not None:
+      for name in sorted(ids & _held(cache, arch) - held):
+        kept.keep_warp(wp.config.version, cache / name)
+        held.add(name)
+
+  n = _run(workers, [functools.partial(_fill_group, ms, arch, cache) for ms in groups.values()], "group", t0, keep)
+  return n + _run(workers, [functools.partial(_compile_module, m, arch, cache) for m in plain], "module", t0, keep)
 
 
-def _take_modules(seed: Path, cache: Path, modules: list[wp.Module], arch: int) -> int:
-  """Copies the entries of `modules` that Warp kernel cache `seed` holds with an sm_`arch` binary
-  and `cache` lacks into `cache` (whole entries: copied under a temporary name, then renamed);
-  their number. Only those: a module of the previous tree that this fill does not list is not
-  carried over."""
-  held, have = _held(seed, arch), _held(cache, arch)
-  ids = {m.get_module_identifier() for m in modules} & held - have
+def _take_modules(seed: Bundle, cache: Path, ids: set[str], arch: int) -> int:
+  """Copies the Warp modules of `ids` that bundle `seed` holds (of sm_`arch` and this Warp
+  release: none of another's) and `cache` lacks into `cache` (fetched first when `seed` is remote;
+  whole entries: copied under a temporary name, then renamed); their number. Only those: a module
+  of the previous tree that this fill does not list is not carried over."""
+  import warp as wp
+
+  if (seed.manifest.arch, seed.manifest.warp) != (arch, wp.config.version):
+    print(f"FILL seed {seed.root}: sm{seed.manifest.arch} Warp {seed.manifest.warp}, no module of it taken", flush=True)
+    return 0
+  listed = seed.module_files()
+  todo = sorted((ids & set(listed)) - _held(cache, arch))
+  failed = seed.fetch(rel for name in todo for rel in listed[name])
   cache.mkdir(parents=True, exist_ok=True)
-  for name in sorted(ids):
+  taken = 0
+  for name in todo:
+    if any(rel in failed for rel in listed[name]):
+      continue  # compiled instead
     partial = cache / f".{name}.{os.getpid()}.partial"
     shutil.rmtree(partial, ignore_errors=True)
-    shutil.copytree(seed / name, partial)
+    partial.mkdir()
+    for rel in listed[name]:
+      shutil.copyfile(seed.root / rel, partial / Path(rel).name)
     shutil.rmtree(cache / name, ignore_errors=True)  # an entry without a binary (an interrupted move)
     partial.rename(cache / name)
-  return len(ids)
+    taken += 1
+  return taken
+
+
+def seed_bundle(seed: str) -> Bundle:
+  """The previous bundle `seed`: a complete directory (`<package>/sm<arch>/`), or a published
+  bundle's URL (`<kernels>/sm<arch>/<content>`: its file list fetched into a scratch store of this
+  machine, each file when first read), read once per process.
+
+  Raises:
+    SystemExit: the published bundle cannot be fetched.
+  """
+  return _seed_bundle(seed)
+
+
+@functools.cache
+def _seed_bundle(seed: str) -> Bundle:
+  """`seed_bundle`'s (once per process)."""
+  from raywarp.core.build.kernel_cache import prebuilt
+  from raywarp.core.build.kernel_cache import store as kernel_store
+
+  if "://" not in seed:
+    return prebuilt.Bundle(Path(seed), prebuilt.Manifest.read(Path(seed) / prebuilt.MANIFEST))
+  local = Path(tempfile.gettempdir()) / "raywarp_fill_seed" / hashlib.sha1(seed.encode()).hexdigest()[:16]
+  try:
+    files = kernel_store.listing(local, seed, None)
+    first = prebuilt.Bundle(local, prebuilt.Manifest(arch=0, warp="", content=""), seed, files)
+    return prebuilt.Bundle(local, prebuilt.Manifest.read(first.path(prebuilt.MANIFEST)), seed, files)
+  except kernel_store.FetchError as e:
+    raise SystemExit(f"FILL the seed bundle {seed}: {e}") from e
 
 
 def _held(cache: Path, arch: int) -> set[str]:
@@ -666,7 +723,7 @@ def _compile_module(module: wp.Module, arch: int, cache: Path) -> int:
 
   from tools.prebuilt import software
 
-  scratch = Path(tempfile.mkdtemp(prefix="wpbr_fill_"))
+  scratch = Path(tempfile.mkdtemp(prefix="raywarp_fill_"))
   try:
     (cubin,) = wp.compile_aot_module(module, arch=arch, module_dir=str(scratch))
     software.move_entry(scratch, cache / cubin.name.split(".sm")[0])
@@ -675,14 +732,15 @@ def _compile_module(module: wp.Module, arch: int, cache: Path) -> int:
   return 1
 
 
-def _run(workers: int, jobs: list[Callable[[], int]], what: str, t0: float) -> int:
-  """`jobs` on `workers` threads (NVRTC and nvJitLink release the GIL), one line as each ends
-  (the heartbeat); the modules they filled."""
+def _run(workers: int, jobs: list[Callable[[], int]], what: str, t0: float, after: Callable[[], None]) -> int:
+  """`jobs` on `workers` threads (NVRTC and nvJitLink release the GIL), `after` and one line as
+  each ends (the heartbeat); the modules they filled."""
   done = 0
   with concurrent.futures.ThreadPoolExecutor(workers) as pool:
     futures = [pool.submit(job) for job in jobs]
     for i, future in enumerate(concurrent.futures.as_completed(futures), 1):
       done += future.result()
+      after()
       print(f"FILL warp {what} {i}/{len(jobs)}, {done} modules (elapsed {time.perf_counter() - t0:.0f} s)", flush=True)
   return done
 
@@ -715,14 +773,15 @@ def fill(
   profile: str | None = None,
   census: tuple[Path, ...] = (),
   shard: Path | None = None,
-  seed: Path | None = None,
+  seed: str | None = None,
+  cache: Path | None = None,
   lens: bool = False,
 ) -> None:
   """Compiles the PTX of every distinct OptiX build of the fill points (and its GI programs' PTX,
   its bundled lens programs, `Build.lenses`; with `lens` every lens model's program too,
   `lens_keys`: a lens camera of another build compiles its model's program once per build, user
   decisions 2026-11-11 and 2026-11-16)
-  into `root`/wpbr/ptx, each with the kernel code its generation used (`reach`) and the module
+  into `root`/raywarp/ptx, each with the kernel code its generation used (`reach`) and the module
   records per tier the census files `census` reach (`census_records`; `build.py collect` then
   makes the bundle): `workers` processes, NVRTC only (no GPU). `warp` (always on the software
   backend, whose bundle is Warp modules only): instead, the Warp modules the fill points' frames
@@ -730,17 +789,19 @@ def fill(
   modules: a shard resolves only those points); `only`: the points whose census row has these
   values (scene, tier, layout, gi, set as "a+b": a dry run's few builds); `profile`: the GPU (the
   backend's `PROFILES` entry by default). What `root` already holds (a resumed shard's snapshot)
-  is not compiled again, nor what the previous bundle `seed` (`<package>/sm<arch>/`) holds for
-  this tree: the PTX of each listed key whose reached code is unchanged (`prebuilt.Entry.fresh`)
-  and the listed Warp modules (same id, same code), each copied in (`root` holds only this fill's
-  keys and modules: `build.py collect` bundles nothing else). Prints the build count, the wall
-  time and the PTX bytes."""
+  is not compiled again, nor what the previous bundle `seed` (`seed_bundle`: a directory or a
+  published bundle's URL) or the build cache `cache` (`build_cache.BuildCache`: the mounted cache
+  bucket's root) holds for this tree: the PTX of each listed key whose reached code is unchanged
+  (`prebuilt.Entry.fresh`) and the listed Warp modules (same id, same code), each copied in
+  (`root` holds only this fill's keys and modules: `build.py collect` bundles nothing else); what
+  the cache lacks is kept there as it is made. Prints the build count, the wall time and the PTX
+  bytes."""
   t0 = time.perf_counter()
   listed = None if shard is None else json.loads(shard.read_text())
   only = listed["points"] if listed is not None else only
   if warp or backend == "software":
     names = None if listed is None else frozenset(listed["modules"])
-    _warp_fill(root, workers, names, backend=backend, only=only, profile=profile, seed=seed)
+    _warp_fill(root, workers, names, backend=backend, only=only, profile=profile, seed=seed, cache=cache)
     return
   records, nrow, old = census_records(list(census))
   builds: dict[str, Build] = {}
@@ -758,7 +819,7 @@ def fill(
     flush=True,
   )
   print(f"FILL {len(jobs)} builds resolved in {time.perf_counter() - t0:.0f} s", flush=True)
-  ptx = root / "wpbr" / "ptx"
+  ptx = root / "raywarp" / "ptx"
   ptx.mkdir(parents=True, exist_ok=True)
   t1 = time.perf_counter()
   context = multiprocessing.get_context("spawn")
@@ -770,17 +831,25 @@ def fill(
   ) as pool:
     # As each build finishes (`map` yields in order: one long build held back every later line and
     # tripped the stall watchdog while the other workers went on).
-    futures = [pool.submit(_compile, job, [unit], seed) for job in jobs for unit in _units(job, records, lens=lens)]
+    units = [(job, unit) for job in jobs for unit in _units(job, records, lens=lens)]
+    futures = [pool.submit(_compile, job, [unit], seed, None if cache is None else str(cache)) for job, unit in units]
+    hows: list[str] = []
     for i, future in enumerate(concurrent.futures.as_completed(futures), 1):
       key, seconds, how = future.result()
+      hows.append(how)
       print(f"FILL {i}/{len(futures)} {key[:16]} {how} {seconds:.0f} s (elapsed {time.perf_counter() - t1:.0f} s)", flush=True)
   files = list(ptx.glob("*.ptx"))
   size = sum(f.stat().st_size for f in files)
   print(
     f"FILL done: {len(jobs)} builds, {len(files)} PTX ({size / 2**20:.0f} MB) in {time.perf_counter() - t1:.0f} s "
-    f"on {workers} processes (resolve {t1 - t0:.0f} s)",
+    f"on {workers} processes (resolve {t1 - t0:.0f} s); {_tally(hows)}",
     flush=True,
   )
+
+
+def _tally(hows: list[str]) -> str:
+  """ "compiled N, kept N, seeded N, cached N" of the units' `_compile` outcomes."""
+  return ", ".join(f"{how} {hows.count(how)}" for how in ("compiled", "kept", "seeded", "cached"))
 
 
 def _warp_fill(
@@ -791,10 +860,12 @@ def _warp_fill(
   backend: str,
   only: list[dict[str, str]] | None,
   profile: str | None,
-  seed: Path | None,
+  seed: str | None,
+  cache: Path | None,
 ) -> None:
   """`fill`'s Warp modules: the points listed (one pass, cheap: no compile), then the modules
-  `names` (None: all) compiled (`_compile_warp`; `seed`: a previous bundle's taken first).
+  `names` (None: all) compiled (`_compile_warp`; `seed`: a previous bundle's, `cache`: the build
+  cache's taken first).
 
   Raises:
     SystemExit: a listed module the points no longer make (the shard files are another tree's).
@@ -809,8 +880,9 @@ def _warp_fill(
   if names is not None and not names <= set(_MODULES):
     raise SystemExit(f"FILL {len(names - set(_MODULES))} listed modules not made here: list again on this tree")
   arch = harness.PROFILES[profile or PROFILES[backend]][0]
-  nmod = _compile_warp(root, arch, workers, names, None if seed is None else seed / "warp")
-  print(f"FILL done: {nmod} Warp modules in {time.perf_counter() - t0:.0f} s", flush=True)
+  kept = None if cache is None else BuildCache(cache, arch)
+  nmod = _compile_warp(root, arch, workers, names, seed, kept)
+  print(f"FILL done: compiled {nmod} Warp modules in {time.perf_counter() - t0:.0f} s", flush=True)
 
 
 def listing(
@@ -947,7 +1019,7 @@ def _worker(root: str) -> None:
   from tools.prebuilt import reach
 
   reach.start()
-  os.environ["RAYWARP_CACHE_DIR"] = str(Path(root) / "wpbr")
+  os.environ["RAYWARP_CACHE_DIR"] = str(Path(root) / "raywarp")
   import warp as wp
 
   wp.config.log_level = wp.LOG_WARNING  # no init banner / module-load lines from every process
@@ -1110,12 +1182,13 @@ def _units(build: Build, census: Census, *, lens: bool) -> list[Unit]:
   return units + ([Unit(area, False, {}, area=True)] if area is not None else [])
 
 
-def _compile(build: Build, units: list[Unit], seed: Path | None) -> tuple[str, float, str]:
-  """The PTX of `build`'s `units`, each unless the PTX cache holds it or the previous bundle `seed`
-  holds it for this kernel code (`_take`), each stored with its entry (`<key>.json`: the reach of
-  its generation, `reach.of`, its digest, and its module records per tier; `build.py collect`
-  indexes them); (the last unit's key, seconds, per unit what was done: compiled, kept or
-  seeded)."""
+def _compile(build: Build, units: list[Unit], seed: str | None, cache: str | None) -> tuple[str, float, str]:
+  """The PTX of `build`'s `units`, each unless the PTX cache holds it, the previous bundle `seed`
+  (`seed_bundle`) holds it for this kernel code (`_take`) or the build cache at `cache` does
+  (`BuildCache.ptx_entry`), each stored with its entry (`<key>.json`: the reach of its generation,
+  `reach.of`, its digest, and its module records per tier; `build.py collect` indexes them), and
+  each compiled one kept in the build cache; (the last unit's key, seconds, per unit what was
+  done: compiled, kept, seeded or cached)."""
   import warp as wp
 
   from raywarp.core.build.kernel_cache import kernel_code, prebuilt
@@ -1131,9 +1204,12 @@ def _compile(build: Build, units: list[Unit], seed: Path | None) -> tuple[str, f
     path = pipeline._ptx_path(unit.key)
     if path is None:
       raise SystemExit("RAYWARP_CACHE_DIR is empty: the fill has no PTX cache")
+    kept = None if cache is None else BuildCache(Path(cache), build.arch)
     entry, how = _cached(path), "kept"
     if entry is None and seed is not None:
-      entry, how = _take(seed, unit.key, path), "seeded"
+      entry, how = _take(seed_bundle(seed), unit.key, path), "seeded"
+    if entry is None and kept is not None:
+      entry, how = kept.ptx_entry(unit.key, path), "cached"
     if entry is None:
       if unit.gi:
         module = programs.build_gi(f, flags)
@@ -1148,6 +1224,8 @@ def _compile(build: Build, units: list[Unit], seed: Path | None) -> tuple[str, f
       found = reach.of([module])
       entry, how = prebuilt.Entry(ptx="", code=kernel_code.digest(found), reach=found, groups={}), "compiled"
       _write_bytes(path, ptx)
+      if kept is not None:
+        kept.keep_ptx(unit.key, path, entry)
     done.append(how)
     path.with_suffix(".json").write_text(json.dumps(dataclasses.replace(entry, ptx="", groups=unit.groups).json()))
   return units[-1].key, time.perf_counter() - t0, "+".join(done)
@@ -1165,16 +1243,20 @@ def _cached(path: Path) -> Entry | None:
   return entry if path.is_file() and entry.fresh() else None
 
 
-def _take(seed: Path, key: str, path: Path) -> Entry | None:
+def _take(seed: Bundle, key: str, path: Path) -> Entry | None:
   """The entry of PTX key `key` in the previous bundle `seed` when it holds the PTX of this kernel
-  code (`Bundle.entry`), its PTX written at `path`."""
+  code (`Bundle.entry`; fetched when `seed` is remote; None too when a fetch fails: compiled
+  instead), its PTX written at `path`."""
   import lzma
 
-  from raywarp.core.build.kernel_cache import prebuilt
+  from raywarp.core.build.kernel_cache import store as kernel_store
 
-  entry = prebuilt.Bundle(seed, prebuilt.Manifest.read(seed / prebuilt.MANIFEST)).entry(key)
-  if entry is not None:
-    _write_bytes(path, lzma.decompress((seed / "ptx" / entry.ptx).read_bytes()))
+  try:
+    entry = seed.entry(key)
+    if entry is not None:
+      _write_bytes(path, lzma.decompress(seed.path(f"ptx/{entry.ptx}").read_bytes()))
+  except kernel_store.FetchError:
+    return None  # warned once (`prebuilt.unreachable`)
   return entry
 
 
@@ -1247,9 +1329,11 @@ def main(argv: list[str]) -> None:
   fl.add_argument("--only", action="append", default=[], help="KEY=VALUE of the census rows to fill (repeat)")
   fl.add_argument(
     "--seed",
-    type=Path,
     default=None,
-    help="a previous bundle (sm<arch>/): take its listed keys of unchanged code and listed modules",
+    help="a previous bundle (sm<arch>/ or a published one's URL): take its listed keys of unchanged code and listed modules",
+  )
+  fl.add_argument(
+    "--cache", type=Path, default=None, help="the build cache's root (tools/prebuilt/build_cache.py): take, then keep"
   )
   fl.add_argument("--profile", default=None, help="the GPU profile (tools/prebuilt/probe.PROFILES), e.g. l4")
   fl.add_argument("--niche", action="store_true", help="the niche tiers and output forms too (`NICHE_TIERS`, `NICHE_FORMS`)")
@@ -1283,6 +1367,7 @@ def main(argv: list[str]) -> None:
       census=tuple(a.census),
       shard=a.shard,
       seed=a.seed,
+      cache=a.cache,
       lens=a.lens,
     )
 

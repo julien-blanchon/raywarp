@@ -18,8 +18,7 @@
 #
 # The prebuilt GPU kernels are not in the wheels: the renderer downloads what it uses on first use
 # from their remote (raywarp/core/build/kernel_cache/store.py), published by .github/workflows/kernels.yml
-# before the tag, whose pins (raywarp/core/build/kernel_cache/kernels.json) these wheels carry. newton-pbr was
-# folded into raywarp[newton] (0.3.0): its last release stays 0.2.0.
+# before the tag, whose pins (raywarp/core/build/kernel_cache/kernels.json) these wheels carry.
 name: Release
 
 on:

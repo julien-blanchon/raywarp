@@ -1,4 +1,4 @@
-"""UsdSemantics labels read at ingest: a host column (kept by the `.wpbr` file) and the default
+"""UsdSemantics labels read at ingest: a host column (kept by the `.rayw` file) and the default
 classes of semantic segmentation; explicit `set_semantics` patterns override them."""
 
 from __future__ import annotations
@@ -33,9 +33,9 @@ def _stage(tmp_path):
 
 
 def test_labels_are_a_host_column_and_the_default_classes(tmp_path):
-  """Labels survive the `.wpbr` file; the renderer starts from them; patterns override."""
+  """Labels survive the `.rayw` file; the renderer starts from them; patterns override."""
   s = rw.formats.usd.read(_stage(tmp_path)).build()
-  path = tmp_path / "scene.wpbr"
+  path = tmp_path / "scene.rayw"
   s.save(path)
   loaded = rw.Scene.load(path)
   paths = loaded.instances.paths.tolist()

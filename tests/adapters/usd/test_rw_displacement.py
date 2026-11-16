@@ -23,12 +23,12 @@ def test_constant_displacement_instances_share_geometry_and_cache(tmp_path: Path
   mesh = quad(builder)
   material = builder.add_material(rw.Material(displacement=rw.scene.Displacement(amount=0.2)))
   builder.add_instances("mesh", mesh=mesh, material=material, xforms=np.tile(np.eye(4), (4, 1, 1)))
-  scene = builder.build(tmp_path / "displaced.wpbr")
+  scene = builder.build(tmp_path / "displaced.rayw")
   assert np.all(scene.instances.mesh == scene.instances.mesh[0])
   actual = scene.meshes.get(int(scene.instances.mesh[0]))
   np.testing.assert_allclose(actual.points[:, 2], 0.2)
   np.testing.assert_allclose(actual.normals, np.tile([0, 0, 1], (len(actual.points), 1)))
-  loaded = rw.Scene.load(tmp_path / "displaced.wpbr")
+  loaded = rw.Scene.load(tmp_path / "displaced.rayw")
   np.testing.assert_array_equal(loaded.meshes.points, scene.meshes.points)
   assert scene.report.counts["displacement.mesh_variants"] == 1
 
@@ -219,7 +219,7 @@ def test_repeated_usd_import_preserves_builder_preparation_policy(tmp_path: Path
     if cache is not None:
       warm = usd.load(source, cache=cache, adapter=rw.formats.usd.Options(displacement=False, displacement_max_level=2))
       assert "warm_load" in warm.report.timings
-  baked = usd.bake(source, tmp_path / "off.wpbr", adapter=rw.formats.usd.Options(displacement=False, displacement_max_level=2))
+  baked = usd.bake(source, tmp_path / "off.rayw", adapter=rw.formats.usd.Options(displacement=False, displacement_max_level=2))
   np.testing.assert_array_equal(baked.meshes.points[:, 2], 0)
 
 

@@ -15,6 +15,7 @@ import warp as wp
 from raywarp.core.kernels.abi import toggles
 from raywarp.core.trace.rays.primary import PINHOLE
 from tools.prebuilt import fill, software
+from tools.prebuilt.build_cache import BuildCache
 
 pytestmark = pytest.mark.usefixtures("_quiet")
 
@@ -54,7 +55,7 @@ def test_word_modules_group_by_their_kernels_not_their_word() -> None:
   assert a.get_module_identifier() != b.get_module_identifier()
   assert software.group_key(a) == software.group_key(b)
   assert (software.words_of(a), software.words_of(b)) == ({toggles.WORD_MACRO: 0}, {toggles.WORD_MACRO: 1})
-  plain = wp.Module("wpbr_test_plain", None)
+  plain = wp.Module("rw_test_plain", None)
   assert software.words_of(plain) == {}
 
 
@@ -171,7 +172,8 @@ def _plain() -> wp.Kernel:
 def test_warp_shards_fill_each_module_once_and_resume(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
   """`fill._compile_warp` over listed shards (their module names): every module filled by the
   shard listing it (a word group whole on one), and a second pass over the same root fills
-  nothing (a resumed shard)."""
+  nothing (a resumed shard); each module made is kept in the build cache, so a later fill on a
+  fresh root takes every one of them and compiles none."""
   monkeypatch.setattr(software, "group_ltoir", lambda c: b"IR")
   monkeypatch.setattr(software, "combination_cubin", lambda c, words, ltoir: b"linked")
   modules = [_kernel(0).module, _kernel(1).module, _plain().module]
@@ -186,10 +188,17 @@ def test_warp_shards_fill_each_module_once_and_resume(tmp_path: Path, monkeypatc
 
   monkeypatch.setattr(fill, "_compile_module", fake_nvrtc)
   shards = [frozenset({modules[0].name, modules[1].name}), frozenset({modules[2].name})]
-  assert [fill._compile_warp(tmp_path, 80, 2, names, None) for names in shards] == [2, 1]
-  cache = tmp_path / "warp" / wp.config.version
-  assert {p.name for p in cache.iterdir()} == {m.get_module_identifier() for m in modules}
-  assert sum(fill._compile_warp(tmp_path, 80, 2, names, None) for names in shards) == 0
+  kept = BuildCache(tmp_path / "build_cache", 80)
+  root = tmp_path / "root"
+  assert [fill._compile_warp(root, 80, 2, names, None, kept) for names in shards] == [2, 1]
+  cache = root / "warp" / wp.config.version
+  ids = {m.get_module_identifier() for m in modules}
+  assert {p.name for p in cache.iterdir()} == ids
+  assert sum(fill._compile_warp(root, 80, 2, names, None, kept) for names in shards) == 0
+  assert {p.name.removesuffix(".tar") for p in kept.warp_dir(wp.config.version).iterdir()} == ids
+  fresh = tmp_path / "fresh"  # another release's fill: everything from the build cache
+  assert sum(fill._compile_warp(fresh, 80, 2, names, None, kept) for names in shards) == 0
+  assert {p.name for p in (fresh / "warp" / wp.config.version).iterdir()} == ids
 
 
 def test_the_words_of_a_build_share_its_device_functions() -> None:

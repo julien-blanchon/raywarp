@@ -11,7 +11,7 @@ newton = pytest.importorskip("newton")
 from test_scene import _lights, _scenery_model
 
 import raywarp as rw
-import raywarp.integrations.newton as newton_pbr
+import raywarp.integrations.newton as rw_newton
 from raywarp.scene.images import colorspace
 from raywarp.scene.model.tables import Images
 
@@ -31,7 +31,7 @@ def test_mesh_texture_files_get_the_auto_color_space(tmp_path):
   for path in (hdr, png):
     mesh = newton.Mesh(verts, np.array([0, 1, 2], np.int32), uvs=uvs, texture=str(path))
     builder.add_shape_mesh(-1, mesh=mesh)
-  host = newton_pbr.load(builder.finalize(device="cpu"))
+  host = rw_newton.load(builder.finalize(device="cpu"))
   tex = host.textures
   spaces = {host.images.paths[int(i)]: colorspace.from_code(int(c)) for i, c in zip(tex.image, tex.colorspace, strict=True)}
   assert spaces == {str(hdr): rw.scene.ColorSpace.LIN_REC709, str(png): rw.scene.ColorSpace.SRGB_REC709}
@@ -52,7 +52,7 @@ def test_mesh_texture_arrays_match_their_rgba_bytes(kind):
     """The image table of a one-mesh model textured with `texture`."""
     builder = newton.ModelBuilder()
     builder.add_shape_mesh(-1, mesh=newton.Mesh(verts, np.array([0, 1, 2], np.int32), uvs=uvs, texture=texture))
-    return newton_pbr.load(builder.finalize(device="cpu")).images
+    return rw_newton.load(builder.finalize(device="cpu")).images
 
   got, want = images(given), images(expected)
   assert len(got) == 1
@@ -70,7 +70,7 @@ def test_mesh_normals_and_uvs_of_the_wrong_length_are_reported_once_per_mesh():
   builder = newton.ModelBuilder()
   for _ in range(2):
     builder.add_shape_mesh(-1, mesh=mesh)
-  host = newton_pbr.load(builder.finalize(device="cpu"))
+  host = rw_newton.load(builder.finalize(device="cpu"))
   report = host.report
   assert report.dropped["newton.Mesh.normals.length"] == 1 and report.dropped["newton.Mesh.uvs.length"] == 1
   assert report.examples["newton.Mesh.normals.length"].endswith("(2 normals for 3 vertices)")
@@ -85,8 +85,8 @@ def test_shared_scenery_renders_on_another_device_than_the_model():
   by CUDA launches), and a moved global shape still raises."""
   nworld = 2
   model, state = _scenery_model(nworld)  # on the CPU
-  host = newton_pbr.load(model, lighting=_lights())
-  scene = rw.upload(host, "cuda:0", binding=newton_pbr.binding(host, model, device="cuda:0"))
+  host = rw_newton.load(model, lighting=_lights())
+  scene = rw.upload(host, "cuda:0", binding=rw_newton.binding(host, model, device="cuda:0"))
   cylinder = int(np.flatnonzero(model.shape_type.numpy() == int(newton.GeoType.CYLINDER))[0])
   settings = rw.RenderSettings(outputs=rw.Outputs.of("depth"), performance=rw.settings.Performance(traversal="software"))
   r = rw.Renderer(scene, nworld=nworld, cameras=[rw.CameraSpec(fovy=60.0)], resolution=(24, 16), settings=settings)
@@ -126,8 +126,8 @@ def test_foreign_device_arrays_upload_once_per_frame_and_replay_in_a_graph(monke
   monkeypatch.setattr(staging.wp, "Event", event)
   nworld = 2
   model, state = _scenery_model(nworld)
-  host = newton_pbr.load(model, lighting=_lights())
-  scene = rw.upload(host, "cuda:0", binding=newton_pbr.binding(host, model, device="cuda:0"))
+  host = rw_newton.load(model, lighting=_lights())
+  scene = rw.upload(host, "cuda:0", binding=rw_newton.binding(host, model, device="cuda:0"))
   settings = rw.RenderSettings(outputs=rw.Outputs.of("depth"), performance=rw.settings.Performance(traversal="software"))
   r = rw.Renderer(scene, nworld=nworld, cameras=[rw.CameraSpec(fovy=60.0)], resolution=(24, 16), settings=settings)
   rot = wp.quat_from_matrix(wp.mat33(1.0, 0.0, 0.0, 0.0, 0.5, -0.866, 0.0, 0.866, 0.5))
@@ -155,8 +155,8 @@ def test_foreign_device_arrays_upload_once_per_frame_and_replay_in_a_graph(monke
 def test_a_model_on_the_render_device_stages_nothing():
   """Same device: the binding reads the model's arrays themselves (no copy, nothing staged)."""
   model, state = _scenery_model(2)
-  host = newton_pbr.load(model, lighting=_lights())
-  binding = newton_pbr.binding(host, model)
+  host = rw_newton.load(model, lighting=_lights())
+  binding = rw_newton.binding(host, model)
   binding.stage(state)
   sources = binding.sources(state)  # what the pose kernel reads: no staged copy among them
   assert set(sources) == {"state.body_q"} and sources["state.body_q"] is state.body_q

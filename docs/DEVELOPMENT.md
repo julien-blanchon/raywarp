@@ -2,10 +2,7 @@
 
 This guide is for people who change `raywarp`: how the pieces fit, the code standards and how
 they are checked, how to test, and how to add a feature or an adapter. The user guide is in
-[`docs/README.md`](README.md). The knowledge base in `internal/research/kb/` holds the working rules
-(`OPERATING_MANUAL.md`), the current state (`STATUS.md`), decisions, known bugs and the
-architecture notes. Older plans and evidence (`internal/research/plan/`, `internal/results/`) are archived in the
-HF bucket (see "Evidence paths" in [`docs/README.md`](README.md)). Code establishes implemented
+[`docs/README.md`](README.md). Code establishes implemented
 behaviour, not necessarily intended or correct behaviour. Update affected documentation with each
 code change, and distinguish implemented behaviour, known limitations and planned work.
 
@@ -30,7 +27,7 @@ A frame goes through five layers:
 1. **Sources**: a MuJoCo model, a USD stage, a Newton model. Only adapters know them.
 2. **Adapters** (`raywarp/integrations/`: `mujoco`, `newton`, `mjlab`, `isaaclab`;
    `raywarp/formats/`: `usd`, `gltf`) turn a source into a format-neutral **host scene**
-   (`raywarp.scene.Scene`, NumPy only, cacheable as a `.wpbr` file) and a **binding**
+   (`raywarp.scene.Scene`, NumPy only, cacheable as a `.rayw` file) and a **binding**
    (`Binding[S]`), which tells the core where the per-step state (poses) of a simulator state
    `S` lives. MuJoCo is the exception: it goes straight to a `GpuScene` that aliases the
    `mjw.Model` arrays.
@@ -66,7 +63,7 @@ raywarp/
                      `python -m raywarp.cache.prune`
   settings/          RenderSettings, FAST, Outputs, the settings groups and output specs
   scene/             host scene (NumPy only)
-    model/           tables, lights, materials, geometry, checks, LoadReport, Scene, .wpbr (wpbr.py)
+    model/           tables, lights, materials, geometry, checks, LoadReport, Scene, .rayw (rayw.py)
     images/          decoding, colour spaces, HDR / EXR, mips, the texel blob, latlong layout
     lighting/        Lighting rig, photometry, sky, IES, emissive panels
     build/           SceneBuilder and its mesh / instance / image pools, displacement
@@ -135,11 +132,9 @@ the upload's light derivation, cycle C4). Inside `core`, a package is device cod
 `trace.rays`, `trace.accel`, `trace.optix.device`, `shade`, `post.{exposure, grading, display,
 temporal}`, `kernels`) or host code, never both; device code reads host modules only through the
 `HOST_ONLY` / `HOST_CONSTANTS` names of `kernel_code.py` (`tests/contracts/test_kernel_code.py`).
-Module renames by restructure: `internal/research/kb/RESTRUCTURE_MAP.md`.
 
-Tests are in `tests/`, by area (section 5.1); benchmarks, the scene registry and the regression
-suite in `internal/benchmarks/` (`internal/benchmarks/README.md`); maintenance scripts in `tools/` (HF jobs and
-sandboxes: `python -m internal.tools.hf`, `tools/hf/README.md`; the dev-server client: `internal/tools/dev/`).
+Tests are in `tests/`, by area (section 5.1); the benchmark script in `benchmarks/`
+([`benchmarks/README.md`](../benchmarks/README.md)); maintenance scripts in `tools/` (section 9).
 
 ## 3. The parts, one by one
 
@@ -151,8 +146,8 @@ lights, environments, cameras, plus a `LoadReport` and metadata. NumPy only.
 **How**: an adapter fills a `SceneBuilder` (`scene/build/builder.py`: `add_mesh`, `add_image`,
 `add_texture`, `add_material`, `add_instance(s)`, `add_light`, `add_environment`, `add_camera`)
 and calls `build()`. Materials and textures are deduplicated by value; instances are stored as
-column chunks (`scene/model/tables.py`) concatenated at build. `build(path)` writes a `.wpbr` file
-(`scene/model/wpbr.py`): every array raw and 256-byte aligned, a JSON header written last, so a crash
+column chunks (`scene/model/tables.py`) concatenated at build. `build(path)` writes a `.rayw` file
+(`scene/model/rayw.py`): every array raw and 256-byte aligned, a JSON header written last, so a crash
 never leaves a valid file and a load is one memory map with a zero-copy view per array, whatever
 the object count. Freshness is a `CacheKey` (adapter, source path, options, code version) plus
 the list of every file read, checked with one parallel `stat`.
@@ -190,7 +185,7 @@ The adapters:
 - **USD** (`usd/`): `rw.formats.usd.load(path, cache=...)` reads the stage into a
   `SceneBuilder` (`stage.py`, `mesh.py`, `gprims.py`, `lux.py`, `shade.py`, `camera.py`,
   `semantics.py`); MDL materials are evaluated or baked to textures (`mdl/`); `bind.py` returns
-  `StaticPoses`. `rw.formats.usd.bake` writes a `.wpbr` offline.
+  `StaticPoses`. `rw.formats.usd.bake` writes a `.rayw` offline.
 - **Newton** (`newton/`): `rw.integrations.newton.load(model)` ingests the model's visible shapes
   into a host `Scene` (`lighting=`: the lights, the headlight as CAMERA / AMBIENT lights), `rw.integrations.newton.binding(scene, model)`
   binds them (`NewtonBinding`: one kernel writes instance poses from `state.body_q`), the caller
@@ -463,8 +458,7 @@ the gates (section 4.3) enforce what tools can check.
   `unknown-return-type` sub-configs pass on inferred types. Exceptions: overloaded factories
   (the overloads are the contract), decorators (`concrete`, `specialize`: their return is generic
   over the decorated function) and `trace.instance_pose` (Pyrefly 1.4 infers the scalars of a
-  tuple of Warp vectors returned through `@wp.func` as Unknown:
-  `research/upstream/pyrefly_inferred_tuple_args.md`).
+  tuple of Warp vectors returned through `@wp.func` as Unknown).
 
 ```python
 # docs: skip (illustration; the helper is raywarp/core/kernels/abi/tables.py)
@@ -481,7 +475,7 @@ def batched[T](table: wp.array2d[T], worldid: int, i: int) -> T:
 - No dynamically created attributes: declared fields.
 - Optional values narrowed before use; no `# pyrefly: ignore` for our own mistakes.
 - Stub gaps are fixed in pyrefly-warp-stubs, not suppressed here; until released, one tagged
-  ignore per site, listed in `internal/research/upstream/pyrefly_stub_gaps.md`. Our own native builtins
+  ignore per site. Our own native builtins
   (`wp.mjpbr_*`, registered at import by `core/kernels/native.py`) get a local `.pyi`.
 - Process-wide caches keyed by `Features` use `functools.cache` on the factory, not hand-written
   `dict[Any, wp.Kernel]` with ignores.
@@ -669,51 +663,49 @@ uv run pyrefly check                                 # 0 errors (raywarp + every
 - **pyrefly** (`[tool.pyrefly]`, preset `default`): needs the `typing` extra (shape-aware Warp and
   NumPy stubs, MuJoCo stubs), pulled in by the `dev` group. The `typing` extra requires
   pyrefly-warp-stubs 0.1.3 or newer (integer operators on Warp scalars, `wp.ref[T]`,
-  `wp.kernel(fn, **options)`, vector-dtype arrays, ...: `internal/research/upstream/pyrefly_stub_gaps.md`).
+  `wp.kernel(fn, **options)`, vector-dtype arrays, ...).
 
 ## 5. Testing
 
 ### 5.1 CPU test suite
 
 CPU-compatible tests run on Warp's CPU device; GPU-only and unavailable-dependency tests skip.
-During development run only relevant tests. Pandora is light-use only (a few tests at `-n 2`);
-full regular / debug suites and regression checks run on HF at lane / phase completion.
+During development run only relevant tests; run the full regular and debug suites before a
+checkpoint, on a machine with enough cores (or an HF job, section 5.2).
 
 ```bash
 uv sync --all-extras --group bench
-uv run pytest -n 24                # on HF (section 5.3)
-uv run pytest -n 24 --warp-debug   # on HF: bounds-checking build
+uv run pytest -n 24                # full suite
+uv run pytest -n 24 --warp-debug   # bounds-checking build
 uv run pytest -n 2 tests/contracts/test_api.py -k per_world   # focused local check
 ```
 
-Layout (`tests/`), one file per feature (lane-split files are merged):
+Layout (`tests/`), one file per feature:
 
 | Directory | What it tests |
 |---|---|
 | `unit/` | host-side units: BVHs, Sobol, LTC, lobes, photometry, textures, bake keys, upload, warmup, the default settings' snapshot (`unit/test_default_settings.py`) |
 | `render/` | CPU end-to-end per feature: shading, materials, lights, light grid, shadows, GI, IBL / envmaps, temporal, reflections, outputs and layouts, imaging, `rw.randomize` |
 | `optix_backend/` | the OptiX backend: host logic through a fake OptiX function table (`test_optix_host.py`, CPU), the GPU parity / lifetime tests (`test_optix.py`, skip without OptiX) |
-| `adapters/{mujoco,newton,isaaclab,usd,gltf}/` | one directory per adapter (`usd/`: USD, MDL, MaterialX, images, `.wpbr` caches) |
+| `adapters/{mujoco,newton,isaaclab,usd,gltf}/` | one directory per adapter (`usd/`: USD, MDL, MaterialX, images, `.rayw` caches) |
 | `contracts/` | API and runtime contracts: import boundary, keyword-only, Warp runtime, conformance kit, typing contracts (`typing_*.py`, checked by pyrefly) |
 | `calibration/` | light units and emission |
-| `tooling/` | docs, CLI, packaging, glTF converters, asset manifests, webui backend, `python -m internal.tools.hf` |
-| `bench/` | the benchmark tools: runner, registry, regression harness, gallery, loop, corpus |
+| `tooling/` | docs, CLI, packaging, the benchmark script, the native build hook, the prebuilt-kernels and release tooling, the web viewer |
 | `fixtures/`, `data/` | shared helpers and fakes (`from fixtures import optix_fake`), test data |
 
 A test file imports helpers of its own directory or of `fixtures/` (and `conftest`: `REPO`,
 `DATA`, `make_scene`, ...), never a test file of another directory. GPU-only tests skip on the
-CPU; they run on an HF GPU job (`python -m internal.tools.hf run --flavor l4x1 -- 'python -m pytest
+CPU; run them on a CUDA machine or an HF GPU job (`python -m tools.hf run --flavor l4x1 -- 'python -m pytest
 tests/optix_backend ...'`).
 
-The lock has a second fork for Newton's SolverMuJoCo (`internal/benchmarks/loop.py`): the
+The lock has a second fork for Newton's SolverMuJoCo: the
 `newton-sim` dependency group holds Newton's `[sim]` MuJoCo / MuJoCo Warp pins, older than the
 latest pair the `mujoco` extra locks. Use a separate environment for it:
 `UV_PROJECT_ENVIRONMENT=.venv-sim uv run --group newton-sim --group bench --extra newton ...`.
 
-`conftest.py` (the repository root, serving `tests/` and `internal/tests/`) renders MuJoCo scenes from inline XML (fixture `scene(xml, ...)`, every
+`conftest.py` (at the repository root) renders MuJoCo scenes from inline XML (fixture `scene(xml, ...)`, every
 extra keyword a `RenderSettings.replace` key) and points the bake cache at a temporary directory.
-Tests that need assets look them up under `$MJPBR_ASSET_DIR` (`python internal/tools/fetch_assets.py`)
-and skip without them. Run only the tests related to a change while developing; the full suite
+Tests that need assets look them up under `$MJPBR_ASSET_DIR` and skip without them. Run only the tests related to a change while developing; the full suite
 before a checkpoint.
 
 `--warp-debug` does not enable `--warp-verify-fp`; floating-point verification is a separate
@@ -723,92 +715,54 @@ actual tested environment when interpreting a passing suite.
 Tests worth knowing:
 
 - `tests/unit/test_canonical_features.py`: equivalent settings resolve to one kernel.
-- `internal/tests/bench/test_cost_guard.py`: each configuration (unlit, `FAST`, the default, the recipes) is
-  clearly cheaper than the next richer one (CPU),
-  so a feature switched off cannot silently stop saving time.
 - `tests/contracts/test_conformance.py`: the adapter conformance kit on MuJoCo, USD, Newton and Isaac Lab
   (through fakes of Isaac Lab's renderer objects, `tests/fixtures/isaaclab_fake.py`; the end-to-end run,
   `tests/adapters/isaaclab/test_isaaclab_integration.py`, needs Isaac Lab and CUDA).
 - `tests/contracts/test_import_boundary.py`: `core`, `scene` and `_common` import no scene format.
 
-### 5.2 Regression suite (`internal/benchmarks/regression.py`)
+### 5.2 HF jobs (`python -m tools.hf`)
 
-A declarative list of cases (scene, view, resolution, recipe, seed, frame) rendered on the CPU
-with software traversal and compared with recorded references (mean FLIP, max difference,
-channel drift, NaN / inf). References live outside git
-(`$MJPBR_REGRESSION_DIR/<tag>`, default `~/.cache/raywarp/regression/<tag>`); the manifest is
-committed (`internal/benchmarks/baselines/regression_<tag>.json`). The current tag is the one of the
-manifest in `internal/benchmarks/baselines/` (`perf1`); its references are in the bucket
-(`regression/perf1.tgz`).
-
-```bash
-uv run python internal/benchmarks/regression.py list --tag perf1 --case 'cornell*'
-uv run python internal/benchmarks/regression.py check --tag perf1 --workers 4 --case 'cornell*'
-uv run python internal/benchmarks/regression.py record --tag <new-tag>     # only for an explained pixel change
-```
-
-Deterministic cases pass at <= 1/255 per channel and mean FLIP <= 0.01; stochastic cases
-against the difference between two recorded seeds. `check` writes `report.md` and
-`failures.png` (reference | new | difference). Predict which cases a change alters before you
-run it, and explain every changed pixel before recording a new tag. `check --exact` fails every
-case that is not bit-identical; `check --device cuda:0 [--traversal optix]` renders on the GPU
-against the CPU references: the CPU / GPU parity check of the whole suite.
-
-### 5.3 HF jobs and sandboxes (`python -m internal.tools.hf`)
-
-Everything heavier than a few tests runs on Hugging Face through one CLI (rules, flavors, caches,
+Work heavier than a few tests can run on Hugging Face Jobs through one CLI (flavors, caches,
 spend tracking: [tools/hf/README.md](../tools/hf/README.md)). A run uploads the committed `HEAD`
 of the worktree; tag it with the lane.
 
 ```bash
-python -m internal.tools.hf run --tag my-lane-cpu --flavor cpu-performance --timeout 1h --wait -- \
+python -m tools.hf run --tag my-lane-cpu --flavor cpu-performance --timeout 1h --wait -- \
   'python -m pytest -q -n 8 tests'                                     # the CPU suite (OOM at -n 8 on cpu-upgrade)
-python -m internal.tools.hf run --tag my-lane-reg --flavor cpu-upgrade --timeout 1h --wait -- \
-  'python internal/benchmarks/regression.py check --tag perf1 --workers 8'       # the regression suite
-python -m internal.tools.hf run --tag my-lane-gpu --flavor l4x1 --timeout 30m --wait -- \
+python -m tools.hf run --tag my-lane-gpu --flavor l4x1 --timeout 30m --wait -- \
   'python -m pytest -q -n 2 tests/optix_backend tests/render'           # GPU shards
-python internal/benchmarks/run.py launch --spec internal/benchmarks/specs/per_merge.json --flavor rtx-pro-6000 \
-  --source base=core-refactor --source cand=HEAD                         # perf A/B (internal/benchmarks/README.md)
-python -m internal.tools.hf ps | logs <run> | fetch <run> | kill <run>
+python -m tools.hf ps | logs <run> | fetch <run> | kill <run>
 ```
 
-### 5.4 The warm dev server (`wpbr-dev`)
+The maintainers also run a pixel regression suite (CPU references, with a CPU / GPU parity mode),
+performance A/B jobs and a warm dev server for looking at renders; these are not part of the
+public repository.
 
-For looking at renders while developing: the dev server (`python -m internal.webui`) keeps scenes, kernels
-and renderers warm on an HF GPU sandbox; `internal/tools/dev/wpbr-dev` drives it (`wpbr-dev up`,
-`sync`, `render SCENE`, `video SCENE`, `ab SCENE`, `profile SCENE`, `bisect settings|commits`,
-`forward` for the browser viewer, `down`). Every registry scene of `internal/benchmarks/scenes.py` is
-selectable and renders as every other tool renders it (its lighting, views and exposure come from
-the registry entry). Stop the sandbox when done (`wpbr-dev down`).
-
-### 5.5 Evidence
+### 5.3 Evidence
 
 A change that can affect speed, cold start or pixels lands with numbers or images: a report folder
-under the git-ignored `internal/results/`, mirrored to the HF bucket, and cited by its bucket path. A bug
+cited in the change's description. A bug
 fix lands with a test that fails before it. Keep evaluations small: one scene, one size, the two
 or three variants being compared.
 
-### 5.6 Ground truth for look decisions
+### 5.4 Ground truth for look decisions
 
-Which reference decides what (user decision, 2026-10-28, `internal/results/history/review_c/robotics_fit/`):
+Which reference decides what:
 
 - **Look decisions (the default settings, tone mapper, GI on or off, occlusion, light transport):
   Mitsuba 3 path tracing on a small robotics set**, at the target resolution (512-1024 px): the
-  pick table (`pick0`), the env-lit bin (`bin0`) and the MuJoCo validation scenes. Tooling:
-  `internal/benchmarks/quality.py mitsuba` (FLIP of the real-time tier against Mitsuba `direct` / `path`
-  with the Filament BSDF), `internal/benchmarks/references/mitsuba_scene.py` (`scene_dict`: a MuJoCo model,
-  camera, lights and envmap as a Mitsuba scene; it does not export MuJoCo's headlight: turn it
-  off in the compared scene), and the robotics scenes and `mitsuba` / `vs_mitsuba` modes of the archived
-  `internal/results/history/review_c/robotics_fit/lab/rf.py`. Compare both through the same tone map at
-  the same exposure, so that the tone mapper is out of the comparison.
-- **Omniverse RTX stills** (Office, Hospital, Sponza, Bistro: `internal/benchmarks/references/rtx_refs.py`)
+  pick table, an env-lit bin and the MuJoCo validation scenes, compared by FLIP against Mitsuba
+  `direct` / `path` with the Filament BSDF (the maintainers' reference tooling, not part of the
+  public repository). MuJoCo's headlight is not exported to Mitsuba: turn it off in the compared
+  scene. Compare both through the same tone map at the same exposure, so that the tone mapper is
+  out of the comparison.
+- **Omniverse RTX stills** (Office, Hospital, Sponza, Bistro)
   only for the RTX look recipe and the USD adapter's conventions (units, light normalisation,
   dome orientation, OmniPBR / MDL). They are not a reference for the default / `FAST`:
   RTX RealTimePathTracing has its own shortcuts, and those scenes are light-heavy interiors that
   no tabletop task resembles.
 - Analytic checks (white furnace, radiometry: `tests/render/test_ibl.py`, `test_render.py`) stay
-  renderer-independent; the regression suite (`internal/benchmarks/regression.py`) is a change detector,
-  not ground truth.
+  renderer-independent; a pixel regression suite is a change detector, not ground truth.
 
 ## 6. Adding a feature
 
@@ -835,9 +789,8 @@ Which reference decides what (user decision, 2026-10-28, `internal/results/histo
 6. **Default.** Decide the field's default (`RenderSettings()`, its group's default) and its
    `FAST` value (`settings/render.py`) and why; a compile-time field must keep the default,
    `FAST` and the recipes on a prebuilt tier (`core/build/variants/tiers.py`, `python -m tools.prebuilt.zero
-   holes`), and the cost guard must still pass.
-7. **Test and evidence.** A unit test of the effect on a tiny scene, the affected regression
-   cases (`--case`), and timing on GPU for hot-path changes (megakernel local memory and
+   holes`).
+7. **Test and evidence.** A unit test of the effect on a tiny scene, and timing on GPU for hot-path changes (megakernel local memory and
    registers through `wp.get_cuda_kernel_properties`, then a GPU run).
 
 A new trace backend implements the `TraceBackend` Protocol and registers in
@@ -854,7 +807,7 @@ A new trace backend implements the `TraceBackend` Protocol and registers in
 2. **Ingest.** `scene(source, **options) -> Scene`: fill a `SceneBuilder`; call
    `report.drop(name, where)` / `report.approx(name, where)` for every attribute you cannot
    represent exactly (`<source>.<attribute>` names), `report.count` for totals, and record the
-   files read in `builder.dependencies` so the `.wpbr` cache knows when it is stale. Map units
+   files read in `builder.dependencies` so the `.rayw` cache knows when it is stale. Map units
    once (photometric lights, sRGB vs linear per texture role) with the core's conventions, never
    with constants tuned to one asset. Set each instance's `source` id so a cached scene can be
    bound again.
@@ -890,7 +843,7 @@ Adapter conventions already in use (private extensions, documented for users):
 
 ## 8. Kernel lab lessons
 
-Measured during the refactor (details in `internal/results/history/m3/` and `internal/results/history/m7/`):
+Measured during the refactor:
 
 - **Inline hot pieces.** Warp passes structs to `wp.func`s by value: a non-inlined call taking
   `Geometry` (~40 arrays) copies it. When you split a hot function into pieces, use
@@ -907,46 +860,36 @@ Measured during the refactor (details in `internal/results/history/m3/` and `int
 - **Keep vendored arithmetic in the same operation order**: that is what keeps results
   bit-identical across refactors.
 - Prototype `wp.ref[T]` on a tiny kernel before relying on it.
-- Don't edit sources while tests or the regression suite compile (Warp re-reads them).
+- Don't edit sources while tests compile (Warp re-reads them).
 - Don't move widely imported structs; move their builders. Scripted signature rewrites must keep
   parameter order.
 - OptiX launch parameters are passed by value with an 8 KB limit: watch their size
-  (`internal/results/history/m6/README.md` lists the headroom per configuration).
+  when adding struct fields.
 - Rejected with evidence: shader execution reordering (no gain on L4, a material-keyed reorder
-  1.7-1.9x slower, `internal/results/history/m7/ser_omm/README.md`).
+  1.7-1.9x slower).
 - Rejected with evidence: per-pixel ambient occlusion rays (user decision, 2026-10-28). Six
   short rays (15 cm) per shading point added visible grain and over-darkened mesh crevices for
   +60 % (tabletop) to +490 % (G1 on a height field) per frame, and do not handle enclosure (rooms,
-  bins) at all; the baked GI probes do that
-  (`internal/results/history/review_c/robotics_fit/README.md` section 1, and earlier
-  `internal/results/history/m1/sky/sky.md`). If contact darkening is ever wanted, the tool is a baked
+  bins) at all; the baked GI probes do that. If contact darkening is ever wanted, the tool is a baked
   per-object AO or a screen-space pass, not per-pixel rays.
 
 ## 9. Commands and utilities
 
 ```bash
 uv sync --all-extras --group bench                     # dev environment (every extra, the dev and bench groups)
-python internal/tools/fetch_assets.py                           # Khronos glTF, Menagerie robots, Poly Haven HDRIs
-uv run python internal/benchmarks/run.py run --spec internal/benchmarks/specs/smoke.json --out internal/results/smoke --dry-run
-uv run python internal/benchmarks/warmstart.py --help           # process start -> first frame, per stage
-uv run python internal/benchmarks/residency.py --help           # host <-> device traffic of a steady frame
-uv run python internal/benchmarks/gallery.py sheet --out internal/results/features --res 384
-uv run python internal/benchmarks/regression.py check --tag perf1 --exact   # bit-identical check
+python -m benchmarks.run --scene franka --worlds 64 --res 512   # frame time, first frame, compiles
+python tools/settings_table.py                          # check the generated docs tables (--write to update)
 ```
 
 `tools/`:
 
-- `fetch_assets.py`: downloads benchmark assets (follows MDL module imports).
-- `gltf_to_mjcf.py`, `gltf_to_usd.py`: glTF 2.0 to visual-only MJCF / to USD with
-  UsdPreviewSurface and UsdLux (the CLI of `raywarp.formats.gltf.to_usd`, what `rw.formats.gltf` reads).
-- `mdl_corpus.py`: how every MDL material of a set of stages converts.
 - `fit_ltc.py`, `check_ltc.py`: fit and check the LTC tables of area lights.
 - `make_dfg_lut.py`: regenerates `raywarp/data/dfg_lut.npz`.
-- `dev/`: `wpbr-dev`, the client of the warm dev server (`internal/webui/`, internal/docs/webui.md): stills, videos,
-  A/B, profiles and bisection on an HF sandbox.
-- `hf/`: `python -m internal.tools.hf`, Hugging Face jobs, sandboxes, caches, prepared scenes and spend
-  (section 5.3, `tools/hf/README.md`).
+- `settings_table.py`: the generated tables of the docs (settings, OpenPBR coverage, MuJoCo
+  material mapping).
+- `recipes.py`: the documented settings recipes by name, for the tooling.
+- `hf/`: `python -m tools.hf`, Hugging Face jobs, caches and spend (section 5.2,
+  [`tools/hf/README.md`](../tools/hf/README.md)).
 - `native/`: the install-time build hook (`hook.py`: OptiX headers + MDL SDK bundled in `raywarp/_native`).
-
-Plan, state and decisions: `internal/research/kb/` (start with `README.md`). Archived plans and milestone
-evidence: the bucket archives named in [`docs/README.md`](README.md).
+- `prebuilt/`: builds the prebuilt-kernels bundle and wheel.
+- `release/`: release tooling (the kernels wheel variants and their index, the release smokes).

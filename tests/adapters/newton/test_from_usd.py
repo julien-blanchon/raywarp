@@ -11,7 +11,7 @@ pxr = pytest.importorskip("pxr")
 
 from pxr import UsdGeom, UsdPhysics
 
-import raywarp.integrations.newton as newton_pbr
+import raywarp.integrations.newton as rw_newton
 from raywarp.integrations.newton.from_usd import usd_tables
 
 
@@ -39,7 +39,7 @@ def test_a_suffix_naming_two_bodies_of_one_world_raises(tmp_path):
     builder.add_shape_box(body, hx=0.1, hy=0.1, hz=0.1)
   model = builder.finalize(device="cpu")
   with pytest.raises(ValueError, match="matches several Newton bodies of world"):
-    newton_pbr.load_usd(model, stage)
+    rw_newton.load_usd(model, stage)
 
 
 def test_prefixed_replicas_in_different_worlds_bind_one_body_each(tmp_path):
@@ -53,7 +53,7 @@ def test_prefixed_replicas_in_different_worlds_bind_one_body_each(tmp_path):
     builder.add_builder(item, xform=wp.transform((2.0 * w, 0.0, 0.0), wp.quat_identity()), label_prefix=f"/env_{w}")
     builder.end_world()
   model = builder.finalize(device="cpu")
-  host = newton_pbr.load_usd(model, stage)
+  host = rw_newton.load_usd(model, stage)
   tables = usd_tables(model, host, host.ninstance, stage)
   visual = host.instances.paths.tolist().index("/Robot/Link/Visual")
   assert tables.body[:, visual].tolist() == [0, 1]
@@ -73,7 +73,7 @@ def test_static_placement_follows_the_import_transform_most_bodies_agree_on(tmp_
     body = builder.add_body(xform=wp.transform(wp.vec3(*start), wp.quat_identity()), label=prim)
     builder.add_shape_box(body, hx=0.1, hy=0.1, hz=0.1)
   model = builder.finalize(device="cpu")
-  host = newton_pbr.load_usd(model, stage)
+  host = rw_newton.load_usd(model, stage)
   tables = usd_tables(model, host, host.ninstance, stage)
   ground = host.instances.paths.tolist().index("/World/Ground")
   np.testing.assert_allclose(tables.local[0, ground, :3], [0.0, 0.0, 0.45], atol=1e-6)
@@ -94,7 +94,7 @@ def test_one_row_tables_of_a_multi_world_model(tmp_path):
       builder.add_shape_box(-1, hx=0.1, hy=0.1, hz=0.1)
     builder.end_world()
   model = builder.finalize(device="cpu")
-  host = newton_pbr.load_usd(model, stage)
+  host = rw_newton.load_usd(model, stage)
   tables = usd_tables(model, host, host.ninstance, stage)
   assert tables.body.shape == tables.world.shape == tables.shape.shape == tables.local.shape[:2] == (1, host.ninstance)
   visual = host.instances.paths.tolist().index("/Robot/Link/Visual")

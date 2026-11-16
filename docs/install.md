@@ -17,6 +17,32 @@ the ffmpeg CLI on `PATH` ([recording](recording.md)). Check a machine with `rayw
 ([CLI](cli.md)): the GPU, its compute capability and RT cores, the driver, OptiX, Warp, the
 traversal `traversal="auto"` picks and whether the kernels' remote answers.
 
+## Supported GPUs
+
+An NVIDIA GPU with a driver that serves OptiX 9.0 (R580 or newer) runs the RT-core path. Prebuilt
+kernels exist for these architectures; others compile their kernels once on first use.
+
+| architecture | GPUs | traversal |
+| --- | --- | --- |
+| sm_80 | A100 | Warp BVH (no RT cores) |
+| sm_86 | A10, A40, RTX 30 | OptiX (RT cores) |
+| sm_89 | L4, L40S, RTX 40 | OptiX (RT cores) |
+| sm_90 | H100 | Warp BVH (no RT cores) |
+| sm_120 | RTX PRO 6000 Blackwell, RTX 50 | OptiX (RT cores) |
+
+`performance.traversal="auto"` (the default) picks OptiX on GPUs with RT cores and the Warp BVH
+on GPUs without them and on the CPU. Both are first-class paths with the same features. There is
+no silent fallback: where OptiX cannot run on an RT-core GPU, the renderer raises and names the
+cause; `performance.traversal="software"` selects the Warp BVH explicitly. OptiX comes with the
+NVIDIA driver; Raywarp calls it through its own binding and bundles the SDK headers, so there is
+nothing else to install.
+
+## CPU
+
+Every feature runs unchanged on Warp's CPU device (`wp.ScopedDevice("cpu")`), with images within a
+few 1/255 of the GPU's. It is meant for debugging and tests, not throughput
+([performance](performance.md#running-on-the-cpu)).
+
 ## Prebuilt kernels
 
 The kernels are compiled ahead, one bundle per GPU architecture (sm_80: A100; sm_86: A10, RTX 30;

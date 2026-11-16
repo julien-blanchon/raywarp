@@ -146,7 +146,7 @@ def test_alias_identity_of_the_device_tables(path):
   the emitted radiance (peak x tint) is MuJoCo's m.mat_emission x the rgb, which the core computes
   by scaling the base color with the aliased m.mat_emission. Cut-outs (MASK) keep only the rgb."""
   if not path.exists():
-    pytest.skip(f"{path} missing: run internal/tools/fetch_assets.py")
+    pytest.skip(f"{path} missing (downloaded assets under $MJPBR_ASSET_DIR)")
   _check_alias_identity(mujoco.MjModel.from_xml_path(str(path)))
 
 

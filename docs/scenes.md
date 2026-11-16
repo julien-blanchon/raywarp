@@ -59,6 +59,9 @@ two light models and the adapter follows MuJoCo's own (Filament renderer) rule:
 | `type="image"` with a `texture` | image-based lighting: the texture's radiance x `intensity` [nits] (also the background) |
 | skybox texture | background only (MuJoCo's skybox lights nothing) when no envmap (`lighting=`) or image light is given |
 
+<!-- SHOWCASE: scenes/lights.webp (docs/assets/SHOTS.md) -->
+![Point, spot, rect area and IES lights](assets/scenes/lights.webp)
+
 Lights with a `bulbradius` are sphere lights; under `lighting.area_lights="ltc"` (the default;
 "point", as in `FAST`, shades them as points) they are shaded as true area lights (LTC highlights,
 soft shadows from `shadows.samples` points on the light). The scene above is photometric (`intensity="3"`): a dim 3 lux sun, so render it
@@ -92,6 +95,9 @@ light emits along its local -Z; the radiance is `intensity x 2^exposure x color`
 
 An equirectangular HDR image lights the scene (split-sum image-based lighting, a prefiltered
 map baked once and cached on disk) and fills the background.
+
+<!-- SHOWCASE: scenes/envmaps.webp (docs/assets/SHOTS.md) -->
+![One object under three environment maps](assets/scenes/envmaps.webp)
 
 ```python
 sky = np.ones((32, 64, 3), np.float32)  # (height, width, 3) linear radiance; row 0 is the zenith
@@ -176,7 +182,7 @@ mujoco.mj_forward(mjm2, mjd2)
 assert r.render(mjw.put_data(mjm2, mjd2)).rgb.numpy()[..., :3].mean() > 60
 ```
 
-A host scene that is already built (a `.wpbr` file, a USD or Newton scene) gets the same with
+A host scene that is already built (a `.rayw` file, a USD or Newton scene) gets the same with
 `Scene.with_lighting`, which returns a new scene (point and spot lights made without an
 intensity are display-relative: their intensity follows their distance to the scene's centre):
 
@@ -184,13 +190,13 @@ intensity are display-relative: their intensity follows their distance to the sc
 b = rw.SceneBuilder()
 grey = b.add_material(rw.Material(base_color=(0.8, 0.8, 0.8)))
 b.add_instance("box", size=(3.0, 3.0, 0.05), material=grey, xform=np.c_[np.eye(3), [0.0, 0.0, -0.05]])
-host = b.build()  # or rw.Scene.load("scene.wpbr")
+host = b.build()  # or rw.Scene.load("scene.rayw")
 lit = host.with_lighting(rw.Lighting(lights=[rw.Light.sun((0.3, 0.2, -1.0))], ambient=(0.1, 0.1, 0.1)))
 gpu = rw.upload(lit)
 studio = rw.upload(host.with_lighting(rw.Lighting.studio(replace=True)))  # the rig alone
 ```
 
-USD and Newton take it at ingest (USD adds it after the `.wpbr` cache, so the cache key does not
+USD and Newton take it at ingest (USD adds it after the `.rayw` cache, so the cache key does not
 change); Newton's front ends (`SensorCamera`, `ViewerRaywarpHeadless`) take it as `lighting=` too, and Isaac
 Lab as `RaywarpRendererCfg(lighting=...)`:
 
@@ -239,8 +245,7 @@ filtering never reaches across a wall, whatever its thickness: closed rooms stay
 do not pick up light from outside. Per-world randomised materials, lights or environments: a few
 variants get one exactly baked volume each; mostly distinct worlds (continuous randomisation)
 share one volume tinted per world (a coarse directional ratio field from probe rays shaded in
-that world, recomputed in the frame its inputs change). The developer tool `internal/tools/dev/gi_debug.py`
-(`view(renderer, kind)`) draws the GI lookups, the probes and their sky visibility over a rendered frame (outputs `position` and `normal`).
+that world, recomputed in the frame its inputs change).
 
 ### A closed room lit by an environment map
 
@@ -298,6 +303,9 @@ The renderer's `hdr` output is scene-linear radiance before display exposure and
 For a Lambertian surface with reflectance `rho`, normal-incidence illuminance `E` produces
 `rho * E / pi` radiance. Calibration checks use that equation directly, without comparing
 8-bit tone-mapped images as though they were radiance.
+
+<!-- SHOWCASE: scenes/exposure.webp (docs/assets/SHOTS.md) -->
+![Automatic exposure vs manual ev100 8 / 12 / 15](assets/scenes/exposure.webp)
 
 Exposure is automatic by default (`exposure.mode = "auto"`): each camera image is metered on a
 histogram of its scene luminance (the 10-90 % band shown at middle grey 0.18, darkened by at most
@@ -407,10 +415,13 @@ the one place where values are converted). The core renders OpenPBR's real-time 
 spec's "Flexibility of implementation" clause allows: one GGX specular lobe (alpha = roughness²,
 Schlick Fresnel) over a Lambert base, an optional GGX coat, emission and opacity.
 
+<!-- SHOWCASE: scenes/materials.webp (docs/assets/SHOTS.md) -->
+![OpenPBR: metalness, roughness, coat, sheen, transmission](assets/scenes/materials.webp)
+
 A `rw.Material` holds:
 - 16 inputs as fields: the ones the core renders or derives from, and two it carries without
   rendering them (`specular_color`, `geometry_thin_walled`);
-- `extras=rw.scene.OpenPbrExtras(...)`, the other OpenPBR inputs. They are carried (`.wpbr`
+- `extras=rw.scene.OpenPbrExtras(...)`, the other OpenPBR inputs. They are carried (`.rayw`
   included) and reported `gpu.material.<input>` when authored, but not rendered;
 - `ext=rw.scene.RaywarpExt(...)`, the raywarp extensions (below);
 - textures per slot (`rw.scene.Slot`, named after the input each drives; `rw.scene.TextureRef`: channel,
@@ -432,7 +443,7 @@ b.add_light(
   rw.Light(kind=rw.scene.LightKind.RECT, intensity=2000.0, width=0.5, height=0.5, xform=np.c_[np.eye(3), [0.5, 0.5, 1.5]])
 )
 b.add_camera("cam", rw.scene.Camera(xform=np.c_[[[1, 0, 0], [0, 0.34, 0.94], [0, -0.94, 0.34]], [0, -3, 1.2]]))
-host = b.build()  # a rw.Scene (b.build("scene.wpbr") also writes the cache file)
+host = b.build()  # a rw.Scene (b.build("scene.rayw") also writes the cache file)
 r = rw.Renderer(rw.upload(host), nworld=1, cameras=None, resolution=(64, 48))
 out = r.render()
 ```
@@ -519,6 +530,9 @@ Every OpenPBR input, where it lives, its default and how the core renders it (ge
 | `geometry_detail_normal` | `extras.textures` |  | supported | raywarp extension: a detail normal map combined with geometry_normal by RNM, own UV transform |
 <!-- openpbr-inputs:end -->
 
+<!-- SHOWCASE: scenes/glass.webp (docs/assets/SHOTS.md) -->
+![Glass: a refracting solid, a thin-walled pane, tinted absorption](assets/scenes/glass.webp)
+
 **Coats.** OpenPBR's coat semantics apply to OpenPBR, Standard Surface and other coupled sources:
 the base reflects at the IOR ratio `specular_ior` / `coat_ior` under the coat, the coat roughens
 the base, and the coat weight is scaled by F0(`coat_ior`) / 0.04. glTF, UsdPreviewSurface,
@@ -581,7 +595,7 @@ only the visible surface, not its fitted light or the GI.
 `Material(displacement=rw.scene.Displacement(amount=...))` accepts a constant object-space distance
 or a scalar-channel `TextureRef`. The texture binding supplies scale, bias, UV transform and
 addressing. There is no implicit midpoint. `SceneBuilder` prepares the authored height into
-ordinary triangle meshes shared by instances and saved in `.wpbr`; runtime material swaps
+ordinary triangle meshes shared by instances and saved in `.rayw`; runtime material swaps
 change shading, not geometry. No new shader or device material field is needed.
 
 UsdPreviewSurface's scalar `displacement` input is read even without a material displacement
@@ -604,8 +618,7 @@ are reported because their boundaries are not stitched. Analytic primitive displ
 reported as unsupported. MaterialX/MDL displacement, vector displacement, residual bump,
 bump-only mode and per-world geometry changes remain unimplemented. The first scalar checkpoint
 passed both-backend GPU depth tests and downloaded-tile depth parity; 1024px keyframes were
-inspected. See `internal/research/plan/reviews/scalar_displacement_preparation_2026_10_30.md` for exact
-source, preparation measurements, images and remaining reference/motion/performance checks.
+inspected; reference, motion and performance checks remain.
 
 ### Sources
 
@@ -672,7 +685,7 @@ it becomes a radiance of emission x k nits, so a raw HDR sky and the asset's emi
 their authored ratio under automatic exposure.
 The conversion is kept (`cache=True`, the default; `cache=None`: a temporary conversion) by the
 content of the asset and every file it references
-(plus the converter's code), with the host scene's `.wpbr` next to it (`verify=` as
+(plus the converter's code), with the host scene's `.rayw` next to it (`verify=` as
 `rw.formats.usd.load`'s: "files" checks every file of the conversion, "source" the converted stage only);
 `raywarp convert scene.gltf scene.usdc` writes the same stage for other renderers ([CLI](cli.md)).
 
@@ -705,6 +718,9 @@ appearance tables (`PerWorld(material=[...])`) vary colors, roughness or a textu
 
 A `rw.CameraSpec` is one camera of a Renderer; a scene camera name (MJCF `camera`, USD
 `Camera` prim path) is shorthand for `CameraSpec(mount=name)` with the scene camera's lens.
+
+<!-- SHOWCASE: scenes/camera_models.webp (docs/assets/SHOTS.md) -->
+![Pinhole, orthographic, fisheye 180 deg, OpenCV distortion](assets/scenes/camera_models.webp)
 
 ```python
 cams = [
@@ -769,6 +785,9 @@ frame. Pinhole cameras never compile ([performance](performance.md#zero-compiles
   touching an object sees past it), and depth still counts from the eye. Shadow, reflection and GI
   rays are not clipped. MuJoCo Warp's ray caster has no near clip (MuJoCo's native renderer has).
 
+<!-- SHOWCASE: scenes/lens_distortion.webp (docs/assets/SHOTS.md) -->
+[![Per-world lens distortion, k1 from -0.4 to 0.4, no recompile](assets/scenes/lens_distortion.webp)](assets/scenes/lens_distortion.mp4)
+
 **Ray bundles** (measured lens models, LiDAR-like patterns): give each pixel its own
 camera-frame ray; depth is then the distance along the ray. Prefer `projection="fisheye"` for
 fisheye lenses: bundles are all-or-none per Renderer, one resolution, and have no motion vectors.
@@ -800,6 +819,9 @@ labels = r.set_semantics({"ground": ["floor"], "object": ["ball", "crate"]})
 assert labels == ("background", "unlabelled", "ground", "object")  # class ids 0, 1, 2, 3
 semantic = r.render(d).semantic.numpy()
 ```
+
+<!-- SHOWCASE: scenes/segmentation.webp (docs/assets/SHOTS.md) -->
+![Instance and semantic segmentation](assets/scenes/segmentation.webp)
 
 USD `UsdSemantics` labels are kept in the host scene (`Instances.label`).
 

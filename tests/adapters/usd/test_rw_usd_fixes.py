@@ -196,8 +196,7 @@ def test_normalize_divides_by_the_area_in_stage_units(tmp_path, mpu):
   """One `normalize` rule for area lights and MeshLightAPI meshes: the world-space area in stage
   units (UsdLux). A 2 m RectLight and a 2 m MeshLightAPI quad of intensity 40 emit 10 nits on a
   metre stage, 40 / 200^2 on a centimetre stage (Omniverse RTX: a normalized 50 cm RectLight on a
-  cm stage is 1e4 x dimmer than on a metre stage,
-  internal/results/history/post_release/usd_look)."""
+  cm stage is 1e4 x dimmer than on a metre stage)."""
   stage = new_stage(tmp_path, mpu=mpu)
   size = 2.0 / mpu
   mesh = quad(stage, "/Panel", size)
@@ -221,7 +220,7 @@ def test_normalize_divides_by_the_area_in_stage_units(tmp_path, mpu):
 
 def test_camera_exposure_is_read_into_the_camera_lens(tmp_path):
   """A camera's exposure (exposure + exposure:fStop / time / iso / responsivity, as stops) is a
-  host column (kept by the `.wpbr` file) and the scene camera's `CameraSpec.exposure`."""
+  host column (kept by the `.rayw` file) and the scene camera's `CameraSpec.exposure`."""
   import warp as wp
 
   stage = new_stage(tmp_path)
@@ -230,7 +229,7 @@ def test_camera_exposure_is_read_into_the_camera_lens(tmp_path):
   plain = UsdGeom.Camera.Define(stage, "/Plain")
   s = rw.formats.usd.read(stage).build()
   assert not s.report.dropped
-  path = tmp_path / "scene.wpbr"
+  path = tmp_path / "scene.rayw"
   s.save(path)
   loaded = rw.Scene.load(path)
   names = loaded.cameras.names.tolist()

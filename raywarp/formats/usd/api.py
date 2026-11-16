@@ -1,8 +1,8 @@
-"""`rw.formats.usd.scene` / `load` / `bake` / `read`: stage -> GpuScene / Scene, with the `.wpbr`
+"""`rw.formats.usd.scene` / `load` / `bake` / `read`: stage -> GpuScene / Scene, with the `.rayw`
 cache.
 
-Cache: `<cache dir>/<stem>-<key>.wpbr` (or an explicit `.wpbr` path), freshness through
-`raywarp.scene.model.wpbr`: the key (source file name, options, the converter version
+Cache: `<cache dir>/<stem>-<key>.rayw` (or an explicit `.rayw` path), freshness through
+`raywarp.scene.model.rayw`: the key (source file name, options, the converter version
 `version.CONVERTER`, the versions of `LIBRARIES`) and every file the scene came from (USD layers,
 .mdl modules, images; missing ones included; recorded relative to the source's directory) are
 compared on load (no pxr import). raywarp's own MDL library and the SDK wheel's modules are
@@ -31,7 +31,7 @@ from raywarp.scene.build.builder import SceneBuilder
 from raywarp.scene.images import blob
 from raywarp.scene.images.prefetch import Prefetch
 from raywarp.scene.lighting.rig import Lighting
-from raywarp.scene.model import wpbr
+from raywarp.scene.model import rayw
 from raywarp.scene.model.scene import Scene
 from raywarp.scene.model.types import Json
 
@@ -63,19 +63,19 @@ def cache_key(
   options: SceneOptions = DEFAULT_SCENE_OPTIONS,
   adapter: Options = DEFAULT_OPTIONS,
   mips: bool = False,
-) -> wpbr.CacheKey:
+) -> rayw.CacheKey:
   """The cache key of `load(source, options=options, adapter=adapter, mips=mips)`."""
   # A read's MDL materials depend on the MDL search paths, raywarp's MDL library (data: by content)
   # and the bundled MDL SDK release (`LIBRARIES`' "mdl-sdk": the build hook's).
   from raywarp.formats.usd.materials.mdl import sdk as mdl_sdk  # noqa: PLC0415  # its build record, on use
 
   mdl: list[Json] = [*(os.environ.get(v, "") for v in MDL_PATH_VARIABLES), version.mdl_library_digest()]
-  return wpbr.CacheKey(
+  return rayw.CacheKey(
     adapter="usd",
     source=os.path.abspath(os.fspath(source)),
     options={**_json(adapter, options), "mips": mips, "mdl": mdl},
     code=f"converter-{version.CONVERTER}",
-    libraries={**wpbr.installed_versions(*LIBRARIES), "mdl-sdk": mdl_sdk.version()},
+    libraries={**rayw.installed_versions(*LIBRARIES), "mdl-sdk": mdl_sdk.version()},
   )
 
 
@@ -87,8 +87,8 @@ def cache_path(
   adapter: Options = DEFAULT_OPTIONS,
   mips: bool = False,
 ) -> Path:
-  """The `.wpbr` file `load(source, cache=cache, ...)` reads or writes."""
-  return wpbr.cache_file(cache_key(source, options=options, adapter=adapter, mips=mips), cache)
+  """The `.rayw` file `load(source, cache=cache, ...)` reads or writes."""
+  return rayw.cache_file(cache_key(source, options=options, adapter=adapter, mips=mips), cache)
 
 
 def read(
@@ -157,9 +157,9 @@ def load(  # noqa: PLR0913  # the source and keyword-only options
   cache: str | os.PathLike[str] | bool | None = True,  # a location, True (the cache directory) or None
   mips: bool = False,
   threads: int | None = None,
-  verify: wpbr.Verify = "files",
+  verify: rayw.Verify = "files",
 ) -> Scene:
-  """Loads a USD stage as a host Scene, through the `.wpbr` cache when `cache` is given.
+  """Loads a USD stage as a host Scene, through the `.rayw` cache when `cache` is given.
 
   `lighting` is added after the cache (`Scene.with_lighting`): it does not change the cache key.
 
@@ -169,15 +169,15 @@ def load(  # noqa: PLR0913  # the source and keyword-only options
       at decode, the rest at upload).
     adapter: the USD options (`raywarp.formats.usd.Options`).
     lighting: lights, ambient, environment maps and headlight added to the stage's.
-    cache: cache directory, a `.wpbr` file path, True (the default: the cache directory,
+    cache: cache directory, a `.rayw` file path, True (the default: the cache directory,
       ~/.cache/raywarp or $RAYWARP_CACHE_DIR; no cache when that variable is empty) or None (no
-      cache). A second load of an unchanged source maps its `.wpbr` (0.4-0.6 s for an Isaac prop
+      cache). A second load of an unchanged source maps its `.rayw` (0.4-0.6 s for an Isaac prop
       that converts in 3-9 s). The directory also holds the baked MDL textures shared by every
       scene (`mdl/`).
     mips: store full mip chains in the scene.
     threads: image decode threads.
     verify: what a cached scene's freshness compares besides its key: "files" every file it was
-      read from, "source" the stage file only (`scene.model.wpbr.fresh`: for prepared caches whose
+      read from, "source" the stage file only (`scene.model.rayw.fresh`: for prepared caches whose
       files were checked otherwise, e.g. on a network mount where each file costs a round trip).
 
   Raises:
@@ -193,7 +193,7 @@ def load(  # noqa: PLR0913  # the source and keyword-only options
     host.report.timings["total"] = time.perf_counter() - start
   else:
     key = cache_key(source, options=options, adapter=adapter, mips=mips)
-    path = wpbr.cache_file(key, cache)
+    path = rayw.cache_file(key, cache)
     cache_paths.remove_stale(path)  # temporary files of crashed writers
     found = Scene.load_fresh(path, key, verify=verify)
     if found is not None:
@@ -205,7 +205,7 @@ def load(  # noqa: PLR0913  # the source and keyword-only options
   return host if lighting is None else host.with_lighting(lighting)
 
 
-def check_arguments(options: SceneOptions, adapter: Options, *, threads: int | None, verify: wpbr.Verify) -> None:
+def check_arguments(options: SceneOptions, adapter: Options, *, threads: int | None, verify: rayw.Verify) -> None:
   """Checks a read's options before any work (a cache hit would otherwise never check `threads`;
   `options` and `adapter` are both "Options" and easily swapped).
 
@@ -219,8 +219,8 @@ def check_arguments(options: SceneOptions, adapter: Options, *, threads: int | N
   if not isinstance(adapter, Options):
     raise TypeError(f"adapter must be a raywarp.formats.usd.Options, got {type(adapter).__module__}.{type(adapter).__name__}")
   blob.worker_count(threads)
-  if verify not in typing.get_args(wpbr.Verify.__value__):
-    raise ValueError(f"verify must be one of {list(typing.get_args(wpbr.Verify.__value__))}, got {verify!r}")
+  if verify not in typing.get_args(rayw.Verify.__value__):
+    raise ValueError(f"verify must be one of {list(typing.get_args(rayw.Verify.__value__))}, got {verify!r}")
 
 
 def scene(  # noqa: PLR0913  # the source and keyword-only options
@@ -233,7 +233,7 @@ def scene(  # noqa: PLR0913  # the source and keyword-only options
   cache: str | os.PathLike[str] | bool | None = True,  # a location, True (the cache directory) or None
   mips: bool = False,
   threads: int | None = None,
-  verify: wpbr.Verify = "files",
+  verify: rayw.Verify = "files",
 ) -> GpuScene[None]:
   """A USD stage as a GpuScene on `device`: `load` (see its arguments), then `rw.upload` with
   `options` (the stage's poses are static)."""
@@ -246,7 +246,7 @@ def scene(  # noqa: PLR0913  # the source and keyword-only options
 def _rebuild(  # noqa: PLR0913  # the build's inputs, keyword-only
   source: str | os.PathLike[str],
   path: Path,
-  key: wpbr.CacheKey,
+  key: rayw.CacheKey,
   *,
   mips: bool,
   threads: int | None,
@@ -254,15 +254,15 @@ def _rebuild(  # noqa: PLR0913  # the build's inputs, keyword-only
   options: SceneOptions,
   adapter: Options,
 ) -> Scene:
-  """Builds stage file `source` into `.wpbr` file `path` (cache `key`), reading the layers and
+  """Builds stage file `source` into `.rayw` file `path` (cache `key`), reading the layers and
   modules the stale `path` lists ahead (`Prefetch`: what the stage open and the MDL conversion
   read one after the other; images are read by the builder as they are found)."""
-  prefetch = Prefetch(d for d in wpbr.stale_dependencies(path, key.root) if _composed(d.path))
+  prefetch = Prefetch(d for d in rayw.stale_dependencies(path, key.root) if _composed(d.path))
   started = time.time_ns()
   try:
     builder = read(source, options=options, adapter=adapter, mdl_cache=mdl_cache)
     known = prefetch.done() | builder.read_states()
-    wpbr.record(builder.meta, key, builder.dependencies, known=known, since_ns=started)
+    rayw.record(builder.meta, key, builder.dependencies, known=known, since_ns=started)
   finally:
     prefetch.close()
   return builder.build(path, mips=mips, threads=threads)
@@ -286,7 +286,7 @@ def bake(  # noqa: PLR0913  # the source, the destination and keyword-only optio
   threads: int | None = None,
   mdl_cache: Path | None = None,
 ) -> Scene:
-  """Converts a stage to a `.wpbr` file (the cache format, usable as `load(...,
+  """Converts a stage to a `.rayw` file (the cache format, usable as `load(...,
   cache=destination)`).
 
   Returns the memory-mapped Scene.

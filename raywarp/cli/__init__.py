@@ -3,7 +3,7 @@
   raywarp view [SCENE ...]                the web viewer (`raywarp.viewer`)
   raywarp record SCENE OUT.mp4            an MP4 of a scene, the camera orbiting (`raywarp.video`)
   raywarp convert IN.gltf OUT.usdc|.xml   glTF -> USD / MJCF (`raywarp.formats.gltf`)
-  raywarp prepare IN.usd [-o OUT.wpbr]    a USD stage baked to a `.wpbr` scene file
+  raywarp prepare IN.usd [-o OUT.rayw]    a USD stage baked to a `.rayw` scene file
   raywarp kernels info | fetch            the prebuilt GPU kernels (`raywarp.kernels`)
   raywarp cache info | prune --max-gb N   the disk caches (`raywarp.cache`)
   raywarp info                            the environment: GPU, driver, OptiX, Warp, kernels

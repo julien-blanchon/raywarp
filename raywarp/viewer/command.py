@@ -22,7 +22,7 @@ def _size(text: str) -> tuple[int, int]:
 
 def add_arguments(p: argparse.ArgumentParser) -> None:
   """The viewer's options on parser `p` (`raywarp view`)."""
-  p.add_argument("scenes", nargs="*", help="scene files: .wpbr, USD (.usd/.usda/.usdc/.usdz), glTF (.gltf/.glb), MJCF (.xml)")
+  p.add_argument("scenes", nargs="*", help="scene files: .rayw, USD (.usd/.usda/.usdc/.usdz), glTF (.gltf/.glb), MJCF (.xml)")
   p.add_argument("--scenes-dir", action="append", default=[], help="a directory of scene files (and its subdirectories)")
   p.add_argument("--open", default=None, help="the scene shown first (a file given; default: the first file, else the demo)")
   p.add_argument("--device", default="cuda", help="Warp device: cuda, cuda:N or cpu (default: cuda)")

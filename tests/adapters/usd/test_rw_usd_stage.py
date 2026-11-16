@@ -19,7 +19,7 @@ import raywarp as rw
 import raywarp.formats.usd
 from raywarp.cache import paths
 from raywarp.core.pipeline.textures import formats
-from raywarp.scene.model import wpbr as cache
+from raywarp.scene.model import rayw as cache
 
 
 def load(stage, **options) -> rw.Scene:
@@ -274,7 +274,7 @@ def test_scene_cache_cold_warm_and_invalidation(tmp_path):
   src = tmp_path / "scene.usda"
   cache = tmp_path / "cache"
   cold = rw.formats.usd.load(src, cache=cache)
-  files = list(cache.glob("*.wpbr"))
+  files = list(cache.glob("*.rayw"))
   assert len(files) == 1 and "warm_load" not in cold.report.timings
   warm = rw.formats.usd.load(src, cache=cache)
   assert "warm_load" in warm.report.timings and warm.ninstance == 1
@@ -293,7 +293,7 @@ def test_scene_cache_cold_warm_and_invalidation(tmp_path):
 
 
 def test_load_caches_by_default_and_can_be_switched_off(tmp_path, monkeypatch):
-  """`cache=True` is the default (the cache directory: a second load maps the `.wpbr`);
+  """`cache=True` is the default (the cache directory: a second load maps the `.rayw`);
   `cache=None` and an empty RAYWARP_CACHE_DIR convert every time and write nothing."""
   stage = new_stage(tmp_path)
   quad(stage, "/Q")
@@ -302,13 +302,13 @@ def test_load_caches_by_default_and_can_be_switched_off(tmp_path, monkeypatch):
   directory = tmp_path / "default_cache"
   monkeypatch.setenv(paths.CACHE_ENV, str(directory))
   cold = rw.formats.usd.load(src)
-  assert len(list(directory.glob("*.wpbr"))) == 1 and "warm_load" not in cold.report.timings
+  assert len(list(directory.glob("*.rayw"))) == 1 and "warm_load" not in cold.report.timings
   assert "warm_load" in rw.formats.usd.load(src).report.timings
   assert "warm_load" not in rw.formats.usd.load(src, cache=None).report.timings
   monkeypatch.setenv(paths.CACHE_ENV, "")
   off = rw.formats.usd.load(src)
   assert "warm_load" not in off.report.timings and off.ninstance == 1
-  assert len(list(directory.glob("*.wpbr"))) == 1
+  assert len(list(directory.glob("*.rayw"))) == 1
 
 
 def test_a_default_cache_directory_that_cannot_be_written_warns_and_loads(tmp_path, monkeypatch):
@@ -328,17 +328,17 @@ def test_a_default_cache_directory_that_cannot_be_written_warns_and_loads(tmp_pa
 
 
 def test_bake_and_load_without_pxr_work(tmp_path):
-  """A baked `.wpbr` loads (in a fresh interpreter) without importing pxr."""
+  """A baked `.rayw` loads (in a fresh interpreter) without importing pxr."""
   stage = new_stage(tmp_path)
   quad(stage, "/Q")
   stage.Save()
-  rw.formats.usd.bake(tmp_path / "scene.usda", tmp_path / "out.wpbr")
-  s = rw.Scene.load(tmp_path / "out.wpbr")
+  rw.formats.usd.bake(tmp_path / "scene.usda", tmp_path / "out.rayw")
+  s = rw.Scene.load(tmp_path / "out.rayw")
   assert s.meta["adapter"] == "usd" and s.ninstance == 1
   assert any(dep.path.endswith("scene.usda") for dep in cache.recorded_dependencies(s.meta, tmp_path))
   code = (
     "import sys, raywarp\n"
-    f"s = raywarp.Scene.load({str(tmp_path / 'out.wpbr')!r})\n"
+    f"s = raywarp.Scene.load({str(tmp_path / 'out.rayw')!r})\n"
     "assert s.ninstance == 1 and 'pxr' not in sys.modules, sorted(m for m in sys.modules if m.startswith('pxr'))\n"
   )
   subprocess.run([sys.executable, "-c", code], check=True, cwd=REPO)

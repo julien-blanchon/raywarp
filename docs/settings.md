@@ -301,7 +301,7 @@ tabletops about -20 %. The bundle holds its own build (`fast` tier), so `FAST` c
 A run-time speed knob on the default: `reflections.enabled=False` (Office -29 %, 169.7 -> 119.8
 ms; the image is the same apart from the reflections). `gi.enabled=False` on the default is
 within run-to-run drift on static scenes; on `FAST` it saves 3.5-3.8 % (Office, the showcase room)
-to 12.7 % (Franka) (RTX PRO 6000, 512 worlds; W10 measurement), and under domain randomisation
+to 12.7 % (Franka) (RTX PRO 6000, 512 worlds), and under domain randomisation
 also the relight.
 
 ## Recipes
@@ -309,6 +309,9 @@ also the relight.
 The other looks are plain field changes of the default. Each routes to a prebuilt tier (zero
 compiles: `python -m tools.prebuilt.zero holes` walks them; `tools/recipes.py` holds the same
 table for the tooling).
+
+<!-- SHOWCASE: settings/recipes.webp (docs/assets/SHOTS.md) -->
+![unlit, FAST, default, quality](assets/settings/recipes.webp)
 
 ```python
 # Shape and color, no lighting cues: the base color (material x texture x instance color) as is,
@@ -391,7 +394,7 @@ name with the default specs, `rw.Outputs.parse` from plain data (JSON, a command
 specs carry the conventions: `DepthOutput(convention="planar" | "radial", miss="zero" | "inf" |
 "far")` (MuJoCo Warp / Isaac Lab / `mujoco.Renderer`), `ColorOutput(channels=3, planar=True,
 dtype="float16")` (the color channels-first for a policy's input, written by the kernel:
--0.3..+1.9 %, `internal/results/checkpoint/gpu4-r1/report.md`; every layout world-major), `NormalOutput(frame="shading" |
+-0.3..+1.9 % frame time on an RTX PRO 6000; every layout world-major), `NormalOutput(frame="shading" |
 "geometric")`, `ShadowOutput(light=)`, and `dtype="float16"` on every float output. Without a
 shaded output (depth, seg, semantic, position, uv, material, a geometric normal, motion) the
 render takes the geometry-only kernel: one closest hit per pixel, no shading. What each output
@@ -400,7 +403,7 @@ holds and what it costs: [robotics.md](robotics.md#outputs-what-you-can-request-
 **`aa`** (anti-aliasing). The guidance:
 
 - `aa.spp=2` for small clean images: 2 x 2 samples everywhere (the best quality of every
-  variant studied at 128 x 128, `internal/results/history/m5/aa_study/README.md`).
+  variant studied at 128 x 128).
 - Every frame renders on its own (no temporal accumulation, reprojection or denoiser): a frame
   never depends on earlier ones.
 - Specular anti-aliasing is always on: it widens roughness by the normal variance in the pixel
@@ -415,6 +418,9 @@ holds and what it costs: [robotics.md](robotics.md#outputs-what-you-can-request-
   depth and the display in place, no copy of the image. Off: no pass, no memory; switching
   never compiles.
 
+<!-- SHOWCASE: settings/aa.webp (docs/assets/SHOTS.md) -->
+![Anti-aliasing: aa.spp=1, aa.post (FXAA), aa.spp=2 (2x crops)](assets/settings/aa.webp)
+
 **`shadows`.** One shadow ray per light per sample by default, only for the `max_casters`
 strongest casters of each point (the rest scaled by the traced ones' visibility).
 `samples > 1` samples soft shadows from the light's size (ray cost grows with the sample count).
@@ -424,6 +430,9 @@ low-discrepancy set shifted per pixel and light (larger sets can still show spat
 error). Punctual bulb shadows use random points per pixel when `samples > 1`.
 Off (`enabled=False`) when the task does
 not need shadows: the largest single saving of a lit render after reflections.
+
+<!-- SHOWCASE: settings/shadows.webp (docs/assets/SHOTS.md) -->
+![Shadows: hard (FAST), soft LTC area light, shadows.samples=8](assets/settings/shadows.webp)
 
 `area_rays` (0 = off, the default) softens the shadows of large, near area lights by a pass after
 the render (`core/shade/shadows/area.py`): per pixel, the pass shades the pixel's surface as the
@@ -442,14 +451,16 @@ near area lights light most pixels.
 (LTC highlights, soft shadows); `"point"` shades them as points (cheaper, `FAST`).
 `max_exact` (default 4; None: every light, `FAST`; 8 in the quality recipe) shades only the strongest lights of a point exactly and the rest through their
 diffuse irradiance (Office, 16 x 256 x 256, L4: -44 % frame time, FLIP 0.06 against every light
-exact; Office candidate light entries per pixel 49.6 -> 3.2, `internal/results/history/m5/lighting/`,
-`internal/results/checkpoint/gpu4-r1/report.md`). `light_grid` limits each point to the lights its cell
+exact; Office candidate light entries per pixel 49.6 -> 3.2). `light_grid` limits each point to the lights its cell
 can see (needed with dozens of lights; built on the first render, cached on disk). `"auto"` (the
 default) builds it from 8 lights: below, its lookup costs more than it culls (robotics scenes
 with 1-5 lights: off 0-4 % faster; 8 lights in 4 closed rooms: on 7 % faster at 512 px on an
-L4, `internal/results/history/post_release/robotics_defaults/`); `True` forces it at any count.
+L4); `True` forces it at any count.
 `emissive_lights` turns flat emissive panels into rect lights. `camera_light` is MuJoCo's headlight, a
 camera-attached light (`"auto"`: as the model says).
+
+<!-- SHOWCASE: settings/contact_ao.webp (docs/assets/SHOTS.md) -->
+![lighting.contact_ao off / on](assets/settings/contact_ao.webp)
 
 `contact_ao` (0 = off, the default; up to 1) darkens the indirect light of the static scenery
 around the dynamic objects: the per-world instances (a robot's links, grasped or randomised
@@ -483,6 +494,9 @@ the dominant ray stands for the lobe's sharp core only (its share of the GGX lob
 chrome at roughness 0.05, 39 % at 0.25), the rest is the blurred environment / GI term, so rough
 metals do not read as mirrors.
 
+<!-- SHOWCASE: settings/reflections.webp (docs/assets/SHOTS.md) -->
+![reflections.enabled off / on](assets/settings/reflections.webp)
+
 **`transparency`.** Translucent layers composited front to back, up to `max_layers` (run-time
 data: the layer loops' bound; a change re-bakes the GI probes); compiled in only when the scene
 has something translucent (`"auto"`). Turning them off on such a scene renders every surface
@@ -504,6 +518,9 @@ own (K stacked sets for K variants; under continuous randomisation one shared vo
 world), found from the data and tracked every frame (`raywarp/core/shade/gi/groups.py`).
 Dynamic/per-world geometry and deformables do not enter the bake or its placement bounds. Its
 field changes re-bake the volume.
+
+<!-- SHOWCASE: settings/gi.webp (docs/assets/SHOTS.md) -->
+![gi.enabled off / on](assets/settings/gi.webp)
 
 `gi.relight` (runtime) decides when a world of continuous randomisation (the shared volume tinted
 per world) whose GI inputs changed is re-lit by rays. `"on_change"` (the default) re-lights it on
@@ -537,8 +554,11 @@ unlit recipe).
 
 **`post`.** `tone_mapper` (`"pbr_neutral"` Khronos PBR Neutral, which keeps base colors: the default;
 `"aces_rtx"` RTX's ACES approximation, the RTX look recipe's: closest to
-Omniverse RTX renders, but it turns HDRI-lit tabletops milky (+0.3..+0.9 EV,
-`internal/results/history/review_c/robotics_fit/`); `"aces"`; `"clamp"`), runtime.
+Omniverse RTX renders, but it turns HDRI-lit tabletops milky (+0.3..+0.9 EV);
+`"aces"`; `"clamp"`), runtime.
+
+<!-- SHOWCASE: settings/tone_mapper.webp (docs/assets/SHOTS.md) -->
+![post.tone_mapper: pbr_neutral, aces_rtx, aces](assets/settings/tone_mapper.webp)
 
 **`exposure`, `grading`.** `exposure.mode`: `"auto"` (the default: each camera image
 metered: middle grey 0.18 on the 10-90 % histogram band, highlights protected, temporal adaptation
@@ -566,6 +586,9 @@ noise of sigma0 + k (z - z0)^2 metres, Kinect v1's fit by default, any camera), 
 default 0 / 0 / 0 is off), or where `fog.range` is declared per world; color, range and haze are
 runtime and per world (a domain-randomisation knob; every tier build compiles the fog in, off at
 run time: free on the RTX PRO 6000).
+
+<!-- SHOWCASE: settings/fog.webp (docs/assets/SHOTS.md) -->
+![atmosphere off / fog / haze](assets/settings/fog.webp)
 
 **`performance`** (never changes pixels). `kernels` (`"prebuilt"` or `"scene"`, above), `traversal` (`"auto"`: OptiX on GPUs with RT
 cores, the software BVH elsewhere), `render_order` (`"world"` helps when every world renders nearly the same

@@ -4,7 +4,7 @@ the kernels bundle, the OptiX module pack of the NVIDIA driver that filled it.
 1. `fill` (tools/prebuilt/fill.py, CPU): the PTX of every code split under a root R, with the
    kernel code each was generated from and the module records the census reaches.
 2. `collect --root R --arch 120 --workers 8 --out dist/`: `R/warp` (Warp's kernel cache) and
-   `R/wpbr/ptx` (the OptiX programs' PTX, compressed and stored by content, each build's entry
+   `R/raywarp/ptx` (the OptiX programs' PTX, compressed and stored by content, each build's entry
    beside them: `prebuilt.entry_path`; only those of this kernel code, `prebuilt.Entry.fresh`: a
    root holds only its fill's keys and modules) into `dist/raywarp_kernels/sm<arch>/`, with its
    manifest. The shards of a sharded fill (`fill_all.sh`) are each collected, then `merge --bundle
@@ -21,7 +21,9 @@ the kernels bundle, the OptiX module pack of the NVIDIA driver that filled it.
    with the same `K` resumes from it. `--seed URL` (a published pack of the same driver,
    `<kernels>/sm120/<content>/optix/<driver>`): each wanted module that pack holds is fetched, not
    made (a module's name covers its PTX and record, `modules.digest`: a refill makes only the
-   modules whose PTX or record changed).
+   modules whose PTX or record changed). `plan-pack --bundle B --driver D [--select C ...]
+   [--keep K] [--seed URL] --out F` (CPU): how many of those modules neither `K` nor the seed
+   holds; none: `pack --assemble D` (CPU, no GPU) makes the pack from them alone.
 4. `rekey --bundle dist/raywarp_kernels/sm120 --out dist2/ --since REV [--old NAME=VALUE ...]
    [--ignore UNIT ...]` (tools/prebuilt/rekey.py, CPU, no compile): the bundle again with its
    entries under the keys and kernel-code digests of this tree, after a change of the PTX key's
@@ -71,7 +73,7 @@ _LINE_INFO: Final = re.compile(r"\.(loc|file)\s")
 # `wp_<module>_<Warp module hash>.cu`, and a digest of it (`_ZN58_INTERNAL_00000000_27_wp_raywarp_
 # optix_bdefb90_cu_8d30c1fb2wp6volume7CLOSESTE`): one per module, varying from fill to fill.
 _INTERNAL: Final = re.compile(r"_ZN\d+_INTERNAL_[0-9a-f]+_\d+_\w+?_cu_[0-9a-f]{8}")
-_INTERNAL_AS: Final = "_ZN_INTERNAL_wpbr_"
+_INTERNAL_AS: Final = "_ZN_INTERNAL_rw_"
 # A function's local-memory depot (`__local_depot<N>`, numbered by the function's position).
 _DEPOT: Final = re.compile(r"__local_depot\d+\b")
 # An OptiX program's Warp name suffix (`__raygen__render_<8 hex>`: its source text's hash, comments
@@ -104,7 +106,7 @@ def normalise(ptx: bytes) -> bytes:
   """The same program as PTX `ptx`, as OptiX reads it, in fewer and more shared bytes: no
   comments, blank lines, line info (`.loc`, `.file`) or debug sections, and each function's
   registers and labels numbered by first use (RTX PRO 6000, OptiX 9: accepted, identical images;
-  xz -7 %: `internal/benchmarks/lab/ptx_normal_check.py`); the names that vary from fill to fill
+  xz -7 %); the names that vary from fill to fill
   (NVRTC's file-scope prefix, the programs' Warp source-hash suffix, the programs' order and their
   depots' numbers) made fixed, so equal code is equal bytes in every fill and its OptiX modules keep
   their names (`trace/optix/modules.digest`): a module pack seeds the next refill (`pack --seed`).
@@ -207,7 +209,7 @@ def collect(root: Path, arch: int, out: Path, workers: int) -> Path:
     (bundle / "warp" / module.name).mkdir(parents=True)
     for f in files:
       shutil.copy2(f, bundle / "warp" / module.name / f.name)
-  found = sorted((root / "wpbr" / "ptx").glob("*.ptx"))
+  found = sorted((root / "raywarp" / "ptx").glob("*.ptx"))
   entries = {ptx: e for ptx in found if (e := _entry(ptx)) is not None}
   if len(entries) != len(found):
     print(f"collect: {len(found) - len(entries)} PTX without an entry of this kernel code left out", flush=True)
@@ -341,6 +343,7 @@ def pack(
   keep: Path | None = None,
   seed: str | None = None,
   deadline: float | None = None,
+  assemble: str = "",
 ) -> Path:
   """The OptiX module pack of `bundle` for this machine's GPU and driver (`out`/PACK/
   sm<arch>-drv<driver>/m/<module>.db, `prebuilt.module_path`): every module its index records
@@ -352,21 +355,30 @@ def pack(
   loses the modules in flight). `seed`: the URL of a published pack of this driver whose modules
   are fetched, not made (`open_seed`). `deadline` (epoch seconds): no module starts after it; the
   pack then holds the modules done (in `_packed`'s order: group by group, the most used first).
-  Prints the module count, the wall time and the size."""
+  `assemble` (a driver's version): no GPU, nothing made: the pack of that driver from `keep` and
+  `seed` alone (`plan_pack` found nothing left to make). Prints the module count, the wall time
+  and the size."""
   b = prebuilt.Bundle(bundle, prebuilt.Manifest.read(bundle / prebuilt.MANIFEST))
-  driver = prebuilt.driver_version()
+  driver = assemble or prebuilt.driver_version()
   if not driver:
     raise SystemExit("no NVIDIA driver version (/proc/driver/nvidia/version): a pack is per driver")
+  if assemble:
+    deadline, workers = 0.0, 1  # nothing starts
   index, count = shard
   target = out / PACK / f"sm{b.manifest.arch}-drv{driver}"
   shutil.rmtree(target, ignore_errors=True)
   (target / prebuilt.MODULE_DIR).mkdir(parents=True)
-  scratch = Path(tempfile.mkdtemp(prefix="wpbr_pack_"))
+  scratch = Path(tempfile.mkdtemp(prefix="raywarp_pack_"))
   todo = _packed(b, select, groups or fill.EVERY)[index::count]
   spawn = multiprocessing.get_context("spawn")  # one CUDA / OptiX context per worker, no fork
   try:
     published = None if seed is None else open_seed(seed, scratch / "seed", b.manifest.arch, driver)
-    with concurrent.futures.ProcessPoolExecutor(max(1, workers), mp_context=spawn, initializer=_worker_env) as pool:
+    executor: concurrent.futures.Executor = (
+      concurrent.futures.ThreadPoolExecutor(1)  # assembled: nothing is made
+      if assemble
+      else concurrent.futures.ProcessPoolExecutor(max(1, workers), mp_context=spawn, initializer=_worker_env)
+    )
+    with executor as pool:
       done, wall = create_kept(
         pool, bundle, todo, target, workers=workers, scratch=scratch, keep=keep, seed=published, deadline=deadline
       )
@@ -375,6 +387,24 @@ def pack(
     shutil.rmtree(scratch, ignore_errors=True)
   print(f"pack {target}: {done} OptiX modules in {wall:.0f} s on {workers} processes, {_size(target) / 2**20:.1f} MB")
   return target
+
+
+def plan_pack(
+  bundle: Path, select: tuple[Path, ...], groups: tuple[fill.Group, ...], keep: Path | None, seed: str | None, driver: str
+) -> tuple[int, int]:
+  """(modules left to make, modules wanted) of the pack of `bundle` for driver `driver`
+  (`pack`'s selection, every shard): the wanted modules that neither the kept modules `keep`
+  (the build cache's: any earlier fill's) nor the published pack `seed` hold. CPU only."""
+  b = prebuilt.Bundle(bundle, prebuilt.Manifest.read(bundle / prebuilt.MANIFEST))
+  names = set(_names(bundle, _packed(b, select, groups or fill.EVERY)).values())
+  held = set()
+  if keep is not None and (keep / prebuilt.MODULE_DIR).is_dir():
+    held = {f.name.removesuffix(prebuilt.MODULE_SUFFIX) for f in (keep / prebuilt.MODULE_DIR).iterdir()}
+  if seed is not None:
+    with tempfile.TemporaryDirectory() as scratch:
+      published = open_seed(seed, Path(scratch), b.manifest.arch, driver)
+    held |= {n for n in names if prebuilt.module_path(n) in published.files.files}
+  return len(names - held), len(names)
 
 
 def _worker_env() -> None:
@@ -473,7 +503,7 @@ def create_kept(
       name, seconds = future.result()
       took[job[0]] = max(took.get(job[0], 0.0), seconds)
       made += 1
-      if keep is not None:
+      if keep is not None and not (keep / prebuilt.module_path(name)).exists():  # immutable: same name, same module
         _copy(target / prebuilt.module_path(name), keep / prebuilt.module_path(name))
       if made % 50 == 0:
         print(f"pack: {made}/{len(names)} modules ({time.perf_counter() - t0:.0f} s)", flush=True)
@@ -601,7 +631,7 @@ def merge_packs(packs: list[Path], out: Path) -> Path:
 
 
 def main(argv: list[str] | None = None) -> None:
-  """`collect`, `merge`, `pack`, `merge-packs`, `rekey` (see the module doc)."""
+  """`collect`, `merge`, `pack`, `plan-pack`, `merge-packs`, `rekey` (see the module doc)."""
 
   p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
   sub = p.add_subparsers(dest="cmd", required=True)
@@ -627,6 +657,15 @@ def main(argv: list[str] | None = None) -> None:
   k.add_argument("--keep", type=Path, default=None, help="copy each module file here; resume from it (a bucket path)")
   k.add_argument("--seed", default=None, help="a published pack's URL (this driver): fetch the modules it holds, not made")
   k.add_argument("--deadline", type=float, default=None, help="epoch seconds: no module batch starts after it")
+  k.add_argument("--assemble", default="", metavar="DRIVER", help="no GPU: that driver's pack from --keep and --seed only")
+  pp = sub.add_parser("plan-pack")
+  pp.add_argument("--bundle", type=Path, required=True)
+  pp.add_argument("--select", type=Path, action="extend", nargs="+", default=[])
+  pp.add_argument("--groups", type=fill.groups_of, default=())
+  pp.add_argument("--keep", type=Path, default=None)
+  pp.add_argument("--seed", default=None)
+  pp.add_argument("--driver", required=True)
+  pp.add_argument("--out", type=Path, required=True, help="the count of modules left to make, written here")
   g = sub.add_parser("merge")
   g.add_argument("--bundle", type=Path, action="append", required=True, help="a shard's collected bundle (repeat)")
   g.add_argument("--out", type=Path, required=True)
@@ -656,7 +695,12 @@ def main(argv: list[str] | None = None) -> None:
       keep=args.keep,
       seed=args.seed,
       deadline=args.deadline,
+      assemble=args.assemble,
     )
+  elif args.cmd == "plan-pack":
+    todo, wanted = plan_pack(args.bundle, tuple(args.select), args.groups, args.keep, args.seed, args.driver)
+    args.out.write_text(f"{todo}\n")
+    print(f"pack plan: {todo} of {wanted} modules left to make (driver {args.driver})")
   elif args.cmd == "merge-packs":
     merge_packs(args.pack, args.out)
   elif args.cmd == "merge":

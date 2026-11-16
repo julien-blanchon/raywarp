@@ -1,5 +1,5 @@
 """The disk-cache directory and atomic cache writes, shared by every disk cache of the package (the
-`.wpbr` scene files, the bakes, textures, kernels and conversion memos).
+`.rayw` scene files, the bakes, textures, kernels and conversion memos).
 
 A writer writes its own temporary file `<name>.tmp-<host>-<pid>-<token>` next to the destination
 and renames it into place on success (`write_atomic`), so a concurrent reader sees the old file or
@@ -30,7 +30,7 @@ _TMP_PARTS: Final = 3
 STALE_SECONDS: Final = 6 * 3600.0
 
 
-# Cache directory of the scene adapters' `.wpbr` files (their default `cache=True`) and of the
+# Cache directory of the scene adapters' `.rayw` files (their default `cache=True`) and of the
 # renderer's bakes, unless the environment variable CACHE_ENV names another one (empty: no cache).
 DEFAULT_DIR: Final = "~/.cache/raywarp"
 
@@ -69,7 +69,7 @@ def _pid_alive(pid: int) -> bool:
 
 
 def remove_stale(path: str | os.PathLike[str]) -> list[Path]:
-  """Deletes the stale temporary files of `.wpbr` file `path` (see the module docstring).
+  """Deletes the stale temporary files of `.rayw` file `path` (see the module docstring).
 
   A temporary file is stale when its writer (a pid of this pid space, `_host`) is dead, or when it
   was last written more than STALE_SECONDS ago (another pid space's, or one whose pid a later
@@ -123,7 +123,7 @@ def cache_dir() -> Path | None:
 def location(
   cache: str | os.PathLike[str] | bool | None,  # noqa: FBT001 (the adapters' `cache` option)
 ) -> str | os.PathLike[str] | None:
-  """Where an adapter's `cache` option keeps its `.wpbr` file: True (the adapters' default) the
+  """Where an adapter's `cache` option keeps its `.rayw` file: True (the adapters' default) the
   cache directory (`cache_dir`: None when CACHE_ENV is set empty, caching off; None with a
   RuntimeWarning when it cannot be created or written, as the bake cache's failed writes: a
   read-only home must not fail every load), a path as given (its errors raise: asked for), None
@@ -135,7 +135,7 @@ def location(
   directory = cache_dir()
   if directory is not None and not _writable(directory):
     warnings.warn(
-      f"raywarp cache: {directory} cannot be written; loading without the .wpbr cache "
+      f"raywarp cache: {directory} cannot be written; loading without the .rayw cache "
       f"(set {CACHE_ENV} to a writable directory, or to an empty value to turn caching off)",
       RuntimeWarning,
       stacklevel=3,

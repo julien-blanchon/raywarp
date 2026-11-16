@@ -18,33 +18,11 @@ files, Mitsuba 3 and MuJoCo's renderer through the MuJoCo models).
   clear sky with a 90 klx sun; `studio.hdr`: three softboxes; `white.hdr`: a uniform 1000 nit furnace), stored in Omniverse's latlong
   layout.
 
-Everything here is written by [`generate.py`](../../../internal/benchmarks/scenes/generate.py) (`python internal/benchmarks/scenes/generate.py`;
-`internal/tests/bench/test_feature_scenes.py` fails when the files are out of date). The catalogue, with views,
-camera paths, the features each scene verifies and its exposure, is
-[`internal/benchmarks/feature_scenes.py`](../../../internal/benchmarks/feature_scenes.py); the scenes are registered in
-`internal/benchmarks/scenes.py` (`SCENES`, group `"feature"`), so the runner (`run.py`), the gallery and
-the dev server (`python -m internal.webui`, internal/docs/webui.md) take them by name. `corpus/` holds the scene
-corpus (its own README; written by `corpus.py`).
-
-```bash
-python internal/benchmarks/gallery.py sheet --out internal/results/features --res 384               # quality preset
-python internal/benchmarks/gallery.py sheet --out internal/results/features --recipe default --res 256
-python internal/benchmarks/gallery.py sheet --out internal/results/features --scenes motion --video-frames 96
-```
-
-`gallery.py sheet` renders every view (one PNG per scene and a contact sheet), and with
-`--video-frames` each scene's camera path (per-frame renders; the motion scene animates). The "quality" preset
-(`feature_scenes.QUALITY`) turns every feature on: LTC area lights with 4 stochastic shadow
-samples, probe GI, glossy reflections with sun shadows, translucent shadows, the light grid with an 8-caster
-budget, 64 accumulated jittered frames. In code:
-
-```python
-import feature_scenes as fs
-
-rig = fs.load("cornell_rect", settings=fs.QUALITY, res=(256, 256), device="cuda:0")
-rig.render(frames=64)
-rig.rgb()  # (nworld, nview, 256, 256, 3) uint8
-```
+Everything here is written by the maintainers' scene generator (development repository only; a
+test there fails when the committed files are out of date): edit the scenes through it, not by
+hand. The same repository holds the catalogue (views, camera paths, the features each scene
+verifies and its exposure, a "quality" preset that turns every feature on), registers the scenes
+in its benchmark registry and renders them as contact sheets and videos.
 
 USD scenes upload with the catalogue's `rw.upload` options (the default: a sky map's sun is cut
 out as a shadowed directional light). For Omniverse RTX, render each stage's `View<i>` cameras with RealTimePathTracing
@@ -87,12 +65,12 @@ or PathTracing; the expected differences are listed under "Known approximations"
 
 ## Automated checks
 
-`internal/tests/bench/test_feature_scenes.py` (CPU, about 10 s with a warm Warp kernel cache) loads every file
-and renders a few pixels of the scenes where a feature has a physically expected value:
+The development repository's feature-scene test (CPU, about 10 s with a warm Warp kernel cache)
+loads every file and renders a few pixels of the scenes where a feature has a physically expected value:
 
 | test | scene | asserts |
 |---|---|---|
-| `test_scene_files_are_generated` | all | the committed files are `generate.py`'s output |
+| `test_scene_files_are_generated` | all | the committed files are the generator's output |
 | `test_catalogue_and_registration` | all | views, camera paths, settings valid; registered in `scenes.SCENES` |
 | `test_usd_stages_load_cleanly` | USD | only the documented load-report entries; instance / light / dome counts |
 | `test_dome_rotation_moves_the_sun` | `environment*` | the sun cut out of `sky.hdr` is at the authored direction and turns with the DomeLight |

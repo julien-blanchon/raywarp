@@ -9,7 +9,7 @@ derived from them at upload (`core.pipeline.derive.materials`), the one place wh
 happen. Colors are linear Rec.709.
 
 This is `rw.Material`: the builder, the host tables (`tables.Materials`,
-`MaterialExtras`), the `.wpbr` format and the upload hold it; every adapter writes it.
+`MaterialExtras`), the `.rayw` format and the upload hold it; every adapter writes it.
 """
 
 from __future__ import annotations

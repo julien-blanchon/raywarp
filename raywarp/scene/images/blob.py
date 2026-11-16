@@ -30,9 +30,9 @@ import numpy as np
 
 from raywarp.scene.images.decode import ImageInfo, ImageSource, decode_base, image_nbytes, probe, probe_bytes, read_file
 from raywarp.scene.images.mips import mip_chain, mip_count
+from raywarp.scene.model.rayw import Dependency, align
 from raywarp.scene.model.tables import DIGEST_BYTES, Images
 from raywarp.scene.model.types import Texels
-from raywarp.scene.model.wpbr import Dependency, align
 
 # Receives image i's decoded levels (on a worker thread): `sink(i, levels)`.
 type Sink = Callable[[int, list[Texels]], None]
@@ -196,7 +196,7 @@ class Ahead:
       self._items.append(source)
       return
     if self._pool is None:
-      self._pool = concurrent.futures.ThreadPoolExecutor(worker_count(None), thread_name_prefix="wpbr-image")
+      self._pool = concurrent.futures.ThreadPoolExecutor(worker_count(None), thread_name_prefix="raywarp-image")
     self._items.append(self._pool.submit(self._work, source))
 
   def _work(self, source: ImageSource) -> Probed:

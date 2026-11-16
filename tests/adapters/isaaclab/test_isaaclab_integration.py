@@ -52,9 +52,8 @@ def _camera(renderer_cfg, names):
 class _SceneCfg(InteractiveSceneCfg):
   """Ground, a falling red cube, two lights and the two cameras."""
 
-  # A kinematic box as ground (as Isaac's RenderBenchmark task and
-  # internal/benchmarks/lab/isaac_runtime.py): the terrain importer's plane is a Nucleus asset,
-  # which needs Kit.
+  # A kinematic box as ground (as Isaac's RenderBenchmark task): the terrain importer's plane is a
+  # Nucleus asset, which needs Kit.
   ground = RigidObjectCfg(
     prim_path="{ENV_REGEX_NS}/Ground",
     spawn=sim_utils.CuboidCfg(

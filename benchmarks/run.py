@@ -8,8 +8,8 @@ Scenes (downloaded on first use into the cache directory, `<cache>/benchmarks/<k
 release's public bucket, every file checked against its sha256; README.md: sources and licences):
   franka    MuJoCo Menagerie's MJX Panda pick scene with three cubes (MJCF: the `mujoco`
             extra; Apache-2.0)
-  showcase  raywarp's showcase room: a furnished room, a window, a robot (`.wpbr`)
-  sponza    Intel's New Sponza, the full scene (`.wpbr`; CC-BY 4.0, Intel Corporation)
+  showcase  raywarp's showcase room: a furnished room, a window, a robot (`.rayw`)
+  sponza    Intel's New Sponza, the full scene (`.rayw`; CC-BY 4.0, Intel Corporation)
 
 The scene files are converted ahead per scene-file format and USD converter version (`KEY`); the
 release pipeline publishes them (`tools/release/benchmark_scenes.py`). The first frame includes
@@ -34,7 +34,7 @@ from typing import Final
 import numpy as np
 
 # The scene files on the remote, by scene name.
-FILES: Final = {"franka": "franka.tar", "showcase": "showcase.wpbr", "sponza": "sponza.wpbr"}
+FILES: Final = {"franka": "franka.tar", "showcase": "showcase.rayw", "sponza": "sponza.rayw"}
 # The MJCF model inside franka.tar.
 FRANKA_XML: Final = "franka/scene.xml"
 # Each scene's benchmark camera: {scene: [eye, target, fovy]} (world units, degrees).
@@ -44,12 +44,12 @@ URL_ENV: Final = "RAYWARP_BENCHMARKS_URL"
 
 
 def key() -> str:
-  """The scene files' version: the `.wpbr` format and the USD converter
+  """The scene files' version: the `.rayw` format and the USD converter
   (`w<format>-c<converter>`)."""
   from raywarp.formats.usd import version
-  from raywarp.scene.model import wpbr
+  from raywarp.scene.model import rayw
 
-  return f"w{wpbr.VERSION}-c{version.CONVERTER}"
+  return f"w{rayw.VERSION}-c{version.CONVERTER}"
 
 
 def scene_file(name: str) -> tuple[Path, tuple[tuple[float, float, float], tuple[float, float, float], float]]:

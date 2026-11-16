@@ -1,5 +1,5 @@
 """White furnace: spheres under a uniform environment, and the GI probe placement of scenes
-smaller than the probe spacing (internal/results/history/post_release/furnace)."""
+smaller than the probe spacing."""
 
 import numpy as np
 import pytest

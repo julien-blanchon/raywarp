@@ -5,7 +5,7 @@ For each scene and recipe: the tier build and module word of the recipe (the bui
 `output_layout.OutputLayout.word` of the written outputs: `module_word`), and of every single-field
 change a user can make (`probe.toggles`). Every census form of a scene (`forms`: a feature-space
 scene of `feature_space.py`, `probe.point_forms`; in the development tree also the benchmark
-registry's scenes, `internal/benchmarks/lab/compile/common.forms`: as the registry renders it, an
+registry's scenes, its `common.forms`: as the registry renders it, an
 MJCF scene also with its own lights only, a code scene also with its per-world declarations) is a
 scene of its own here. A change that keeps the
 build changes at most the module word (an output change: the output word): the bits it flips are
@@ -199,7 +199,7 @@ def _row(name: str, probe: harness.Probe, recipe: str, required: Mapping[str, ob
 
 def forms(name: str) -> list[harness.Form]:
   """The census forms of scene `name`: a feature-space scene's (`probe.point_forms`), else the
-  development tree's benchmark registry's (`internal/benchmarks/lab/compile/common.forms`).
+  development tree's benchmark registry's (its `common.forms`).
 
   Raises:
     SystemExit: a registry scene in a checkout without the development tree.
@@ -209,7 +209,7 @@ def forms(name: str) -> list[harness.Form]:
   if not _REGISTRY.is_dir():
     raise SystemExit(f"{name}: a benchmark registry scene, only in the development tree (internal/)")
   sys.path[:0] = [str(_REGISTRY)]
-  import common  # pyrefly: ignore[missing-import]  # internal/benchmarks/lab/compile
+  import common  # pyrefly: ignore[missing-import]  # the development tree's compile lab (_REGISTRY)
 
   return common.forms(name)
 

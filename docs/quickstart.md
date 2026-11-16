@@ -27,6 +27,9 @@ renderer reads the poses of the `mjw.Data` you pass to `render`, and the geom, m
 and camera tables of the `mjw.Model` on every frame (write `m.geom_rgba` and the next frame
 shows it).
 
+<!-- SHOWCASE: quickstart/mujoco.webp (docs/assets/SHOTS.md) -->
+![The snippet's 8 worlds x 2 cameras (rgb, depth, seg)](assets/quickstart/mujoco.webp)
+
 ```python
 import mujoco
 import mujoco_warp as mjw
@@ -94,7 +97,10 @@ render.get_rgb(rc, 0, rgb)
 ## USD stages and glTF
 
 `rw.formats.usd.scene(path)` reads a USD stage into a format-neutral host scene, keeps it as a
-memory-mapped `.wpbr` file and uploads it (`rw.formats.gltf.scene(path)` does the same for glTF 2.0).
+memory-mapped `.rayw` file and uploads it (`rw.formats.gltf.scene(path)` does the same for glTF 2.0).
+
+<!-- SHOWCASE: quickstart/usd.webp (docs/assets/SHOTS.md) -->
+![The snippet's USD stage](assets/quickstart/usd.webp)
 
 ```python
 from pathlib import Path
@@ -137,7 +143,7 @@ def Xform "World"
   }
 }
 """)
-gpu = rw.formats.usd.scene("demo.usda", cache="wpbr_cache")  # parsed once, then a memory-mapped .wpbr
+gpu = rw.formats.usd.scene("demo.usda", cache="raywarp_cache")  # parsed once, then a memory-mapped .rayw
 print(gpu.report)  # what was dropped or approximated, counts, timings (upload's as gpu.*)
 r = rw.Renderer(gpu, nworld=1, cameras=None, resolution=(64, 48))  # None: the stage's cameras
 out = r.render()  # a static scene: no simulator state
@@ -146,15 +152,15 @@ assert out.rgb.numpy()[..., :3].mean() > 10
 
 The step before the upload, `host = rw.formats.usd.load(path)`, returns the host scene (`rw.Scene`) to
 inspect or edit (`host.with_lighting(...)`) before `rw.upload(host)`. A loader keeps the scene
-it converts in a `.wpbr` file (`cache=True`, the default: the cache
+it converts in a `.rayw` file (`cache=True`, the default: the cache
 directory, `~/.cache/raywarp` or `$RAYWARP_CACHE_DIR`), so a second load of an unchanged source
-maps it in a fraction of a second. `cache=` a directory or a `.wpbr` path keeps it there,
+maps it in a fraction of a second. `cache=` a directory or a `.rayw` path keeps it there,
 `cache=None` converts every time, and `RAYWARP_CACHE_DIR=""` turns every cache off. A default
 directory that cannot be written (a read-only home) warns and loads without the cache.
 
 `rw.formats.usd.settings(stage)` maps the stage's Omniverse render settings onto a `RenderSettings`
-([settings](settings.md#usd-stages)). Big stages: bake the `.wpbr` once, offline, with
-`rw.formats.usd.bake(stage, "office.wpbr")`; later loads map it in a fraction of a second of host work.
+([settings](settings.md#usd-stages)). Big stages: bake the `.rayw` once, offline, with
+`rw.formats.usd.bake(stage, "office.rayw")`; later loads map it in a fraction of a second of host work.
 
 ## Newton
 
@@ -164,6 +170,9 @@ writes the instance poses from `state.body_q` with one kernel (no host copy), so
 `state_0` / `state_1` needs nothing. Shapes whose
 `shape_color` differs between worlds show each world's color, re-read from `model.shape_color`
 on every render (`rw.integrations.newton.Options(world_colors=False)`: world 0's everywhere).
+
+<!-- SHOWCASE: quickstart/newton.webp (docs/assets/SHOTS.md) -->
+![The snippet's Newton boxes, 4 worlds](assets/quickstart/newton.webp)
 
 ```python
 import newton
@@ -338,8 +347,7 @@ How it fits in:
 - **Look**: `settings` is dotted overrides of the default (`{**rw.FAST}` for maximum throughput); `lighting` (a
   `rw.Lighting`; default a key and a fill light: Newton models carry none) lights the scene.
 
-Installing next to Isaac Lab (the adapter is not in raywarp 0.3.0: install raywarp from source
-until the next release). Isaac Lab 3.0.0 pins `warp-lang==1.17.0` and `newton==1.6.1`; raywarp
+Installing next to Isaac Lab (the adapter ships from raywarp 0.4.0). Isaac Lab 3.0.0 pins `warp-lang==1.17.0` and `newton==1.6.1`; raywarp
 needs Warp 1.18, so install Isaac Lab first, then raywarp without its dependencies, then
 override Warp. Keep Isaac's Newton 1.6.1 (Isaac Lab 3.0.0 breaks with Newton 1.7). These exact
 commands were verified on an NVIDIA L4 (Python 3.12, kit-less); Warp 1.18 under Isaac Lab was
@@ -348,7 +356,7 @@ validated on the Newton-physics path only (PhysX physics needs Isaac Sim, not ch
 ```bash
 uv venv -p 3.12 && . .venv/bin/activate
 uv pip install --extra-index-url https://pypi.nvidia.com --index-strategy unsafe-best-match "isaaclab==3.0.0"
-git clone https://github.com/julien-blanchon/raywarp && uv pip install --no-deps -e raywarp
+uv pip install --no-deps "raywarp>=0.4"
 uv pip install "warp-lang>=1.18,<1.19"
 ```
 

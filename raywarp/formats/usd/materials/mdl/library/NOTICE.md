@@ -16,7 +16,7 @@ package (`materialx/`) is not included.
 | `mdl/nvidia/` | support_definitions, aux_definitions (`::nvidia::*`; `::nvidia::core_definitions` is the MDL SDK wheel's) | `mdl/` |
 | `mdl/materialx/` | MaterialX 1.39.5's MDL implementation (`::materialx::core`, `stdlib_*`, `pbrlib_*`, `noise`, `sampling`, `hsv`, `flake`, `hextile`): the modules `MaterialXGenMdl` output imports (Apache-2.0, see below) | `mdl/` |
 
-The USD adapter (`warp_pbr/usd/mdl/load.py`) searches these roots after the stage's own layer
+The USD adapter (`raywarp/formats/usd/materials/mdl/load.py`) searches these roots after the stage's own layer
 directories and `MDL_USER_PATH` / `MDL_SYSTEM_PATH`. A stage that ships its own copy of a module
 uses that copy. When a module resolves here, the load report says so
 (`mdl.library_module:<file>`).

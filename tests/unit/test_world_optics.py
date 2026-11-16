@@ -247,7 +247,7 @@ def test_glass_shapes_resolve_from_solid_glass_spheres_and_boxes_on_optix() -> N
   its modules' literal)."""
   from conftest import internal_module
 
-  import tools.prebuilt.fill  # noqa: F401  # puts internal/benchmarks/lab/compile (`common`) on the path
+  import tools.prebuilt.fill  # noqa: F401  # puts the development tree's compile lab (`common`) on the path
   from raywarp.core.build.variants import tiers
   from raywarp.core.kernels.abi import toggles
 

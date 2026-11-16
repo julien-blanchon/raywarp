@@ -311,9 +311,9 @@ export material M_Emit(float B = 1.0)
 
 def test_omnipbr_and_unreal_emission_agree(tmp_path, ue4):
   """OmniPBR and OmniUe4Base both emit `material_emission(diffuse_edf(), intensity: I)` (radiant
-  exitance): the same I gives the same radiance, I / pi (Omniverse RTX shows them equal,
-  internal/results/history/m8/emission). OmniPBR's I = color x emissive_intensity; OmniUe4Base's I =
-  emissive color x emissive_multiplier() (2560)."""
+  exitance): the same I gives the same radiance, I / pi (Omniverse RTX shows them equal).
+  OmniPBR's I = color x emissive_intensity; OmniUe4Base's I = emissive color x
+  emissive_multiplier() (2560)."""
   stage = new_stage(tmp_path)
   (tmp_path / "M_Emit.mdl").write_text(UE_EMITTER)
   pbr = _mdl_shader(
@@ -340,7 +340,7 @@ def test_omnipbr_and_unreal_emission_agree(tmp_path, ue4):
 def test_omnisurface_emission_reads_its_emission_mode(tmp_path, sdk):
   """OmniSurfaceBase.mdl: I = weight x intensity x color x (emission_lx ? 1 : pi) as radiant
   exitance. The default emission_lx gives OmniPBR's radiance I / pi for the same intensity (RTX
-  shows the two quads equal, internal/results/history/post_release/usd_look); emission_nt (1, or its
+  shows the two quads equal); emission_nt (1, or its
   token) makes the intensity the radiance [nits]."""
   stage = new_stage(tmp_path)
   t = Sdf.ValueTypeNames

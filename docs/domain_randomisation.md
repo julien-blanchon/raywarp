@@ -19,6 +19,9 @@ known gaps. The short version is in [robotics.md](robotics.md), "Domain randomis
 3. **Render**: world `w` reads row `w` of every declared table. Undeclared fields keep one value
    for every world.
 
+<!-- SHOWCASE: domain_randomisation/grid.webp (docs/assets/SHOTS.md) -->
+[![16 worlds re-randomised every 0.5 s, nothing recompiles](assets/domain_randomisation/grid.webp)](assets/domain_randomisation/grid.mp4)
+
 Simulators can also drive appearance through their own tables: MuJoCo Warp's batched model tables
 (`m.geom_rgba`, `m.mat_rgba`, `m.light_diffuse`, `m.cam_fovy`, ...) are read per world every frame,
 and Isaac Lab's material writers fill the declared tables on the device.
@@ -145,10 +148,16 @@ zero-compile after construction.
 | texture repeat, world-projected UVs | `material=["tex_repeat", "uv_world"]` | `(nworld, nmat)` | free |
 | material assignment | `material=["instance.material"]` | `(nworld, ninst)` material ids | free (the shading bits follow the material) |
 
+<!-- SHOWCASE: domain_randomisation/materials.webp (docs/assets/SHOTS.md) -->
+![Per-world base color, roughness, metalness and texture jitter](assets/domain_randomisation/materials.webp)
+
 ### Lights
 
 The light count is fixed by the scene: add every light a world may need and switch them per world
 (`active`). Declaring `type` compiles the angular profiles (spot, cosine, tube) in.
+
+<!-- SHOWCASE: domain_randomisation/lights.webp (docs/assets/SHOTS.md) -->
+![Per-world light strength, colour and position](assets/domain_randomisation/lights.webp)
 
 | quantity | declare | table | update cost |
 | --- | --- | --- | --- |
@@ -174,6 +183,9 @@ MuJoCo lights follow `d.light_xpos` / `d.light_xdir`: move them through the mode
 | fog colour, range | `env=["fog.color", "fog.range"]` | per world | free (the fog pass runs when fog is on) |
 | background | an environment map per world (`env.id`; a constant map for a plain colour), or a backdrop instance with a randomised material | | free |
 
+<!-- SHOWCASE: domain_randomisation/environment.webp (docs/assets/SHOTS.md) -->
+![Per-world environment map, yaw, exposure and fog](assets/domain_randomisation/environment.webp)
+
 The environment-map bank is fixed when the scene is created. The sun of every bank map that has a dominant one
 (`rw.SceneOptions.env_sun`, on by default) is cut out once, at the upload, as a shadowed directional light: it is on
 in the worlds that show its map and follows their `env.yaw` and `env.intensity`, so switching a world between a sunny
@@ -189,6 +201,9 @@ and an overcast map, turning or dimming it is run-time data (no compile).
 | lens distortion | `camera=["distortion"]` | `(nworld, ncam)` coefficients | compiles the lens model in |
 | colour grading, white balance, chromatic aberration | `env=["grading.*", "sensor.aberration"]` | per world | free when the look pass runs (aberration: the deferred display, automatic exposure) |
 | sensor noise, vignette, response curve | `env=["sensor.noise", "sensor.vignette", "sensor.response"]` | per world | one pass over the colour while noise is on |
+
+<!-- SHOWCASE: domain_randomisation/camera.webp (docs/assets/SHOTS.md) -->
+![Per-world camera pose, field of view, lens and noise](assets/domain_randomisation/camera.webp)
 
 Resolution, the camera count, rolling shutter, motion blur and stereo depth are per renderer.
 

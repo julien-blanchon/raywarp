@@ -23,7 +23,7 @@ its linker), through ctypes on the NVIDIA wheels, in the fill environment only:
 
   pip install "nvidia-cuda-nvrtc==13.4.*" "nvidia-nvjitlink==13.4.*"
 
-(`WPBR_CUDA_LIB`: a directory holding libnvrtc.so.13 and libnvJitLink.so.13, else found in the
+(`RAYWARP_CUDA_LIB`: a directory holding libnvrtc.so.13 and libnvJitLink.so.13, else found in the
 wheels' `nvidia/` package directory.)
 """
 
@@ -226,7 +226,7 @@ def install(c: Captured, module: wp.Module, cubin: bytes, cache: Path) -> Path:
   kernel cache `cache` (`<module id>/`): `cubin` and the group's meta (the kernels' shared memory
   by symbol: equal for every word); its directory."""
   name = module.get_module_identifier()
-  scratch = Path(tempfile.mkdtemp(prefix="wpbr_sw_entry_"))
+  scratch = Path(tempfile.mkdtemp(prefix="raywarp_sw_entry_"))
   try:
     meta = next(c.directory.glob("*.meta"))
     shutil.copyfile(meta, scratch / f"{name}.meta")
@@ -254,7 +254,7 @@ def fill_group(modules: list[wp.Module], arch: int, cache: Path) -> int:
   todo = [m for m in modules if not any((cache / m.get_module_identifier()).glob(f"*.sm{arch}*.cubin"))]
   if not todo:
     return 0
-  c = capture(todo[0], arch, Path(tempfile.mkdtemp(prefix="wpbr_sw_")))
+  c = capture(todo[0], arch, Path(tempfile.mkdtemp(prefix="raywarp_sw_")))
   try:
     t0 = time.perf_counter()
     ltoir = group_ltoir(c)
@@ -340,7 +340,10 @@ def _cuda() -> _Cuda:
   """
   libs = cuda_libs()
   if libs is None:
-    raise RuntimeError('no NVRTC / nvJitLink 13 libraries: pip install "nvidia-cuda-nvrtc==13.4.*" "nvidia-nvjitlink==13.4.*"')
+    raise RuntimeError(
+      "no NVRTC / nvJitLink 13 libraries: an HF job installs them with `--with fillcuda` (tools/hf/pins.env "
+      'FILL_CUDA_PACKAGES); elsewhere pip install "nvidia-cuda-nvrtc==13.4.*" "nvidia-nvjitlink==13.4.*"'
+    )
   cuda = _Cuda(*(ctypes.CDLL(str(path)) for path in libs))
   major, minor = ctypes.c_int(), ctypes.c_int()
   cuda.nvrtc.nvrtcVersion(ctypes.byref(major), ctypes.byref(minor))
@@ -355,9 +358,9 @@ def _cuda() -> _Cuda:
 
 
 def cuda_libs() -> tuple[Path, Path] | None:
-  """The fill's libnvrtc.so.13 and libnvJitLink.so.13 (`_LIBS`: in `WPBR_CUDA_LIB`, else the
+  """The fill's libnvrtc.so.13 and libnvJitLink.so.13 (`_LIBS`: in `RAYWARP_CUDA_LIB`, else the
   NVIDIA wheels' `nvidia/` package); None: not installed."""
-  env = os.environ.get("WPBR_CUDA_LIB")
+  env = os.environ.get("RAYWARP_CUDA_LIB")
   if env:
     roots = [Path(env)]
   else:

@@ -66,7 +66,7 @@
   <text class="h" x="615" y="170" text-anchor="middle">Scene + LoadReport</text>
   <text class="muted" x="615" y="190" text-anchor="middle">tables, meshes, textures,</text>
   <text class="muted" x="615" y="206" text-anchor="middle">lights, envs, cameras</text>
-  <text class="muted" x="615" y="222" text-anchor="middle">.wpbr cache (one mmap)</text>
+  <text class="muted" x="615" y="222" text-anchor="middle">.rayw cache (one mmap)</text>
 
   <rect class="host" x="750" y="148" width="170" height="80" rx="6"/>
   <text class="h" x="835" y="170" text-anchor="middle">Bind</text>

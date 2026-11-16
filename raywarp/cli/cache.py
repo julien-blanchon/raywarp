@@ -2,7 +2,7 @@
 
 info: the cache directory (RAYWARP_CACHE_DIR) and what each cache in it holds.
 prune: deletes the least recently used entries of the content-keyed caches (bakes, textures,
-`.wpbr` scenes, PTX, converted glTF) until they fit (`raywarp.cache.prune`); the kernel store and
+`.rayw` scenes, PTX, converted glTF) until they fit (`raywarp.cache.prune`); the kernel store and
 OptiX's cache are left alone.
 """
 

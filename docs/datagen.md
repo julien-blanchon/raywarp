@@ -2,8 +2,7 @@
 
 The workload: hundreds of scenes with very different configurations (lights, textures, features),
 each rendered for episodes with domain randomisation, scene after scene, with the frames saved to
-disk. This page gives the recommended loop, what each part costs, and how to measure it on your
-own scenes with [`internal/benchmarks/datagen/`](../internal/benchmarks/datagen/run.py).
+disk. This page gives the recommended loop and what each part costs, as measured on 35 scenes.
 
 ## The loop
 
@@ -17,14 +16,14 @@ own scenes with [`internal/benchmarks/datagen/`](../internal/benchmarks/datagen/
    rw.Renderer.warm(scene, nworld=16, resolution=(512, 512), settings=rw.RenderSettings().replace(rw.FAST)).result()
    ```
 
-   Or run the loop below once with one step and saving off (`run.py --steps 1 --sink off`).
-   USD and glTF scenes go through their memory-mapped `.wpbr` cache (on by default:
+   Or run the loop below once with one step per scene and saving off.
+   USD and glTF scenes go through their memory-mapped `.rayw` cache (on by default:
    `rw.formats.usd.load(path)`; `cache=dir` to keep it elsewhere), so later loads skip parsing.
 
 2. **Iterate** over the scenes. For each scene: create one Renderer, run its episodes, then
    `close` it and drop it.
    - Load scene k + 1 **on the host** on a worker thread while scene k renders: map its
-     `.wpbr`, or load its compiled MuJoCo model (below).
+     `.rayw`, or load its compiled MuJoCo model (below).
    - Upload it and create its Renderer on the render thread, or on the worker too (Renderers are
      safe on several threads; their device work then shares the GPU with the frames).
    - Save through a pinned readback ring with a writer thread, so the render loop never waits
@@ -34,7 +33,7 @@ own scenes with [`internal/benchmarks/datagen/`](../internal/benchmarks/datagen/
      scan what was made since.
 
 ```python
-# docs: skip (needs scenes, a GPU and disk; internal/benchmarks/datagen/ is the full, measured version)
+# docs: skip (needs scenes, a GPU and disk)
 import concurrent.futures
 import gc
 
@@ -46,11 +45,11 @@ per_world = rw.PerWorld(material=["base_color", "specular_roughness"], light=["s
 gc.collect()
 gc.freeze()  # start-up objects are permanent: Python's full collections scan only the new ones
 pool = concurrent.futures.ThreadPoolExecutor(1)
-ahead = pool.submit(rw.Scene.load, wpbr_paths[0])  # host only: no device call on the worker
-for i in range(len(wpbr_paths)):
+ahead = pool.submit(rw.Scene.load, rayw_paths[0])  # host only: no device call on the worker
+for i in range(len(rayw_paths)):
   host = ahead.result()  # usually ready: loaded while the previous scene rendered
-  if i + 1 < len(wpbr_paths):
-    ahead = pool.submit(rw.Scene.load, wpbr_paths[i + 1])
+  if i + 1 < len(rayw_paths):
+    ahead = pool.submit(rw.Scene.load, rayw_paths[i + 1])
   r = rw.Renderer(rw.upload(host), nworld=NWORLD, cameras=None, resolution=RES, per_world=per_world)
   for episode in range(EPISODES):
     randomise(r, rng)  # writes r.per_world[...] tables: nothing recompiles
@@ -61,8 +60,8 @@ for i in range(len(wpbr_paths)):
   del r, host  # freed now: no reference cycle holds the scene's device memory
 ```
 
-`internal/benchmarks/datagen/sinks.py` holds the ring (`Ring`) and the writers. `run.py` is the whole loop,
-with the measurements. Copy them.
+`ring` is your readback ring ([saving](#saving)); `randomise` writes the per-world tables
+([domain randomisation](domain_randomisation.md)).
 
 **Threads.** Several Renderers may be built, warmed, rendered and closed on several threads, beside
 your own Warp work. raywarp never changes Warp's process-wide current stream or default device
@@ -82,17 +81,21 @@ raywarp's own conversion (`rw.integrations.mujoco.scene`) takes 0.5-1 s on the C
 ## What a switch costs
 
 RTX PRO 6000, 16 worlds x 512^2, `FAST`, OptiX with the prebuilt kernel bundle, 35
-different scenes (internal/benchmarks/datagen `full` set; run `2026-11-10-w9dg-rtx`):
+different scenes (MuJoCo Menagerie robots, USD interiors, glTF assets, procedural and random
+feature-space scenes):
 
 | stage | median | worst | what it is |
 | --- | --- | --- | --- |
-| host load | 0.02 s | 23.6 s (aloha_clutter; menagerie robots 4.5-8 s) | `.wpbr` map, code build, MJCF compile + meshes: **hidden by the host prefetch** |
+| host load | 0.02 s | 23.6 s (aloha_clutter; menagerie robots 4.5-8 s) | `.rayw` map, code build, MJCF compile + meshes: **hidden by the host prefetch** |
 | upload | 0.05 s | 5.1 s (free_boxes, 1000 bodies) | `rw.upload` / MuJoCo Warp `put_model` + `rw.integrations.mujoco.scene` |
 | Renderer | 0.26 s | 2.6 s (first Renderer of the process) | tables, layout, features, backend |
 | first frame, warm disk caches | 0.02-0.36 s | 1.8 s (Office), 15.6 s (free_boxes) | kernel / module loads, bakes from disk, frame 0 |
 | first frame, first visit on the machine | 1.9 s | 38 s (Franka: 15 MuJoCo Warp compiles) | OptiX modules not in the bundle (1-9 s each), MuJoCo Warp kernels |
 | teardown: `close` | 0.001 s | 0.008 s | releases the build; no longer waits for OptiX modules created ahead |
 | teardown: `gc.collect()` | not needed | | a closed scene leaves no Warp array in a reference cycle (CPU check) |
+
+<!-- SHOWCASE: datagen/scene_switch.webp (docs/assets/SHOTS.md) -->
+[![Scene after scene: Franka, the showcase room, Sponza, fixtures](assets/datagen/scene_switch.webp)](assets/datagen/scene_switch.mp4)
 
 - **Compiles:** zero raywarp kernel compiles over all 35 scenes, cold, thanks to the bundle.
   MuJoCo Warp compiled 45 kernels for its own models (Franka 15, Aloha 10, G1 9, ...). A warm
@@ -104,12 +107,11 @@ different scenes (internal/benchmarks/datagen `full` set; run `2026-11-10-w9dg-r
 - **Memory:** device memory after each teardown stays at the high-water mark of the largest
   scene so far (Warp's memory pool keeps freed blocks), with no growth over 35 switches
   (6.3 GB after Bistro, then flat within +-0.2 GB). Live allocations after teardown were
-  550-690 MB once Bistro had been loaded, about 50 MB of them the readback ring. That measurement
-  still held the previous scene (fixed in `run.py`), and a cache kept each scene's packed mesh
-  BVH for the process (fixed: a closed scene leaves no Warp array alive).
+  550-690 MB once Bistro had been loaded, about 50 MB of them the readback ring (measured before
+  two fixes: the loop no longer holds the previous scene, and a closed scene leaves no Warp
+  array alive).
 
-With the Renderer built on the prefetch worker too (`run.py --overlap renderer`, run
-`2026-11-10-w9sw-rtx`), a warm switch is its first frame: 13 ms for the tabletop, 0.11-0.15 s for
+With the Renderer built on the prefetch worker too, a warm switch is its first frame: 13 ms for the tabletop, 0.11-0.15 s for
 primitives and the Cornell box, 0.47 s for a flex scene, 3.1 s for Office (its first frame).
 
 ## Saving
@@ -125,11 +127,49 @@ are rendered images (worlds x cameras per second):
 | jpeg (Pillow, quality 90, thread pool) | 491 | 10 % | 37 KB | encoding takes the GIL often enough to slow the render thread |
 | mp4 (libx264 per world, ffmpeg processes) | 502 | 8 % | 1.7 KB | the render thread blocked 0.15 s at episode boundaries |
 
+A readback ring: a few pinned host buffers, filled by asynchronous copies on the render stream,
+emptied by a writer thread once each copy's event has completed. The render thread never waits
+for the disk, only for a slot when the writer falls behind:
+
+```python
+# docs: skip (needs a GPU, a renderer `r` and disk)
+import queue
+import threading
+
+import numpy as np
+import warp as wp
+
+SLOTS = 4
+slots = [wp.empty(r.outputs.rgb.shape, dtype=wp.vec4ub, device="cpu", pinned=True) for _ in range(SLOTS)]
+free, full = queue.Queue(), queue.Queue()
+for i in range(SLOTS):
+  free.put(i)
+
+
+def writer() -> None:
+  while (item := full.get()) is not None:
+    i, event, path = item
+    wp.synchronize_event(event)  # this copy is done; the render stream ran on
+    np.save(path, slots[i].numpy()[..., :3])  # (nworld, ncam, H, W, 3) uint8
+    free.put(i)
+
+
+thread = threading.Thread(target=writer, daemon=True)
+thread.start()
+for t in range(STEPS):
+  out = r.render(sim)
+  i = free.get()  # blocks only when every slot is still being written
+  wp.copy(slots[i], out.rgb)  # asynchronous: device -> pinned host
+  full.put((i, wp.record_event(), f"rgb_{t:06d}.npy"))
+full.put(None)
+thread.join()
+```
+
 **Default: npy.** It is the fastest: there is no encode, so the cost is one pack kernel and
 one copy, and the writer thread does a single `write` per frame. The limit is the disk. Raw
 512^2 RGB is 0.75 MB per image, so a disk that sustains 1.2 GB/s keeps up with about 1,600
 images/s. Above that rate, or when storage matters, record MP4: the video recorder
-(`tools/video`, docs/recording.md) encodes on NVENC from device memory, and its
+([recording](recording.md)) encodes on NVENC from device memory, and its
 documented cost is a few tens of microseconds of the render thread per frame. JPEG costs about 10 %
 of the frame rate and gives files 20 times smaller than raw.
 
@@ -148,7 +188,7 @@ A `set_scene` would redo all of that. The only parts that do not depend on the s
 output buffers and the compiled kernels, and both are already reused:
 
 - **Output buffers**: allocate them once and bind them to every Renderer with
-  `Renderer(output_arrays={"rgb": rgb, ...})` (`run.py --bind`). The readback ring and anything
+  `Renderer(output_arrays={"rgb": rgb, ...})`. The readback ring and anything
   else holding the arrays (a torch view, a recorder) keep pointing at the same memory across
   scenes.
 - **Kernels**: scenes of the same tier share their compiled modules, both in the process and on
@@ -157,31 +197,3 @@ output buffers and the compiled kernels, and both are already reused:
 
 A captured CUDA graph belongs to one Renderer (it records that scene's pointers). When
 replaying graphs, capture again for each scene.
-
-## Measuring your own scene set
-
-```bash
-python internal/benchmarks/datagen/run.py --set full --nworld 16 --size 512 --steps 1 --sink off --overlap none --out out/warm   # warm pass
-python internal/benchmarks/datagen/run.py --set full --nworld 16 --size 512 --steps 32 --sink npy --bind --cycles 2 --out out/run
-python internal/benchmarks/datagen/report.py out/run
-```
-
-To add your scenes, add an `Entry` per scene and config to `internal/benchmarks/datagen/catalog.py`. The
-`full` set has 75 configurations, interleaved so that any `--limit` prefix spans every group:
-
-- MuJoCo menagerie robots and comparison scenes;
-- USD Office, Bistro and the simple room;
-- the glTF assets (through MJCF);
-- the feature stages, procedural rooms and diagnostic rooms;
-- 24 seeded random feature-space scenes;
-- config variants: GI on / off, rgb + depth + seg, no DR / full DR, the default settings, lens cameras.
-
-Each scene writes one JSON line to `<out>/scenes.jsonl`:
-
-- the switch, split into teardown (close / gc), prefetch wait, load, upload, Renderer,
-  randomisation and first frame;
-- Warp module compiles (ours and others, e.g. MuJoCo Warp's) and OptiX module creations;
-- images/s with and without saving, and the ring's blocked time;
-- device memory after each teardown (the leak check across switches).
-
-`job.sh` is the HF job that produced the numbers above.

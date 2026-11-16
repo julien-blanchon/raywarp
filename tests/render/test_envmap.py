@@ -144,8 +144,7 @@ def test_negative_radiance_is_clamped_with_a_warning():
 
 
 # ---------------------------------------------------------------------------------------------
-# The GGX prefilter of an environment map under Warp debug mode
-# (internal/results/history/post_release/furnace).
+# The GGX prefilter of an environment map under Warp debug mode.
 
 
 _DEBUG_PREFILTER = textwrap.dedent(

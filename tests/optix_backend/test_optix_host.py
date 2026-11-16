@@ -56,7 +56,7 @@ from raywarp.core.trace.rays.primary import LENS_MODELS
 from raywarp.scene.model.types import AlphaMode, InstanceId, Slot, TextureRef
 
 if TYPE_CHECKING:
-  import feature_scenes as fs  # internal/benchmarks (`internal_module`)
+  import feature_scenes as fs  # development repository only (`internal_module`)
 
   from raywarp.core.trace.optix.context import DeviceContext
 from typing import Final
@@ -705,7 +705,7 @@ def test_ptx_key_holds_whatever_mujoco_warp_is_installed(features, tmp_path, mon
   """The PTX key does not depend on the MuJoCo Warp release (its kernels are vendored): a bundle
   filled with the `mujoco` extra serves a Newton or Isaac Lab install without it, and another
   MuJoCo Warp release (the key read the first `mujoco_warp-<version>.dist-info` on sys.path)."""
-  from raywarp.scene.model.wpbr import installed_versions
+  from raywarp.scene.model.rayw import installed_versions
 
   key = programs.ptx_key(features, scene_flags(), supersampled=False, arch=89)
   (tmp_path / "mujoco_warp-0.0.1.dist-info").mkdir()

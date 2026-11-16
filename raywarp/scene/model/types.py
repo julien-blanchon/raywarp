@@ -72,7 +72,7 @@ class AlphaMode(enum.IntEnum):
 
 class Slot(enum.IntEnum):
   """Texture slots of a material, named after the OpenPBR input each drives (the order and values
-  are frozen: `NSLOT` and the `.wpbr` column shapes). A bound slot's value is
+  are frozen: `NSLOT` and the `.rayw` column shapes). A bound slot's value is
   `field constant x (scale x texel + bias)`; a texture on any other OpenPBR input goes to
   `OpenPbrExtras.textures` (scene/model/material.py)."""
 
@@ -173,7 +173,7 @@ def pixel_itemsize(pixel: PixelType) -> int:
   return itemsize(PIXEL_DTYPES[pixel])
 
 
-# Byte alignment of every array of a `.wpbr` file and of every image in the texel blob.
+# Byte alignment of every array of a `.rayw` file and of every image in the texel blob.
 ALIGN: Final = 256
 
 # Shaped host arrays of the scene tables: one row per object (a first dimension of any length).
@@ -182,13 +182,13 @@ type Column[D: np.generic] = np.ndarray[[int], np.dtype[D]]
 type Rows[D: np.generic, K: IntVar] = np.ndarray[[int, K], np.dtype[D]]
 type Matrices[D: np.generic, J: IntVar, K: IntVar] = np.ndarray[[int, J, K], np.dtype[D]]
 
-# An array of any rank and dtype (the arrays of a `.wpbr` file, keyed by name).
+# An array of any rank and dtype (the arrays of a `.rayw` file, keyed by name).
 type Array = np.ndarray[tuple[int, ...]]
 # Image texels (height, width, channels) of any dtype, and linear float RGBA texels.
 type Texels = np.ndarray[[int, int, int]]
 type LinearRGBA = np.ndarray[[int, int, 4], np.dtype[np.float32]]
 
-# A JSON value (scene metadata, `.wpbr` headers).
+# A JSON value (scene metadata, `.rayw` headers).
 type Json = bool | int | float | str | list[Json] | dict[str, Json] | None
 
 

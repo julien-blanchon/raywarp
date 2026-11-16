@@ -1,4 +1,4 @@
-"""`.wpbr` freshness (B26): key (source, options, code version) and dependencies, missing files
+"""`.rayw` freshness (B26): key (source, options, code version) and dependencies, missing files
 included."""
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ pytest.importorskip("pxr")
 import raywarp as rw
 import raywarp.formats.usd
 from raywarp.core.pipeline.textures import formats
-from raywarp.scene.model import wpbr
+from raywarp.scene.model import rayw
 
 
 def _scene(tmp_path, name="scene.usda", nquad=1):
@@ -67,9 +67,9 @@ def test_same_size_edit_rebuilds(tmp_path):
 
 
 def test_explicit_cache_file_is_keyed_by_source_and_options(tmp_path):
-  """B26: an explicit `cache="x.wpbr"` was reused whatever the source and options."""
+  """B26: an explicit `cache="x.rayw"` was reused whatever the source and options."""
   _, src, _ = _scene(tmp_path)
-  path = tmp_path / "x.wpbr"
+  path = tmp_path / "x.rayw"
   rw.formats.usd.load(src, cache=path)
   assert _warm(rw.formats.usd.load(src, cache=path))
   assert not _warm(rw.formats.usd.load(src, cache=path, options=rw.SceneOptions(textures=formats.TextureStorage(max_size=64))))
@@ -112,7 +112,7 @@ def test_converter_change_rebuilds(tmp_path, monkeypatch):
 
 def test_stat_files_records_missing_files(tmp_path):
   (tmp_path / "a.png").write_bytes(b"x")
-  deps = wpbr.stat_files([str(tmp_path / "b.png"), str(tmp_path / "a.png"), str(tmp_path)])
+  deps = rayw.stat_files([str(tmp_path / "b.png"), str(tmp_path / "a.png"), str(tmp_path)])
   assert [(os.path.relpath(d.path, tmp_path), d.size) for d in deps] == [(".", -1), ("a.png", 1), ("b.png", -1)]
 
 
@@ -210,8 +210,8 @@ def test_rebuild_prefetches_the_stale_layers(tmp_path, monkeypatch):
   again = rw.formats.usd.load(src, cache=cache)
   assert not _warm(again)
   assert fetched == [str(src)]
-  recorded = wpbr.recorded_dependencies(again.meta, src.parent)
-  assert recorded == wpbr.stat_files(d.path for d in recorded)
+  recorded = rayw.recorded_dependencies(again.meta, src.parent)
+  assert recorded == rayw.stat_files(d.path for d in recorded)
   assert {k: v.tobytes() for k, v in again.arrays().items()} == {k: v.tobytes() for k, v in first.arrays().items()}
 
 
@@ -219,15 +219,15 @@ def test_record_reuses_known_states(tmp_path):
   """`record` takes the states read during the build and stats only the others."""
   (tmp_path / "a").write_bytes(b"x")
   (tmp_path / "b").write_bytes(b"yy")
-  known = {str(tmp_path / "a"): wpbr.Dependency(path=str(tmp_path / "a"), mtime_ns=7, size=1)}
+  known = {str(tmp_path / "a"): rayw.Dependency(path=str(tmp_path / "a"), mtime_ns=7, size=1)}
   meta: dict = {}
-  wpbr.record(
+  rayw.record(
     meta,
-    wpbr.CacheKey(adapter="usd", source=str(tmp_path / "s"), options={}, code="c"),
+    rayw.CacheKey(adapter="usd", source=str(tmp_path / "s"), options={}, code="c"),
     [str(tmp_path / "b"), str(tmp_path / "a")],
     known=known,
   )
-  b = wpbr.stat_files([str(tmp_path / "b")])[0]
+  b = rayw.stat_files([str(tmp_path / "b")])[0]
   assert meta["cache"]["dependencies"] == [["a", 7, 1], ["b", b.mtime_ns, b.size]]
 
 
@@ -250,7 +250,7 @@ def test_prefetch_leaves_failed_reads_out(tmp_path, monkeypatch):
   local_os = SimpleNamespace(**vars(os))
   local_os.read = flaky
   monkeypatch.setattr(prefetch, "os", local_os)
-  deps = [wpbr.Dependency(path=str(tmp_path / n), mtime_ns=0, size=0) for n in ("ok", "bad", "missing")]
+  deps = [rayw.Dependency(path=str(tmp_path / n), mtime_ns=0, size=0) for n in ("ok", "bad", "missing")]
   p = prefetch.Prefetch(deps)
   # Wait for every read first: close() cancels reads not started yet, which would drop "ok".
   try:

@@ -107,7 +107,7 @@ def test_mesh_registration_does_not_copy_payloads_for_deduplication() -> None:
 
 
 def test_stored_corner_tables_expand_without_memory_when_no_mesh_has_them() -> None:
-  """A `.wpbr`'s optional corner tables (`Meshes.stored_rows` / `expanded_rows`): a table no mesh
+  """A `.rayw`'s optional corner tables (`Meshes.stored_rows` / `expanded_rows`): a table no mesh
   has comes back as a read-only -1 broadcast (no per-triangle memory), a partial one row-aligned."""
   from raywarp.scene.model.tables import Meshes
 

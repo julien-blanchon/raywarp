@@ -1,7 +1,7 @@
 """Bounds raywarp's disk caches: `prune(max_bytes)` deletes the least recently used entries of
 the content-keyed caches under the cache directory (`cache_dir()`) until they fit.
 
-The caches grow with every scene, setting and code version seen (bakes, textures, `.wpbr`
+The caches grow with every scene, setting and code version seen (bakes, textures, `.rayw`
 scenes, PTX), and nothing in them is ever needed: a deleted entry is a miss that rebuilds it. So
 the size is bounded by a prune the user runs (or a job script calls), not by bookkeeping on
 every write:
@@ -90,8 +90,8 @@ def prune(max_bytes: int, root: Path | None = None) -> Pruned:
 
 
 def entries_of(root: Path) -> Iterator[Entry]:
-  """The entries of the pruned caches under `root` (`CACHES`, plus the `.wpbr` files in `root`)."""
-  yield from (_entry((p,)) for p in _files(root, "*.wpbr"))
+  """The entries of the pruned caches under `root` (`CACHES`, plus the `.rayw` files in `root`)."""
+  yield from (_entry((p,)) for p in _files(root, "*.rayw"))
   for name, directories in CACHES.items():
     folder = root / name
     if directories:
@@ -134,11 +134,11 @@ def _entry(paths: tuple[Path, ...]) -> Entry:
 def sizes(root: Path | None = None) -> dict[str, int]:
   """Bytes held under the cache directory `root` (default `cache_dir()`; {} with caching off), per
   top-level directory (the pruned caches, the kernel store `kernels`, OptiX's cache `optix`, ...)
-  and "wpbr" for the `.wpbr` files beside them; largest first."""
+  and "rayw" for the `.rayw` files beside them; largest first."""
   root = root if root is not None else cache_dir()
   if root is None:
     return {}
-  out = {"wpbr": sum(e.size for e in (_entry((p,)) for p in _files(root, "*.wpbr")))}
+  out = {"rayw": sum(e.size for e in (_entry((p,)) for p in _files(root, "*.rayw")))}
   for d in _children(root):
     if d.is_dir():
       out[d.name] = _entry((d,)).size

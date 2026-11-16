@@ -3,7 +3,7 @@ Features without compiling anything (`Probe`), the OptiX scene flags of its scen
 (`scene_flags`), the fill's synthetic scenes (`load_point`: `feature_space` codes) and the
 settings variants a user reaches (`toggles`). Self-contained in the public tree: the kernel-build
 pipeline (`fill.py`, `word_reach.py`, `zero.py`, `tools/prebuilt/fill_all.sh`) runs from a public
-checkout; the development tree's census adds its registry scenes through `forms` (internal/).
+checkout; the development tree's census adds its registry scenes through `forms`.
 
 Everything here runs on the CPU device. `Probe` is a Renderer whose construction skips the
 background compiles and the software BVH build (the only device work its constructor does besides

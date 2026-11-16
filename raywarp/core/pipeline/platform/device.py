@@ -159,7 +159,7 @@ def _resolve(alias: str) -> DeviceCaps:
   cuda = device.is_cuda
   arch = int(device.arch) if cuda else 0
   if cuda:
-    from raywarp.core.build.kernel_cache import prebuilt  # noqa: PLC0415  # scene.model.wpbr imports this module
+    from raywarp.core.build.kernel_cache import prebuilt  # noqa: PLC0415  # scene.model.rayw imports this module
 
     prebuilt.seed(arch)  # before any module of this device loads
   return DeviceCaps(

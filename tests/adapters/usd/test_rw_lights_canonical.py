@@ -126,14 +126,14 @@ def test_light_ext_range_and_no_falloff_reach_light_range():
   np.testing.assert_array_equal(slots["light.range"][0], np.asarray([np.inf, 4.0, 0.0], np.float32))
 
 
-def test_records_round_trip_through_wpbr(tmp_path):
-  """The v7 light / environment columns survive a `.wpbr` round trip."""
+def test_records_round_trip_through_rayw(tmp_path):
+  """The v7 light / environment columns survive a `.rayw` round trip."""
   b = rw.SceneBuilder()
   b.add_light(Light(kind=rw.scene.LightKind.SPHERE, intensity=2.5, exposure=1.5, shaping=Shaping(cone_angle=40.0), path="/L"))
   b.add_light(Light(kind=rw.scene.LightKind.DISTANT, ext=LightExt(range=3.0), body="arm", path="/S"))
   b.add_environment(EnvironmentLight(intensity=0.25, enable_color_temperature=True, color_temperature=4000.0, path="/D"))
-  scene = b.build(tmp_path / "s.wpbr")
-  again = rw.Scene.load(tmp_path / "s.wpbr")
+  scene = b.build(tmp_path / "s.rayw")
+  again = rw.Scene.load(tmp_path / "s.rayw")
   for name, value in scene.lights.arrays().items():
     np.testing.assert_array_equal(again.lights.arrays()[name], value, err_msg=name)
   assert list(again.lights.paths) == ["/L", "/S"] and int(again.lights.body[1]) == 0

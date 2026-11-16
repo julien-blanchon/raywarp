@@ -1,12 +1,12 @@
 """The public benchmark's scene files on the release's public bucket (`benchmarks/run.py`), one
-directory per scene-file version (`benchmarks.run.key()`: the `.wpbr` format and the USD converter).
+directory per scene-file version (`benchmarks.run.key()`: the `.rayw` format and the USD converter).
 
-  python -m tools.release.benchmark_scenes layout SRC OUT    # SRC: franka.tar, showcase.wpbr,
-  sponza.wpbr, cameras.json python -m tools.release.benchmark_scenes publish OUT [--bucket
+  python -m tools.release.benchmark_scenes layout SRC OUT    # SRC: franka.tar, showcase.rayw,
+  sponza.rayw, cameras.json python -m tools.release.benchmark_scenes publish OUT [--bucket
   OWNER/NAME] [--prefix P]  # user-approved
 
 `layout`: SRC's scene files and their cameras (built by the development repository's
-internal/benchmarks/public_scenes.py) become `OUT/benchmarks/<key>/`: each xz-compressed and
+public-scenes script) become `OUT/benchmarks/<key>/`: each xz-compressed and
 `files.json` (their sha256 and size decompressed), the layout the kernel store reads
 (`raywarp/core/build/kernel_cache/store.py`). `publish`: uploads it, files.json last, and refuses
 a key the bucket already holds (a published version is never written again: new scene content
@@ -46,7 +46,7 @@ def publish(out: Path, bucket: str = BUCKET, prefix: str = "") -> None:
   """
   rel = f"benchmarks/{key()}"
   root = f"{bucket}/{prefix.strip('/')}" if prefix.strip("/") else bucket
-  if _published(root, rel):
+  if _published(root, rel) is not None:
     raise SystemExit(f"{root}/{rel} is published already (never overwritten)")
   dest = f"hf://buckets/{root}/{rel}"
   subprocess.run(["hf", "buckets", "sync", str(out / rel), dest, "--exclude", store.FILES], check=True)

@@ -68,23 +68,26 @@ constructed (a declaration or a setting), then run time.
 | albedo, position, uv, material id, roughness, metallic, emission, direct, indirect, shadow | output words, any combination |
 | optical flow | backward motion vectors + a validity status (`MotionOutput(status=True)`) |
 | point clouds | `r.point_cloud(...)`, on the device |
-| saving | `internal/benchmarks/datagen/sinks.py` (rgb, depth, seg; `CameraLog`: the cameras of every frame + timestamps as `cameras.npz` / `cameras.json`) |
+| saving | your writer: [data generation](datagen.md#saving) (rgb, depth, seg; the cameras of every frame from `r.camera_info()`) |
 | not yet | 2D / 3D boxes, visibility fraction, keypoints, forward flow, COCO / BOP / KITTI writers |
+
+<!-- SHOWCASE: randomization/ground_truth.webp (docs/assets/SHOTS.md) -->
+![Ground truth: rgb, NOCS, camera-frame normals, motion status, camera frustums](assets/randomization/ground_truth.webp)
 
 ## Check it on your setup
 
-`internal/benchmarks/datagen/rand_all.py` builds a renderer with every per-world field declared,
-randomises every knob per world every frame and counts compiles, module loads, acceleration
-builds, bakes, host reads and allocations per knob:
+To prove a generator never compiles, turn compiling off for the process and run its loop: a
+configuration whose kernels are not prebuilt then raises `rw.kernels.KernelsNotPrebuilt`, naming
+it, instead of compiling ([install](install.md#prebuilt-kernels)).
 
-```bash
-python internal/benchmarks/datagen/rand_all.py --out out/rand --nworld 64 --size 256 --expect-zero-compiles
+```python
+# docs: skip (a fragment: your generator's loop)
+rw.kernels.configure(compile=False)  # or RAYWARP_KERNELS_COMPILE=0
+r = rw.Renderer(scene, nworld=64, resolution=(256, 256), per_world=per_world)
+for frame in range(100):
+  randomise(r, rng)  # writes r.per_world[...] tables every frame
+  r.render(sim)
 ```
-
-Its phases: each knob alone from the authored values ("probe"), nothing written ("static"), every
-per-world table re-randomised each frame ("tables"), the same under `gi.relight="on_request"` with
-each world re-lit once per `--episode` frames ("episode"), and every knob and renderer call
-("all").
 
 ## GI under randomisation: per frame or per episode
 

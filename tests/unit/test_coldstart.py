@@ -122,7 +122,7 @@ def test_cold_optix_build_compiles_one_ptx(tmp_path, monkeypatch):
 
   monkeypatch.setattr(pipeline.PtxCompile, "_compile", staticmethod(compile_ptx))
   monkeypatch.setattr(wp.config, "kernel_cache_dir", str(tmp_path))
-  monkeypatch.setenv("RAYWARP_CACHE_DIR", str(tmp_path / "wpbr"))  # no cached PTX either
+  monkeypatch.setenv("RAYWARP_CACHE_DIR", str(tmp_path / "raywarp"))  # no cached PTX either
   monkeypatch.setattr(pipeline, "read_ptx", lambda *_a, **_k: None)  # nor the prebuilt bundle's
   kw = {"cam_res": (24, 16), "outputs": rw.Outputs.of("rgb")}
   optix = make_scene(_XML, performance=rw.settings.Performance(traversal="optix"), **kw).render()

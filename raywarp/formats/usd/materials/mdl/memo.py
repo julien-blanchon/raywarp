@@ -46,7 +46,7 @@ _STALE_DAYS: Final = 7
 
 @functools.cache
 def _code(version: str) -> str:
-  """The code a conversion depends on: the `.wpbr` key's converter version (`version.CONVERTER`) and
+  """The code a conversion depends on: the `.rayw` key's converter version (`version.CONVERTER`) and
   MDL library digest, the SDK's `version`, the distiller target and the bake version."""
   text = f"{usd_version.CONVERTER}|{usd_version.mdl_library_digest()}|{version}|{load.TARGET}|{BAKE_VERSION}"
   return hashlib.sha256(text.encode()).hexdigest()[:16]

@@ -255,7 +255,7 @@ def test_a_conversion_entry_that_does_not_replay_is_a_miss_and_removed(tmp_path)
 
 
 def test_conversion_entries_follow_the_converter_version(tmp_path, monkeypatch):
-  """The conversion cache is keyed on the `.wpbr` key's converter version
+  """The conversion cache is keyed on the `.rayw` key's converter version
   (`formats.usd.version.CONVERTER`): a bumped converter misses."""
   from raywarp.formats.usd import version
   from raywarp.formats.usd.materials.mdl import memo

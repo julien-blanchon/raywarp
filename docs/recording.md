@@ -101,6 +101,9 @@ with recorder("videos/mosaic.mp4", (64, 1, 512, 512), fps=30, layout="mosaic", c
     rec.write(r.outputs.rgb)
 ```
 
+<!-- SHOWCASE: recording/mosaic.webp (docs/assets/SHOTS.md) -->
+[![A 64-view mosaic recorded at render speed](assets/recording/mosaic.webp)](assets/recording/mosaic.mp4)
+
 Options: `codec` (`"h264"`, `"hevc"`), `bits_per_pixel` (0.15: bitrate = bpp x W x H x fps),
 `nvenc_preset` (`"P1"` fastest ... `"P7"`), `x264_preset` (`"veryfast"`), `gop_seconds`,
 `depth`, `workers` (encoder processes, 4), `cols` (mosaic columns).
@@ -133,9 +136,9 @@ larger the loss. Even so, recording at 1024^2 ran at 366-379 frames/s against th
 64. The recipe now runs the encoders in separate processes that share the ring through CUDA
 IPC, so the render process only replays one launch and writes one pipe message per frame. That
 design passes the NVENC round trip on the RTX PRO 6000 (`tests/tooling/test_video.py`), but its
-frame rates are **not measured yet**. Re-run `internal/tools/video_job.sh` (JOB=rtx) to fill this table.
+frame rates are **not measured yet**.
 
-Encoder ceilings (synthetic frames, no renderer; run `2026-11-10-w9video-rtx`):
+Encoder ceilings (synthetic frames, no renderer; RTX PRO 6000):
 
 | stream | NVENC | CPU libx264 veryfast |
 |---|---:|---:|
@@ -181,6 +184,6 @@ frames/s (render-thread blocked 0.5 ms per frame).
 
 ## Measuring it yourself
 
-`python -m internal.tools.video_bench room --out internal/results/video --worlds 1 --size 1024` (render-only runs
-before and after the recorded cases, same loop) and `... synthetic ...` (the encoders' ceiling
-on a kernel-generated pattern). `internal/tools/video_job.sh` is the HF job that produced the table.
+Time the same loop with and without the recorder (one warm-up frame, `wp.synchronize_device()`
+before reading the clock) and read `RecordStats.blocked_s`: the time the render loop waited for
+the encoders.

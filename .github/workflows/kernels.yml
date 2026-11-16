@@ -1,45 +1,67 @@
 # Builds and publishes the prebuilt GPU kernels of every architecture: the multi-architecture fill
 # (tools/prebuilt/fill_all.sh refill: sm_120, sm_89, sm_86 OptiX bundles with their module packs,
 # sm_90 and sm_80 software-path bundles), run as HF jobs this workflow launches and follows, then
-# laid out, pinned and published to the public storage bucket blanchon/raywarp-kernels the renderer
-# downloads from on first use (raywarp/core/build/kernel_cache/store.py). WRITTEN, NOT RUN YET:
-# the first run is the user's decision (cost below).
+# laid out, pinned and published to the public storage bucket the renderer downloads from on first
+# use (raywarp/core/build/kernel_cache/store.py). WRITTEN, NOT RUN YET: the first run is the
+# user's decision (cost below).
 #
 # Triggers: a release tag (v*) and by hand (workflow_dispatch: the architectures, a dry run, the
-# publish switch). The bucket is mutable, so the layout is the versioning: a content key (and a
-# pack under it) is uploaded once and never written again (tools/release/kernels.py publish
-# refuses one the bucket holds); a new fill is a new content key. The pins (raywarp/core/build/
-# kernel_cache/kernels.json: every architecture's bundle, the sha256 of its file list and its packs
-# per NVIDIA driver: tools/release/kernels.py) are written by the run: uploaded as the artifact
-# `kernels-pins` and proposed as a pull request (branch kernels/<tag>); the wheels of a release
-# carry the pins merged before its tag (release.yml).
+# publish switch, force). The bucket is mutable, so the layout is the versioning: a content key (and
+# a pack under it) is uploaded once and never written again (tools/release/kernels.py publish skips
+# a unit published with the same bytes, refuses one with others). The pins (raywarp/core/build/
+# kernel_cache/kernels.json: every architecture's bundle, the sha256 of its file list, its packs per
+# NVIDIA driver and the key of the inputs it was built from) are written by the run: uploaded as the
+# artifact `kernels-pins` and proposed as a pull request (branch kernels/<tag>); the wheels of a
+# release carry the pins merged before its tag (release.yml).
 #
-# The fill outlives one GitHub job (6 h) when queues are long: its state (.fill_all/<tag>: each HF
-# job's run id, the waves passed) is saved to the Actions cache at the end of every run, success or
-# not, and restored at the start, so running the workflow again with the same tag resumes it (jobs
-# done stay done; a running HF job is followed, not relaunched).
+# Nothing is compiled twice (lanes/W21-CICACHE.md):
+# 1. SKIP. The first step computes each architecture's key (tools/prebuilt/buildkey.py: the git
+#    tree ids of the code that reaches a bundle, the locked Warp / MuJoCo Warp releases, the job
+#    image's CUDA, the OptiX headers' commit, the fill options, the pack driver and groups, the
+#    census's code and scenes; git and Python only, seconds, before any install) and compares it with
+#    the pins' `key`. Only the changed architectures are built; the others keep their pins entry.
+#    None changed: the workflow ends there (~1 min, $0, no HF job).
+# 2. REUSE. Every HF job mounts the build cache bucket at /cache: content-addressed, immutable
+#    entries (tools/prebuilt/build_cache.py: PTX by key and code digest, Warp modules by id, OptiX
+#    modules by name, listing parts and census rows by key). Shards take what the cache or the last
+#    published bundle holds and compile the rest, keeping it; listing parts and census scenes the
+#    cache holds launch no job; a pack with no module left to make runs no GPU job.
+# 3. PRUNE. After a publish, the cache keeps per architecture what its last 3 releases reference
+#    (refs/<tag>.json) and anything newer than 7 days; the rest is deleted.
 #
-# Secret: HF_TOKEN, a Hugging Face token of the account owning both buckets with write access:
-#   - HF jobs (launch, follow, logs) on that account (billed to it);
-#   - the project bucket blanchon/mujoco-warp-pbr (runs/: the code archive of each job, the
-#     hand-over archives, spend/budgets.json: the launches count against lane `release`'s budget);
-#   - the kernels bucket blanchon/raywarp-kernels (written only when publishing).
-# GITHUB_TOKEN (automatic) opens the pins pull request (contents + pull-requests: write).
+# The fill outlives one GitHub job (6 h) when queues are long: its state (.fill_all/<tag>: the keys,
+# each HF job's run id, the waves passed) is saved to the Actions cache at the end of every run,
+# success or not, and restored at the start, so running the workflow again with the same tag
+# resumes it (jobs done stay done; a running HF job is followed, not relaunched).
 #
-# Cost per release (worst case: every job to its cap, `fill_all.sh cost`; prices of `hf jobs
-# hardware` on 2026-11-16: cpu-upgrade $0.03/h, cpu-performance $1.90/h, l4x1 $0.80/h, a10g-large
-# $1.50/h, rtx-pro-6000 $2.75/h):
-#   sm_120  79 jobs  $20.64  (9 packs x 35 min rtx-pro-6000 $14.44, release cpu-performance $3.80,
-#                             40 PTX + 16 Warp shards + 12 lists + merge on cpu-upgrade $2.40)
-#   sm_89   76 jobs   $9.00  (6 packs x 35 min l4x1 $2.80, release $3.80, CPU shards $2.40)
-#   sm_86   74 jobs   $9.70  (4 packs x 35 min a10g-large $3.50, release $3.80, CPU shards $2.40)
-#   sm_90   30 jobs   $0.96  (software path: 12 lists + 16 Warp shards + merge + release, cpu-upgrade)
-#   sm_80   30 jobs   $0.96
-#   census   9 jobs   $1.61  (8 cpu-upgrade + 1 cpu-performance for the large prepared stages)
-#   total            $42.86 worst; expected ~$15-20 (the W10 / W15 refills: packs ~70 % of their
-#                    cap, CPU shards ~40 %, release ~30 min). A dry run (dry: true) is ~12
-#                    cpu-upgrade jobs, worst $0.17.
-# The GitHub runner itself only launches and polls (ubuntu-latest, free for a public repository).
+# Buckets (tools/prebuilt/buckets.env, the one place their names are written):
+#   - KERNELS_BUCKET blanchon/raywarp-kernels: public, the releases' bundles and packs (written only
+#     when publishing; the user creates it);
+#   - CACHE_BUCKET blanchon/raywarp-build-cache: private, the fill's build cache (every HF job
+#     reads and writes it through its /cache mount; this workflow lists it, writes refs/<tag>.json
+#     and prunes it);
+#   - PROJECT_BUCKET blanchon/mujoco-warp-pbr: the HF jobs' bucket (/data: the code archive of each
+#     job, the hand-over archives, spend/budgets.json: the launches count against lane `release`).
+# Secret: HF_TOKEN only, a Hugging Face token of the account owning the three buckets with write
+# access (HF jobs are launched on and billed to that account; the jobs get no token: their buckets
+# are mounted). GITHUB_TOKEN (automatic) opens the pins pull request (contents + pull-requests: write).
+#
+# Cost per release, every architecture (`fill_all.sh cost`; prices of `hf jobs hardware` on
+# 2026-11-16: cpu-upgrade $0.03/h, cpu-performance $1.90/h, l4x1 $0.80/h, a10g-large $1.50/h,
+# rtx-pro-6000 $2.75/h; worst: every launched job to its cap; expected: lanes/W21-CICACHE.md):
+#   change                                    before: worst / expected   now: worst / expected
+#   nothing (every key pinned)                $42.86 / ~$15-20           $0 / $0 (no HF job)
+#   a fill option / pack driver only          $42.86 / ~$15-20           $11.70 / ~$1 (CPU jobs, 0 compiled,
+#                                                                          census cached, no pack job)
+#   host-only code (no PTX / module change)   $42.86 / ~$15-20           $13.31 / ~$1.5 (+ census rerun)
+#   one feature's kernels (~5 % of units)     $42.86 / ~$15-20           $16.25 / ~$3 (+ 1 pack job per
+#                                                                          OptiX architecture)
+#   everything (Warp release, launch params)  $42.86 / ~$15-20           $34.04 / ~$12-17 (release on
+#                                                                          cpu-upgrade: -$11.22 worst)
+#   An architecture whose key is unchanged costs $0 in every row (only the changed ones run).
+#   A dry run (dry: true) is ~15 cpu-upgrade jobs, worst $0.21.
+# The GitHub runner itself only computes keys, launches and polls (ubuntu-latest, free for a
+# public repository).
 name: Kernels
 
 on:
@@ -56,6 +78,10 @@ on:
         default: true
       publish:
         description: "Upload the layout to the kernels bucket (a dry run: under scratch/dry-<tag>)"
+        type: boolean
+        default: false
+      force:
+        description: "Build every architecture even when its key is pinned (the cache still reuses units)"
         type: boolean
         default: false
 
@@ -77,31 +103,45 @@ jobs:
       DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry && '1' || '0' }}
       PUBLISH: ${{ (github.event_name == 'push' || inputs.publish) && '1' || '0' }}
       ARCHS_IN: ${{ github.event_name == 'workflow_dispatch' && inputs.archs || '120 89 86 90 80' }}
+      FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force && '1' || '0' }}
       WATCH_EVERY: "300"
+      # A job failing its relaunches fails the fill at once and kills the others (not 6 h of waiting).
+      FAIL_FAST: "1"
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # SEED=auto reads the pins' last commit and diffs the OptiX options code
-      - uses: astral-sh/setup-uv@v6
-        with:
-          python-version: "3.12"
-      - run: uv tool install "huggingface_hub[cli]>=1.0"
-      - name: Interpreter of tools.hf and tools.release (no project install, so no native build)
-        run: |
-          warp=$(python3 -c 'import tomllib; d = tomllib.load(open("pyproject.toml", "rb")); print(next(x for x in d["project"]["dependencies"] if x.startswith("warp-lang")))')
-          echo "PY=uv run --no-project --python 3.12 --with numpy --with $warp --index-strategy unsafe-best-match --extra-index-url https://pypi.nvidia.com python" >> "$GITHUB_ENV"
-          echo "PYTHONPATH=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
       - name: Restore the fill state (resume)
         uses: actions/cache/restore@v4
         with:
           path: .fill_all
           key: fill-state-${{ env.TAG }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: fill-state-${{ env.TAG }}-
-      - name: Fill, pack, lay out (HF jobs)
+      - name: Keys (skip the architectures whose key is pinned)
+        id: keys
         run: |
+          # The runner's python3: buildkey.py needs git and the standard library only.
           # A dry run with the default input keeps fill_all.sh's two dry architectures.
           if [ "$DRY" != 1 ] || [ "$ARCHS_IN" != "120 89 86 90 80" ]; then export ARCHS="$ARCHS_IN"; fi
-          tools/prebuilt/fill_all.sh cost "$TAG"
+          archs=$(PY=python3 tools/prebuilt/fill_all.sh keys "$TAG")
+          echo "archs=$archs" >> "$GITHUB_OUTPUT"
+          if [ -z "$archs" ]; then echo "::notice::every architecture's key is pinned: nothing to build"; fi
+      - uses: astral-sh/setup-uv@v6
+        if: steps.keys.outputs.archs != ''
+        with:
+          python-version: "3.12"
+      - run: uv tool install "huggingface_hub[cli]>=1.0"
+        if: steps.keys.outputs.archs != ''
+      - name: Interpreter of tools.hf and tools.release (no project install, so no native build)
+        if: steps.keys.outputs.archs != ''
+        run: |
+          warp=$(python3 -c 'import tomllib; d = tomllib.load(open("pyproject.toml", "rb")); print(next(x for x in d["project"]["dependencies"] if x.startswith("warp-lang")))')
+          echo "PY=uv run --no-project --python 3.12 --with numpy --with $warp --index-strategy unsafe-best-match --extra-index-url https://pypi.nvidia.com python" >> "$GITHUB_ENV"
+          echo "PYTHONPATH=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
+      - name: Fill, pack, lay out (HF jobs, the changed architectures only)
+        if: steps.keys.outputs.archs != ''
+        run: |
+          tools/prebuilt/fill_all.sh plan "$TAG"
           tools/prebuilt/fill_all.sh refill "$TAG"
       - name: Save the fill state
         if: always()
@@ -110,21 +150,28 @@ jobs:
           path: .fill_all
           key: fill-state-${{ env.TAG }}-${{ github.run_id }}-${{ github.run_attempt }}
       - uses: actions/upload-artifact@v4
-        if: env.PUBLISH == '1'
+        if: env.PUBLISH == '1' && steps.keys.outputs.archs != ''
         with:
           name: kernels-pins
           path: |
             raywarp/core/build/kernel_cache/kernels.json
             .fill_all/${{ env.TAG }}.kernels.json
           if-no-files-found: ignore
+      - name: Prune the build cache (keep what the last 3 releases of each architecture reference)
+        if: env.PUBLISH == '1' && env.DRY != '1' && steps.keys.outputs.archs != ''
+        run: uv run --no-project --python 3.12 --with "huggingface_hub>=1.0" python -m tools.prebuilt.build_cache prune --keep 3 --grace-days 7 --apply
       - name: Propose the pins (pull request)
-        if: env.PUBLISH == '1' && env.DRY != '1'
+        if: env.PUBLISH == '1' && env.DRY != '1' && steps.keys.outputs.archs != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           git diff --quiet -- raywarp/core/build/kernel_cache/kernels.json && { echo "pins unchanged"; exit 0; }
           branch="kernels/${GITHUB_REF_NAME}"
-          content=$(python3 -c 'import json; print(", ".join(f"sm{a} bundle {b[\"content\"]}" for a, b in sorted(json.load(open("raywarp/core/build/kernel_cache/kernels.json"))["bundles"].items())))')
+          # The bundles this fill built (SEED=auto finds a bundle's refill tree by this message; a
+          # skipped architecture's pins entry is the earlier commit's).
+          built=$(cat ".fill_all/${TAG}.archs")
+          # shellcheck disable=SC2086
+          content=$(python3 -c 'import json, sys; b = json.load(open("raywarp/core/build/kernel_cache/kernels.json"))["bundles"]; print(", ".join(f"sm{a} bundle {b[a][\"content\"]}" for a in sys.argv[1:]))' $built)
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -c "$branch"

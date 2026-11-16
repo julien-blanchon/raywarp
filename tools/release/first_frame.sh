@@ -63,7 +63,7 @@ for item in "$@"; do
   (
     cd "$caches"
     WARP_CACHE_PATH=$caches/warp OPTIX_CACHE_PATH=$caches/optix CUDA_CACHE_PATH=$caches/cuda \
-      RAYWARP_CACHE_DIR=$caches/wpbr RAYWARP_KERNELS=$caches/store RAYWARP_KERNELS_URL=$remote \
+      RAYWARP_CACHE_DIR=$caches/raywarp RAYWARP_KERNELS=$caches/store RAYWARP_KERNELS_URL=$remote \
       "$scratch/venv/bin/python" -I "$here/first_frame.py" --out "$out" --repo "$repo" --scene "$scene" --base "$base" ${FIRST_FRAME_ARGS:-}
   ) 2>&1 | grep -E "^first_frame|^process|Error|error|raywarp:" | tee -a "$out/first_frame.log" || true
 done

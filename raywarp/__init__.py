@@ -6,7 +6,7 @@ The public surface is small: these names, three submodules and the adapters.
   added to any scene (`Lighting`, `Headlight`: an adapter's `lighting=`, `Scene.with_lighting`);
   `upload` builds the `GpuScene` the kernels read, with `SceneOptions` (texture storage, emissive
   panels, environment sun). Enums, flags, texture references, IES profiles, `read_hdr` and the
-  `.wpbr` cache: `rw.scene`.
+  `.rayw` cache: `rw.scene`.
 * Rendering: `Renderer` (`render`, `capture` -> `RenderGraph`, `explain`, ...), `RenderSettings`
   (`RenderSettings()`: the one default; `FAST`: the maximum-throughput field set,
   `RenderSettings().replace(rw.FAST)`), `Outputs` (what is written) ->

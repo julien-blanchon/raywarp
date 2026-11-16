@@ -102,14 +102,14 @@ def test_with_outputs_reads_exactly_the_view():
 
 
 def test_catalogue_files_and_directories(tmp_path):
-  (tmp_path / "a.wpbr").touch()
+  (tmp_path / "a.rayw").touch()
   (tmp_path / "sub").mkdir()
   (tmp_path / "sub" / "b.usda").touch()
   (tmp_path / "sub" / "notes.txt").touch()
   entries = catalogue([], [tmp_path])
   assert entries[DEMO].path is None and entries[DEMO].format == "demo"
   names = {e.name: e for e in entries.values()}
-  assert names["a.wpbr"].format == "wpbr" and names["b.usda"].format == "usd" and "notes.txt" not in names
+  assert names["a.rayw"].format == "rayw" and names["b.usda"].format == "usd" and "notes.txt" not in names
   assert names["b.usda"].group == tmp_path.name
   with pytest.raises(ValueError, match="no scene file"):
     file_entry(tmp_path / "missing.usd")
@@ -281,7 +281,7 @@ def test_frames_settings_views_and_errors(server):
 def test_scene_file_opens(server, tmp_path):
   from raywarp.viewer.scenes import demo
 
-  path = tmp_path / "demo_copy.wpbr"
+  path = tmp_path / "demo_copy.rayw"
   demo().save(path)
   status, _, body = call(server, "/api/command", {"type": "path", "path": str(path)})
   state = json.loads(body)
@@ -328,7 +328,7 @@ def test_gltf_file_opens_and_renders(tmp_path, monkeypatch):
 
 
 def test_a_file_that_fails_to_load_is_not_listed(server, tmp_path):
-  path = tmp_path / "broken.wpbr"
+  path = tmp_path / "broken.rayw"
   path.write_bytes(b"not a scene")
   status, _, body = call(server, "/api/command", {"type": "path", "path": str(path)})
   assert status == 400 and "could not load" in json.loads(body)["error"]

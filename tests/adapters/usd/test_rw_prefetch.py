@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 from raywarp.scene.images import prefetch
-from raywarp.scene.model.wpbr import Dependency
+from raywarp.scene.model.rayw import Dependency
 
 
 @pytest.mark.parametrize("threads", [0, -1])

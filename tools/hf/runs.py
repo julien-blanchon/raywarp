@@ -50,6 +50,8 @@ class Request:
   # environment, no caches); `inputs` (name, local file or directory) ship in it as inputs/<name>.
   isolated: bool = False
   inputs: tuple[tuple[str, str], ...] = ()
+  # More storage buckets mounted (OWNER/NAME, mount path), e.g. the kernel build cache at /cache.
+  mounts: tuple[tuple[str, str], ...] = ()
 
 
 def git(tree: Path, *args: str) -> str:
@@ -57,14 +59,14 @@ def git(tree: Path, *args: str) -> str:
   return subprocess.run(["git", "-C", str(tree), *args], capture_output=True, text=True, check=True).stdout.strip()
 
 
-# History never ships: the knowledge base and the results (paths under internal/).
+# History never ships: the development tree's knowledge base and results.
 _HISTORY: Final = ("research", "results")
 
 
 def archive(tree: Path, commit: str, out: Path) -> None:
-  """Writes `commit`'s committed files as the tar.gz `out`, `internal/` included (its
-  `export-ignore`, .gitattributes, keeps it out of a plain `git archive`: the public export) but
-  not its history (`_HISTORY`). A commit without `internal/` (the public tree) ships as it is."""
+  """Writes `commit`'s committed files as the tar.gz `out`, the development-only tree included
+  (its `export-ignore`, .gitattributes, keeps it out of a plain `git archive`: the public export)
+  but not its history (`_HISTORY`). A commit without it (the public tree) ships as it is."""
   excludes = [f":(exclude){h}" for h in _HISTORY]  # top level: a tree from before the split
   base = ["git", "-C", str(tree), "archive", "--format=tar", commit, "--", ".", ":(exclude)internal", *excludes]
   parts = [subprocess.run(base, capture_output=True, check=True).stdout]
@@ -162,12 +164,15 @@ def job_command(rid: str, commit: str, *, isolated: bool = False) -> list[str]:
   return ["bash", "-c", script]
 
 
-def volume(rid: str, *, isolated: bool) -> str:
-  """The job's one volume: the whole bucket at /data, or (isolated) the run's own directory alone,
-  at the same path (`/data/runs/<run>`): nothing else of the bucket is reachable from the job."""
+def volumes(rid: str, *, isolated: bool, mounts: tuple[tuple[str, str], ...] = ()) -> list[str]:
+  """The job's volumes: the whole bucket at /data, or (isolated) the run's own directory alone,
+  at the same path (`/data/runs/<run>`: nothing else of the bucket is reachable from the job);
+  then each of `mounts` (bucket, path), read-write."""
   if isolated:
-    return f"hf://buckets/{hub.BUCKET}/{RUNS}/{rid}:/data/{RUNS}/{rid}"
-  return f"hf://buckets/{hub.BUCKET}:/data"
+    if mounts:
+      raise ValueError("an isolated run mounts its own directory only")
+    return [f"hf://buckets/{hub.BUCKET}/{RUNS}/{rid}:/data/{RUNS}/{rid}"]
+  return [f"hf://buckets/{hub.BUCKET}:/data", *(f"hf://buckets/{b}:{path}" for b, path in mounts)]
 
 
 def launch(request: Request, *, dry_run: bool = False, force_budget: bool = False) -> tuple[str, str]:
@@ -188,7 +193,7 @@ def launch(request: Request, *, dry_run: bool = False, force_budget: bool = Fals
     if dry_run:
       print(json.dumps(cmd, indent=1))
       print(shlex.join(job_command(rid, str(cmd["commit"]), isolated=request.isolated)))
-      print("volume", volume(rid, isolated=request.isolated))
+      print("volumes", *volumes(rid, isolated=request.isolated, mounts=request.mounts))
       return rid, ""
     if hub.exists(f"{RUNS}/{rid}/cmd.json"):
       raise ValueError(f"run {rid} exists: pick another --tag")
@@ -207,7 +212,7 @@ def launch(request: Request, *, dry_run: bool = False, force_budget: bool = Fals
   job = jobs.launch(
     pins()["IMAGE"],
     job_command(rid, str(cmd["commit"]), isolated=request.isolated),
-    volume=volume(rid, isolated=request.isolated),
+    volumes=volumes(rid, isolated=request.isolated, mounts=request.mounts),
     flavor=request.flavor,
     timeout_s=request.timeout_s,
     env=env,

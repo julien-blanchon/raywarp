@@ -9,7 +9,7 @@ primitives) once, the light counts (so the light-loop forms) and the other axes 
 round-robin, plus the extremes (everything at once, the leanest scene).
 The prebuilt kernels' fill points are `base_scenes` (`tools/prebuilt/fill.py`; loaded by
 `tools/prebuilt/probe.load_point`); the development tree registers every point as a benchmark scene
-and times the parity check over them (internal/benchmarks/feature_space_parity.py).
+and times the parity check over them.
 
 Nothing here is imported by `raywarp`.
 """
@@ -206,8 +206,8 @@ def catalogue() -> list[Point]:
   return list(dict.fromkeys(out))
 
 
-# Rare class combinations for the wide prebuilt-vs-scene evaluation
-# (internal/benchmarks/specs/w6_final/ specs.py): each is meant to miss the prebuilt class sets
+# Rare class combinations for the wide prebuilt-vs-scene evaluation (development repository
+# only): each is meant to miss the prebuilt class sets
 # (`raywarp.core.build.variants.class_sets.PREBUILT`) and so be routed to a superset
 # (`tiers.cover`), which the evaluation prices against its scene build. Codes (`Point.code`): IES in
 # a small loop, normal maps without a base map, solid glass alone, layers alone, coat with cut-outs,
@@ -227,11 +227,11 @@ RARE: Final = (
 
 
 def rare() -> list[Point]:
-  """The `RARE` points (registered in `internal/benchmarks/scenes.py` with the catalogue)."""
+  """The `RARE` points (registered with the catalogue in the development tree's scene registry)."""
   return [parse(code) for code in RARE]
 
 
-# The random-scene fuzz (internal/benchmarks/specs/w6_final.md, "any arbitrary scene"): light counts
+# The random-scene fuzz ("any arbitrary scene"): light counts
 # beyond the catalogue's (3, 5, 6, 16: the small forms' edges and the general loop below the grid),
 # geometry weighted towards the host kinds, MuJoCo kinds as their builders express them.
 RANDOM_LIGHT_COUNTS: Final = (1, 2, 3, 4, 5, 6, 8, 16, 64)
@@ -307,7 +307,7 @@ BASE_FILL_LIGHTS: Final = (3, 4)
 
 # The bundle's per-world optics point (`tools/prebuilt/fill._optics_points`, Features.world_optics):
 # glass props whose material and refraction index are chosen per world (domain randomisation), its
-# census form with that declaration (`internal/benchmarks/scenes.py`, `CodeScene.per_world`).
+# census form with that declaration (the development tree's registry, `CodeScene.per_world`).
 OPTICS_POINT: Final = Point(lights="point", nlight=2, material="glass", textures="none", geometry="mesh")
 OPTICS_PER_WORLD: Final[dict[str, tuple[str, ...]]] = {"material": ("instance.material", "specular_ior")}
 

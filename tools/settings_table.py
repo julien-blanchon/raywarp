@@ -8,7 +8,7 @@ the OpenPBR inputs' coverage, `scene.model.openpbr.COVERAGE`; the MuJoCo materia
 
 Regions (between `<!-- <name>:begin ... -->` and `<!-- <name>:end -->` lines):
   settings-table  docs/settings.md: every field, its default, compiled in or runtime, rebuilds
-  runtime-fields  README.md and docs/settings.md: the runtime fields, by group
+  runtime-fields  docs/settings.md: the runtime fields, by group
   openpbr-inputs    docs/scenes.md: every OpenPBR input, its record, default and coverage
   mujoco-materials  docs/scenes.md: MuJoCo material fields -> OpenPBR (`openpbr_materials`'s table)
 """
@@ -26,7 +26,6 @@ from raywarp.settings import RenderSettings
 ROOT = Path(__file__).resolve().parent.parent
 FILES = {
   ROOT / "docs" / "settings.md": ("settings-table", "runtime-fields"),
-  ROOT / "README.md": ("runtime-fields",),
   ROOT / "docs" / "scenes.md": ("openpbr-inputs", "mujoco-materials"),
 }
 # Column where the meaning starts in the mapping table of `raywarp.integrations.mujoco.materials`'

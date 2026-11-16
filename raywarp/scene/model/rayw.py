@@ -1,12 +1,12 @@
-r"""The `.wpbr` scene cache: one file of raw arrays, loaded with a single memory map.
+r"""The `.rayw` scene cache: one file of raw arrays, loaded with a single memory map.
 
 Layout (little endian)::
 
-  [0, 16)        magic b"WPBR" + format version (uint32) + 8 reserved bytes
+  [0, 16)        magic b"RAYW" + format version (uint32) + 8 reserved bytes
   [256, ...)     every array of the scene, raw C-order bytes, each 256-byte aligned
   ...            JSON header: {"version", "arrays": {name: [dtype, shape, offset]}, "report",
   "meta"}
-  last 24 bytes  header offset (uint64), header length (uint64), b"WPBREND\0"
+  last 24 bytes  header offset (uint64), header length (uint64), b"RAYWEND\0"
 
 The header is written last, so arrays (in particular the texel blob) can be written in place
 while images decode, and a crash leaves no valid file: each writer writes its own temporary file
@@ -46,8 +46,8 @@ import numpy as np
 from raywarp.cache.paths import DEFAULT_DIR, cache_dir, remove_stale, tmp_name
 from raywarp.scene.model.types import ALIGN, Array, Json, itemsize
 
-MAGIC: Final = b"WPBR"
-END: Final = b"WPBREND\0"
+MAGIC: Final = b"RAYW"
+END: Final = b"RAYWEND\0"
 # 2: Lights.instance; 3: second UV set, vertex colors; 4: meta["cache"] (key + dependencies),
 # emissive panel lights no longer stored (added after the load); 5: Instances.source;
 # 6: Cameras.exposure, Instances.label / labels (UsdSemantics); 7: canonical OpenPBR materials
@@ -58,8 +58,11 @@ END: Final = b"WPBREND\0"
 # 12: Images.digest (content digests of the images), the cache key's libraries, dependencies
 # recorded relative to the source's directory; 13: Lights.visible_in_primary_ray; 14: images of
 # equal content share their bytes (`Images.offset`), the texel blob is the last array, and the
-# optional corner indices (`Meshes.uv1_idx` / `color_idx`) keep the rows of the meshes with them.
-VERSION: Final = 14
+# optional corner indices (`Meshes.uv1_idx` / `color_idx`) keep the rows of the meshes with them;
+# 15: the Raywarp names (suffix `.rayw`, magic RAYW / RAYWEND; older files are not read).
+VERSION: Final = 15
+# The file name suffix.
+SUFFIX: Final = ".rayw"
 _TRAILER: Final = struct.Struct("<QQ8s")
 # Bytes per read of an in-file move (`Writer.move`).
 _MOVE_CHUNK: Final = 64 << 20
@@ -79,7 +82,7 @@ def align(n: int) -> int:
 
 @final
 class Writer:
-  """Writes a `.wpbr` file whose arrays have known dtypes and shapes, possibly from threads.
+  """Writes a `.rayw` file whose arrays have known dtypes and shapes, possibly from threads.
 
   Arrays are written with `os.pwrite` (thread-safe, releases the GIL). Writing through a
   writable memory map would be slower on macOS: first-touch page faults, then ~0.75 s per GB
@@ -201,33 +204,33 @@ def save(
 
 
 def read_header(path: str | os.PathLike[str]) -> dict[str, Json]:
-  """The JSON header of a `.wpbr` file (raises ValueError if it is not a complete one of this
+  """The JSON header of a `.rayw` file (raises ValueError if it is not a complete one of this
   format version)."""
   with Path(path).open("rb") as file:
     header, _ = _any_header(file)
   if header.get("version") != VERSION:
-    raise ValueError(f"{path}: .wpbr version {header.get('version')} (expected {VERSION})")
+    raise ValueError(f"{path}: .rayw version {header.get('version')} (expected {VERSION})")
   return header
 
 
 def _any_header(file: BinaryIO) -> tuple[dict[str, Json], int]:
-  """JSON header and array-region end of an open `.wpbr`, any format version (else ValueError).
+  """JSON header and array-region end of an open `.rayw`, any format version (else ValueError).
 
   Read and map the same descriptor: an atomic replacement of its path must not mix generations.
   """
   if file.read(4) != MAGIC:
-    raise ValueError(f"{file.name}: not a .wpbr file")
+    raise ValueError(f"{file.name}: not a .rayw file")
   size = file.seek(0, os.SEEK_END)
   if size < ALIGN + _TRAILER.size:
-    raise ValueError(f"{file.name}: truncated .wpbr file")
+    raise ValueError(f"{file.name}: truncated .rayw file")
   file.seek(-_TRAILER.size, os.SEEK_END)
   offset, length, end = _TRAILER.unpack(file.read(_TRAILER.size))
   if end != END or offset < ALIGN or offset + length != size - _TRAILER.size:
-    raise ValueError(f"{file.name}: invalid .wpbr header bounds")
+    raise ValueError(f"{file.name}: invalid .rayw header bounds")
   file.seek(offset)
   header = json.loads(file.read(length))
   if not isinstance(header, dict):
-    raise ValueError(f"{file.name}: malformed .wpbr header")
+    raise ValueError(f"{file.name}: malformed .rayw header")
   return header, offset
 
 
@@ -235,7 +238,7 @@ def _layout(header: Mapping[str, Json]) -> Layout:
   """The array layout of a header (ValueError when malformed)."""
   found = header.get("arrays")
   if not isinstance(found, dict):
-    raise ValueError("a .wpbr header without arrays")
+    raise ValueError("a .rayw header without arrays")
   arrays: dict[str, Json] = found  # annotated: pyrefly loses the element type of a narrowed Json
   layout: Layout = {}
   for name, entry in arrays.items():
@@ -243,16 +246,16 @@ def _layout(header: Mapping[str, Json]) -> Layout:
       case [str(dtype), list(shape), int(offset)] if type(offset) is int and all(type(n) is int and n >= 0 for n in shape):
         layout[name] = (dtype, [n for n in shape if isinstance(n, int)], offset)
       case _:
-        raise ValueError(f"a .wpbr header with a malformed array entry {name}")
+        raise ValueError(f"a .rayw header with a malformed array entry {name}")
   return layout
 
 
 def load(path: str | os.PathLike[str]) -> tuple[dict[str, Array], dict[str, Json]]:
-  """(arrays, header) of a `.wpbr` file: one memory map, one zero-copy view per array."""
+  """(arrays, header) of a `.rayw` file: one memory map, one zero-copy view per array."""
   with Path(path).open("rb") as file:
     header, data_end = _any_header(file)
     if header.get("version") != VERSION:
-      raise ValueError(f"{path}: .wpbr version {header.get('version')} (expected {VERSION})")
+      raise ValueError(f"{path}: .rayw version {header.get('version')} (expected {VERSION})")
     mm = np.memmap(file, dtype=np.uint8, mode="r")
   return _views(path, header, data_end, mm), header
 
@@ -260,7 +263,7 @@ def load(path: str | os.PathLike[str]) -> tuple[dict[str, Array], dict[str, Json
 def load_fresh(
   path: str | os.PathLike[str], key: CacheKey, *, verify: Verify = "files"
 ) -> tuple[dict[str, Array], dict[str, Json]] | None:
-  """`load` of `.wpbr` file `path` when it is `fresh` for `key` (`verify`: see `fresh`), else
+  """`load` of `.rayw` file `path` when it is `fresh` for `key` (`verify`: see `fresh`), else
   None: the header is read and parsed once, the file mapped through the descriptor read from."""
   try:
     with Path(path).open("rb") as file:
@@ -359,19 +362,19 @@ class CacheKey:
     }
 
   def file_name(self) -> str:
-    """`<source stem>-<digest of the adapter, source path and options>.wpbr`: a code or library
+    """`<source stem>-<digest of the adapter, source path and options>.rayw`: a code or library
     change rebuilds the same file (`fresh` compares the whole key) instead of leaving a stale copy
     behind."""
     named = {"adapter": self.adapter, "source": self.source, "options": self.options}
     digest = hashlib.sha1(json.dumps(named, sort_keys=True).encode()).hexdigest()[:16]
-    return f"{Path(self.source).stem}-{digest}.wpbr"
+    return f"{Path(self.source).stem}-{digest}{SUFFIX}"
 
 
 def cache_file(
   key: CacheKey,
   cache: str | os.PathLike[str] | bool,  # noqa: FBT001 (a path or True: the adapters' `cache` option)
 ) -> Path:
-  """The `.wpbr` file of `key`: `cache` itself when it names one, else a file in directory `cache`.
+  """The `.rayw` file of `key`: `cache` itself when it names one, else a file in directory `cache`.
 
   `cache` True means `cache_dir()` (DEFAULT_DIR when caching is off).
   """
@@ -379,7 +382,7 @@ def cache_file(
     if not cache:
       raise ValueError("cache=False names no file")
     return (cache_dir() or Path(DEFAULT_DIR).expanduser()) / key.file_name()
-  if os.fspath(cache).endswith(".wpbr"):
+  if os.fspath(cache).endswith(SUFFIX):
     return Path(cache).expanduser()
   return Path(cache).expanduser() / key.file_name()
 
@@ -464,7 +467,7 @@ def recorded_dependencies(meta: Mapping[str, Json], root: Path) -> list[Dependen
 
 
 def stale_dependencies(path: str | os.PathLike[str], root: Path) -> list[Dependency]:
-  """The dependencies recorded in `.wpbr` file `path` (absolute under `root`), of any format
+  """The dependencies recorded in `.rayw` file `path` (absolute under `root`), of any format
   version (none when it is missing or holds no record): what a rebuild of it will read again."""
   try:
     with Path(path).open("rb") as file:
@@ -476,7 +479,7 @@ def stale_dependencies(path: str | os.PathLike[str], root: Path) -> list[Depende
 
 
 def fresh(path: str | os.PathLike[str], key: CacheKey, *, verify: Verify = "files") -> bool:
-  """Whether `.wpbr` file `path` exists, was built for `key` and none of its files changed.
+  """Whether `.rayw` file `path` exists, was built for `key` and none of its files changed.
 
   `verify`: "files" compares every recorded dependency with the files now; "source" only the source
   itself (one stat), for caches whose other inputs the caller has checked or knows immutable (e.g.

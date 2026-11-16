@@ -1,5 +1,5 @@
 """The USD converter's code version: `CONVERTER` (its output version) and the digest of raywarp's
-MDL library, which the `.wpbr` cache key (`api.cache_key`) and the MDL conversion cache
+MDL library, which the `.rayw` cache key (`api.cache_key`) and the MDL conversion cache
 (`mdl.memo`) read.
 """
 
@@ -21,7 +21,7 @@ from raywarp.formats.usd.options import MDL_LIBRARY
 # 10: `.mtlx` documents a stage references are reported dropped, no longer read (their materials
 # and looks unbound); `usd.Options.mtlx_look` removed.
 # 11: `usd.Options.cone_segments` removed (no longer in the scene's recorded options).
-# 12: images of equal content stored once (`Images.offset` shared; with `.wpbr` VERSION 14).
+# 12: images of equal content stored once (`Images.offset` shared; with `.rayw` VERSION 14).
 # 13: an MDL parameter without a default takes its type's default-constructed value (SimPBR road
 # markings were the error material).
 # 14: PointInstancer orientations normalised (USD composes a rounded `quath` unnormalised: a ~1e-3
