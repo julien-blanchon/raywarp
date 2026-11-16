@@ -1,126 +1,96 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" font-family="sans-serif" font-size="13">
-  <title>raywarp data flow: sources, adapters, host scene, GpuScene, Renderer, Features, trace backends, outputs</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 924 484" role="img">
+  <title>Raywarp data flow: sources, adapters, host Scene, Binding, GpuScene, Renderer, resolve_features, trace backends, RenderOutputs</title>
   <style>
-    text { fill: #1f2328; }
-    .muted { fill: #57606a; font-size: 11px; }
-    .h { font-weight: bold; font-size: 14px; }
-    .line { stroke: #57606a; stroke-width: 1.6; fill: none; }
-    .dash { stroke: #57606a; stroke-width: 1.4; fill: none; stroke-dasharray: 5 4; }
-    .head { fill: #57606a; }
-    .src { fill: #ddf4ff; stroke: #0969da; stroke-width: 1.4; }
-    .host { fill: #fff8c5; stroke: #9a6700; stroke-width: 1.4; }
-    .core { fill: #dafbe1; stroke: #1a7f37; stroke-width: 1.4; }
-    .dev { fill: #ffebe9; stroke: #cf222e; stroke-width: 1.4; }
-    .lane { fill: none; stroke: #8c959f; stroke-width: 1; stroke-dasharray: 2 4; }
-    @media (prefers-color-scheme: dark) {
-      text { fill: #e6edf3; }
-      .muted { fill: #9198a1; }
-      .line, .dash { stroke: #9198a1; }
-      .head { fill: #9198a1; }
-      .src { fill: #0c2d6b; stroke: #4493f8; }
-      .host { fill: #3b2e00; stroke: #d29922; }
-      .core { fill: #04260f; stroke: #3fb950; }
-      .dev { fill: #3c0a0d; stroke: #f85149; }
-      .lane { stroke: #6e7681; }
-    }
+    text { font-family: Inter, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 13px; fill: #1f2937; }
+    .t { font-size: 14px; font-weight: 600; fill: #111827; }
+    .d { fill: #374151; }
+    .c { fill: #7d8590; }
+    .ct { fill: #7d8590; font-weight: 600; }
+    .m { text-anchor: middle; }
+    .e { text-anchor: end; }
+    rect, .k { stroke-width: 1.5; }
+    .b { fill: #dbeafe; stroke: #2563eb; }
+    .g { fill: #dcfce7; stroke: #16a34a; }
+    .a { fill: #fef3c7; stroke: #d97706; }
+    .v { fill: #ede9fe; stroke: #7c3aed; }
+    .r { fill: #ffe4e6; stroke: #e11d48; }
+    .n { fill: #f1f5f9; stroke: #64748b; }
+    .f { fill: none; stroke: #7d8590; stroke-dasharray: 4 4; }
+    .ln { fill: none; stroke: #7d8590; stroke-width: 1.5; }
+    .ds { stroke-dasharray: 5 4; }
+    .ah { fill: #7d8590; }
   </style>
   <defs>
-    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path class="head" d="M0,0 L10,5 L0,10 z"/>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path class="ah" d="M0,0 L10,5 L0,10 z"/>
     </marker>
   </defs>
-
-  <!-- lanes -->
-  <rect class="lane" x="8" y="8" width="944" height="104" rx="6"/>
-  <text class="muted" x="16" y="24">sources (user)</text>
-  <rect class="lane" x="8" y="120" width="944" height="124" rx="6"/>
-  <text class="muted" x="16" y="136">adapters + host scene (numpy only: raywarp/mujoco, usd, newton, raywarp/scene)</text>
-  <rect class="lane" x="8" y="252" width="944" height="300" rx="6"/>
-  <text class="muted" x="16" y="268">GPU core (warp + numpy only: raywarp/core)</text>
-
-  <!-- sources -->
-  <rect class="src" x="40" y="34" width="200" height="64" rx="6"/>
-  <text class="h" x="140" y="58" text-anchor="middle">MuJoCo Warp</text>
-  <text class="muted" x="140" y="78" text-anchor="middle">mjm, mjw.Model, mjw.Data</text>
-  <rect class="src" x="380" y="34" width="200" height="64" rx="6"/>
-  <text class="h" x="480" y="58" text-anchor="middle">USD stage</text>
-  <text class="muted" x="480" y="78" text-anchor="middle">UsdGeom, UsdLux, UsdShade, MDL</text>
-  <rect class="src" x="720" y="34" width="200" height="64" rx="6"/>
-  <text class="h" x="820" y="58" text-anchor="middle">Newton</text>
-  <text class="muted" x="820" y="78" text-anchor="middle">Model (shapes), State.body_q</text>
-
-  <!-- adapters -->
-  <rect class="host" x="40" y="148" width="200" height="80" rx="6"/>
-  <text class="h" x="140" y="170" text-anchor="middle">rw.mujoco.scene</text>
-  <text class="muted" x="140" y="190" text-anchor="middle">ingest + bind in one step</text>
-  <text class="muted" x="140" y="206" text-anchor="middle">aliases m's tables (no copy)</text>
-  <text class="muted" x="140" y="222" text-anchor="middle">MjwBinding</text>
-
-  <rect class="host" x="300" y="148" width="180" height="80" rx="6"/>
-  <text class="h" x="390" y="170" text-anchor="middle">Ingest</text>
-  <text class="muted" x="390" y="190" text-anchor="middle">rw.usd.scene</text>
-  <text class="muted" x="390" y="206" text-anchor="middle">rw.newton.scene(_from_usd)</text>
-  <text class="muted" x="390" y="222" text-anchor="middle">fills a SceneBuilder</text>
-
-  <rect class="host" x="520" y="148" width="190" height="80" rx="6"/>
-  <text class="h" x="615" y="170" text-anchor="middle">Scene + LoadReport</text>
-  <text class="muted" x="615" y="190" text-anchor="middle">tables, meshes, textures,</text>
-  <text class="muted" x="615" y="206" text-anchor="middle">lights, envs, cameras</text>
-  <text class="muted" x="615" y="222" text-anchor="middle">.rayw cache (one mmap)</text>
-
-  <rect class="host" x="750" y="148" width="170" height="80" rx="6"/>
-  <text class="h" x="835" y="170" text-anchor="middle">Bind</text>
-  <text class="muted" x="835" y="190" text-anchor="middle">Binding[S]</text>
-  <text class="muted" x="835" y="206" text-anchor="middle">NewtonBinding (body_q),</text>
-  <text class="muted" x="835" y="222" text-anchor="middle">StaticPoses (USD)</text>
-
-  <path class="line" d="M140,98 V146" marker-end="url(#a)"/>
-  <path class="line" d="M480,98 L410,146" marker-end="url(#a)"/>
-  <path class="line" d="M780,98 L450,146" marker-end="url(#a)"/>
-  <path class="line" d="M480,188 H518" marker-end="url(#a)"/>
-  <path class="line" d="M860,98 V146" marker-end="url(#a)"/>
-
-  <!-- core -->
-  <rect class="core" x="300" y="282" width="410" height="60" rx="6"/>
-  <text class="h" x="505" y="304" text-anchor="middle">rw.upload(host, binding=...) -&gt; GpuScene[S]</text>
-  <text class="muted" x="505" y="324" text-anchor="middle">core/upload/: slot tables, meshes, textures, lights, env maps</text>
-  <path class="line" d="M615,228 V280" marker-end="url(#a)"/>
-  <path class="dash" d="M835,228 V312 H712" marker-end="url(#a)"/>
-  <path class="line" d="M140,228 V312 H298" marker-end="url(#a)"/>
-
-  <rect class="core" x="40" y="370" width="300" height="80" rx="6"/>
-  <text class="h" x="190" y="392" text-anchor="middle">Renderer(scene, nworld, ...)</text>
-  <text class="muted" x="190" y="412" text-anchor="middle">RenderSettings, PerWorld -&gt; sharing.Layout</text>
-  <text class="muted" x="190" y="428" text-anchor="middle">CameraRig, Buffers, per-world tables</text>
-  <text class="muted" x="190" y="444" text-anchor="middle">Baked (light grid, GI, sky), Watch</text>
-  <path class="line" d="M400,342 L300,368" marker-end="url(#a)"/>
-
-  <rect class="core" x="380" y="370" width="250" height="80" rx="6"/>
-  <text class="h" x="505" y="392" text-anchor="middle">resolve_features</text>
-  <text class="muted" x="505" y="412" text-anchor="middle">settings x capabilities x PerWorld</text>
-  <text class="muted" x="505" y="428" text-anchor="middle">x DeviceCaps -&gt; canonical</text>
-  <text class="muted" x="505" y="444" text-anchor="middle">Features (C) + Params (R)</text>
-  <path class="line" d="M340,410 H378" marker-end="url(#a)"/>
-
-  <rect class="dev" x="670" y="362" width="250" height="44" rx="6"/>
-  <text class="h" x="795" y="380" text-anchor="middle">software: megakernel(f)</text>
-  <text class="muted" x="795" y="397" text-anchor="middle">core/accel BVH + core/kernels</text>
-  <rect class="dev" x="670" y="414" width="250" height="44" rx="6"/>
-  <text class="h" x="795" y="432" text-anchor="middle">OptiX: raygen = render_pixel</text>
-  <text class="muted" x="795" y="449" text-anchor="middle">core/optix IAS / GAS on RT cores</text>
-  <path class="line" d="M630,400 L668,386" marker-end="url(#a)"/>
-  <path class="line" d="M630,420 L668,434" marker-end="url(#a)"/>
-  <text class="muted" x="650" y="476" text-anchor="middle">TraceBackend</text>
-
-  <rect class="core" x="670" y="488" width="250" height="52" rx="6"/>
-  <text class="h" x="795" y="510" text-anchor="middle">RenderOutputs</text>
-  <text class="muted" x="795" y="528" text-anchor="middle">rgba, depth, seg, hdr, ... (nworld, ncam, H, W)</text>
-  <path class="line" d="M795,458 V486" marker-end="url(#a)"/>
-
-  <rect class="src" x="40" y="476" width="300" height="64" rx="6"/>
-  <text class="h" x="190" y="498" text-anchor="middle">render(sim: S) every step</text>
-  <text class="muted" x="190" y="516" text-anchor="middle">Binding.slots(sim) -&gt; Frame (overrides &gt;</text>
-  <text class="muted" x="190" y="531" text-anchor="middle">binding &gt; scene tables): no host copy</text>
-  <path class="line" d="M190,476 V452" marker-end="url(#a)"/>
-  <path class="dash" d="M340,512 H560 V460 L668,440" marker-end="url(#a)"/>
+  <text class="ct" x="0" y="12">sources</text>
+  <rect class="b" x="0" y="20" width="170" height="40" rx="6"/>
+  <text class="t m" x="85" y="45">MuJoCo Warp</text>
+  <rect class="b" x="0" y="70" width="170" height="40" rx="6"/>
+  <text class="t m" x="85" y="95">Newton</text>
+  <rect class="b" x="0" y="120" width="170" height="40" rx="6"/>
+  <text class="t m" x="85" y="145">USD stage</text>
+  <rect class="b" x="0" y="170" width="170" height="40" rx="6"/>
+  <text class="t m" x="85" y="195">glTF</text>
+  <path class="ln" d="M170,40 H825 V68" marker-end="url(#ah)"/>
+  <text class="c m" x="470" y="32">mujoco.scene(mjm, m): aliases the mjw.Model arrays, no copy</text>
+  <path class="ln" d="M170,90 H228" marker-end="url(#ah)"/>
+  <path class="ln" d="M170,140 H228" marker-end="url(#ah)"/>
+  <path class="ln" d="M170,190 H228" marker-end="url(#ah)"/>
+  <rect class="a" x="230" y="70" width="200" height="140" rx="6"/>
+  <text class="t m" x="330" y="110.4">host Scene</text>
+  <text class="d m" x="330" y="129.4">load(source): NumPy</text>
+  <text class="d m" x="330" y="146.4">tables, meshes, textures,</text>
+  <text class="d m" x="330" y="163.4">lights, cameras;</text>
+  <text class="d m" x="330" y="180.4">LoadReport, .rayw cache</text>
+  <path class="ln" d="M430,140 H488" marker-end="url(#ah)"/>
+  <rect class="a" x="490" y="70" width="180" height="140" rx="6"/>
+  <text class="t m" x="580" y="118.9">Binding[S]</text>
+  <text class="d m" x="580" y="137.9">binding(scene, source):</text>
+  <text class="d m" x="580" y="154.9">where each step's</text>
+  <text class="d m" x="580" y="171.9">poses live</text>
+  <path class="ln" d="M670,140 H728" marker-end="url(#ah)"/>
+  <rect class="g" x="730" y="70" width="190" height="140" rx="6"/>
+  <text class="t m" x="825" y="110.4">GpuScene[S]</text>
+  <text class="d m" x="825" y="129.4">rw.upload(scene,</text>
+  <text class="d m" x="825" y="146.4">binding=binding):</text>
+  <text class="d m" x="825" y="163.4">device arrays, shared</text>
+  <text class="d m" x="825" y="180.4">by every renderer</text>
+  <path class="ln" d="M825,210 V244 H115 V258" marker-end="url(#ah)"/>
+  <rect class="g" x="0" y="260" width="230" height="100" rx="6"/>
+  <text class="t m" x="115" y="297.4">Renderer(scene, nworld)</text>
+  <text class="d m" x="115" y="316.4">cameras, outputs, sharing,</text>
+  <text class="d m" x="115" y="333.4">PerWorld tables, bakes</text>
+  <path class="ln" d="M230,310 H268" marker-end="url(#ah)"/>
+  <rect class="a" x="270" y="260" width="200" height="100" rx="6"/>
+  <text class="t m" x="370" y="288.9">resolve_features</text>
+  <text class="d m" x="370" y="307.9">settings x caps x PerWorld</text>
+  <text class="d m" x="370" y="324.9">x device -&gt; Features (C)</text>
+  <text class="d m" x="370" y="341.9">and Params (R)</text>
+  <path class="ln" d="M470,296 L508,283" marker-end="url(#ah)"/>
+  <path class="ln" d="M470,324 L508,337" marker-end="url(#ah)"/>
+  <rect class="v" x="510" y="260" width="200" height="46" rx="6"/>
+  <text class="t m" x="610" y="288">Warp BVH + megakernel</text>
+  <rect class="v" x="510" y="314" width="200" height="46" rx="6"/>
+  <text class="t m" x="610" y="342">OptiX raygen, RT cores</text>
+  <path class="ln" d="M710,283 L748,296" marker-end="url(#ah)"/>
+  <path class="ln" d="M710,337 L748,324" marker-end="url(#ah)"/>
+  <rect class="b" x="750" y="260" width="170" height="100" rx="6"/>
+  <text class="t m" x="835" y="297.4">RenderOutputs</text>
+  <text class="d m" x="835" y="316.4">rgb, depth, seg, ...</text>
+  <text class="d m" x="835" y="333.4">(nworld, ncam, H, W)</text>
+  <rect class="b" x="0" y="390" width="470" height="56" rx="6"/>
+  <text class="t m" x="235" y="413.9">render(sim), every step</text>
+  <text class="d m" x="235" y="432.9">Binding.slots(sim) -&gt; Frame: poses stay on the device</text>
+  <path class="ln" d="M470,418 H610 V362" marker-end="url(#ah)"/>
+  <rect class="b" x="0" y="465" width="22" height="14" rx="3"/>
+  <text class="c" x="30" y="476">inputs, outputs</text>
+  <rect class="a" x="143.02" y="465" width="22" height="14" rx="3"/>
+  <text class="c" x="173.02" y="476">host, NumPy only</text>
+  <rect class="g" x="303.2" y="465" width="22" height="14" rx="3"/>
+  <text class="c" x="333.2" y="476">device, Warp</text>
+  <rect class="v" x="437.25" y="465" width="22" height="14" rx="3"/>
+  <text class="c" x="467.25" y="476">trace backends</text>
 </svg>

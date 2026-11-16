@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 904 266" role="img">
+  <title>nworld worlds share the static scenery once; each world has its own moving bodies and ncam cameras; one launch writes (nworld, ncam, H, W) arrays</title>
+  <style>
+    text { font-family: Inter, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 13px; fill: #1f2937; }
+    .t { font-size: 14px; font-weight: 600; fill: #111827; }
+    .d { fill: #374151; }
+    .c { fill: #7d8590; }
+    .ct { fill: #7d8590; font-weight: 600; }
+    .m { text-anchor: middle; }
+    .e { text-anchor: end; }
+    rect, .k { stroke-width: 1.5; }
+    .b { fill: #dbeafe; stroke: #2563eb; }
+    .g { fill: #dcfce7; stroke: #16a34a; }
+    .a { fill: #fef3c7; stroke: #d97706; }
+    .v { fill: #ede9fe; stroke: #7c3aed; }
+    .r { fill: #ffe4e6; stroke: #e11d48; }
+    .n { fill: #f1f5f9; stroke: #64748b; }
+    .f { fill: none; stroke: #7d8590; stroke-dasharray: 4 4; }
+    .ln { fill: none; stroke: #7d8590; stroke-width: 1.5; }
+    .ds { stroke-dasharray: 5 4; }
+    .ah { fill: #7d8590; }
+  </style>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path class="ah" d="M0,0 L10,5 L0,10 z"/>
+    </marker>
+  </defs>
+  <rect class="b" x="0" y="70" width="240" height="100" rx="6"/>
+  <text class="t m" x="120" y="107.4">static scenery, stored once</text>
+  <text class="d m" x="120" y="126.4">floor, table, walls, props:</text>
+  <text class="d m" x="120" y="143.4">one shared BVH, built once</text>
+  <text class="c m" x="120" y="190">traced by every world</text>
+  <rect class="g" x="290" y="22" width="230" height="48" rx="6"/>
+  <text class="t m" x="405" y="41.9">world 0</text>
+  <text class="d m" x="405" y="60.9">own moving bodies, ncam cams</text>
+  <path class="ln ds" d="M242,120 L288,46" marker-end="url(#ah)"/>
+  <path class="ln" d="M522,46 H596" marker-end="url(#ah)"/>
+  <rect class="g" x="290" y="82" width="230" height="48" rx="6"/>
+  <text class="t m" x="405" y="101.9">world 1</text>
+  <text class="d m" x="405" y="120.9">own moving bodies, ncam cams</text>
+  <path class="ln ds" d="M242,120 L288,106" marker-end="url(#ah)"/>
+  <path class="ln" d="M522,106 H596" marker-end="url(#ah)"/>
+  <rect class="g" x="290" y="182" width="230" height="48" rx="6"/>
+  <text class="t m" x="405" y="201.9">world nworld-1</text>
+  <text class="d m" x="405" y="220.9">own moving bodies, ncam cams</text>
+  <path class="ln ds" d="M242,120 L288,206" marker-end="url(#ah)"/>
+  <path class="ln" d="M522,206 H596" marker-end="url(#ah)"/>
+  <circle class="ah" cx="405" cy="144" r="2"/>
+  <circle class="ah" cx="405" cy="152" r="2"/>
+  <circle class="ah" cx="405" cy="160" r="2"/>
+  <text class="c m" x="559" y="38">one launch</text>
+  <text class="c m" x="640" y="14">cam 0</text>
+  <rect class="n" x="600" y="22" width="80" height="48" rx="6"/>
+  <text class="d m" x="640" y="50.7">[0, 0]</text>
+  <rect class="n" x="600" y="82" width="80" height="48" rx="6"/>
+  <text class="d m" x="640" y="110.7">[1, 0]</text>
+  <rect class="n" x="600" y="182" width="80" height="48" rx="6"/>
+  <text class="d m" x="640" y="210.7">[w, 0]</text>
+  <text class="c m" x="730" y="14">cam 1</text>
+  <rect class="n" x="690" y="22" width="80" height="48" rx="6"/>
+  <text class="d m" x="730" y="50.7">[0, 1]</text>
+  <rect class="n" x="690" y="82" width="80" height="48" rx="6"/>
+  <text class="d m" x="730" y="110.7">[1, 1]</text>
+  <rect class="n" x="690" y="182" width="80" height="48" rx="6"/>
+  <text class="d m" x="730" y="210.7">[w, 1]</text>
+  <text class="c m" x="855" y="14">cam ncam-1</text>
+  <rect class="n" x="810" y="22" width="90" height="48" rx="6"/>
+  <text class="d m" x="855" y="50.7">[0, c]</text>
+  <rect class="n" x="810" y="82" width="90" height="48" rx="6"/>
+  <text class="d m" x="855" y="110.7">[1, c]</text>
+  <rect class="n" x="810" y="182" width="90" height="48" rx="6"/>
+  <text class="d m" x="855" y="210.7">[w, c]</text>
+  <circle class="ah" cx="784" cy="46" r="2"/>
+  <circle class="ah" cx="792" cy="46" r="2"/>
+  <circle class="ah" cx="800" cy="46" r="2"/>
+  <circle class="ah" cx="784" cy="106" r="2"/>
+  <circle class="ah" cx="792" cy="106" r="2"/>
+  <circle class="ah" cx="800" cy="106" r="2"/>
+  <circle class="ah" cx="784" cy="206" r="2"/>
+  <circle class="ah" cx="792" cy="206" r="2"/>
+  <circle class="ah" cx="800" cy="206" r="2"/>
+  <circle class="ah" cx="640" cy="144" r="2"/>
+  <circle class="ah" cx="640" cy="152" r="2"/>
+  <circle class="ah" cx="640" cy="160" r="2"/>
+  <circle class="ah" cx="730" cy="144" r="2"/>
+  <circle class="ah" cx="730" cy="152" r="2"/>
+  <circle class="ah" cx="730" cy="160" r="2"/>
+  <circle class="ah" cx="855" cy="144" r="2"/>
+  <circle class="ah" cx="855" cy="152" r="2"/>
+  <circle class="ah" cx="855" cy="160" r="2"/>
+  <text class="c m" x="750" y="254">outputs.rgb[w, c]: (nworld, ncam, H, W)</text>
+</svg>

@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 924 284" role="img">
+  <title>Kernels on first use: the GPU architecture is detected, only the modules used are downloaded from the public Hugging Face bucket, hash-checked, stored locally; other architectures and the CPU compile once</title>
+  <style>
+    text { font-family: Inter, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 13px; fill: #1f2937; }
+    .t { font-size: 14px; font-weight: 600; fill: #111827; }
+    .d { fill: #374151; }
+    .c { fill: #7d8590; }
+    .ct { fill: #7d8590; font-weight: 600; }
+    .m { text-anchor: middle; }
+    .e { text-anchor: end; }
+    rect, .k { stroke-width: 1.5; }
+    .b { fill: #dbeafe; stroke: #2563eb; }
+    .g { fill: #dcfce7; stroke: #16a34a; }
+    .a { fill: #fef3c7; stroke: #d97706; }
+    .v { fill: #ede9fe; stroke: #7c3aed; }
+    .r { fill: #ffe4e6; stroke: #e11d48; }
+    .n { fill: #f1f5f9; stroke: #64748b; }
+    .f { fill: none; stroke: #7d8590; stroke-dasharray: 4 4; }
+    .ln { fill: none; stroke: #7d8590; stroke-width: 1.5; }
+    .ds { stroke-dasharray: 5 4; }
+    .ah { fill: #7d8590; }
+  </style>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path class="ah" d="M0,0 L10,5 L0,10 z"/>
+    </marker>
+  </defs>
+  <rect class="a" x="0" y="0" width="270" height="84" rx="6"/>
+  <text class="t m" x="135" y="29.4">first renderer on a GPU</text>
+  <text class="d m" x="135" y="48.4">detects its architecture:</text>
+  <text class="d m" x="135" y="65.4">sm_80, 86, 89, 90 or 120</text>
+  <rect class="v" x="325" y="0" width="270" height="84" rx="6"/>
+  <text class="t m" x="460" y="29.4">public Hugging Face bucket</text>
+  <text class="d m" x="460" y="48.4">kernel bundle per architecture,</text>
+  <text class="d m" x="460" y="65.4">OptiX module pack per driver</text>
+  <rect class="g" x="650" y="0" width="270" height="84" rx="6"/>
+  <text class="t m" x="785" y="29.4">fetch only what is used</text>
+  <text class="d m" x="785" y="48.4">this renderer's modules, sha256</text>
+  <text class="d m" x="785" y="65.4">checked against the package pins</text>
+  <path class="ln" d="M270,42 H323" marker-end="url(#ah)"/>
+  <path class="ln" d="M595,42 H648" marker-end="url(#ah)"/>
+  <rect class="v" x="0" y="140" width="270" height="84" rx="6"/>
+  <text class="t m" x="135" y="169.4">other architecture, or CPU</text>
+  <text class="d m" x="135" y="188.4">compiles on first use,</text>
+  <text class="d m" x="135" y="205.4">once, then cached</text>
+  <rect class="g" x="325" y="140" width="270" height="84" rx="6"/>
+  <text class="t m" x="460" y="169.4">warm start</text>
+  <text class="d m" x="460" y="188.4">next process: no download,</text>
+  <text class="d m" x="460" y="205.4">no compile</text>
+  <rect class="g" x="650" y="140" width="270" height="84" rx="6"/>
+  <text class="t m" x="785" y="169.4">local store</text>
+  <text class="d m" x="785" y="188.4">~/.cache/raywarp/kernels,</text>
+  <text class="d m" x="785" y="205.4">linked into Warp / OptiX caches</text>
+  <path class="ln" d="M135,84 V138" marker-end="url(#ah)"/>
+  <text class="c" x="143" y="116">no bundle</text>
+  <path class="ln" d="M785,84 V138" marker-end="url(#ah)"/>
+  <path class="ln" d="M650,182 H597" marker-end="url(#ah)"/>
+  <path class="ln" d="M270,182 H323" marker-end="url(#ah)"/>
+  <text class="c" x="0" y="254">rw.kernels.configure(download=False): the local store only (offline);  compile=False: what is not prebuilt raises.</text>
+  <text class="c" x="0" y="274">A setting combination that is not prebuilt compiles once, then is cached; rw.kernels.info() says what serves this machine.</text>
+</svg>

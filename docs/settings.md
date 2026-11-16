@@ -1,12 +1,10 @@
 # Settings
 
-`rw.RenderSettings` is a frozen dataclass of frozen groups, one per subsystem. There is one
-default, `rw.RenderSettings()`, for every entry point (the Renderer, MuJoCo Warp, Newton, Isaac
-Lab, mjlab, the viewer, the webui); `rw.FAST` is the documented field set for maximum training
-throughput (`rw.RenderSettings().replace(rw.FAST)`), and the other looks are field recipes
-([Recipes](#recipes)). Every one of them renders on prebuilt kernels: nothing compiles. The
-exceptions, built on first use (or ahead with `Renderer.warm`) and cached: the motion output, lens
-cameras' programs, and three default-tier variants (below and `performance.md`).
+Choose how a frame looks and what it costs. `rw.RenderSettings` holds every field, grouped by
+subsystem. Every entry point (Newton, Isaac Lab, MuJoCo Warp, mjlab, the viewer) uses the same
+default.
+
+## Quick start
 
 ```python
 import raywarp as rw
@@ -19,55 +17,153 @@ fast = rw.RenderSettings().replace(rw.FAST).replace(outputs=rw.Outputs.of("rgb",
 print(rw.RenderSettings().diff(fast))  # the fields that differ, as "group.field" -> value
 ```
 
-`settings.flat()` lists every field as `"group.field" -> value`; `RenderSettings.fields_table()`
-lists each field's kind (below). Invalid values raise `ValueError` at construction, naming the
-field and the allowed values.
+- `RenderSettings` is frozen: `replace` returns a new value.
+- `settings.flat()` lists every field as `"group.field" -> value`.
+- An invalid value raises `ValueError` at construction, naming the field and the allowed values.
+- Color fields take any three numbers (tuple, list or (3,) array); they are stored as a tuple.
+
+> **New in 0.4.0:** temporal accumulation is gone. Every frame renders on its own and is
+> deterministic per pixel and seed: an observation never depends on earlier frames.
+
+## Choose settings for your task
+
+Start from the observation the policy needs:
+
+| task | settings |
+| --- | --- |
+| depth / segmentation only | any settings with `outputs=rw.Outputs.of("depth", "seg")`: one closest hit per pixel, no shading |
+| shape and color, no lighting cues | the [unlit recipe](#recipes), at the policy's resolution |
+| RGB for training | `rw.FAST`, then add back only what the task must see (mirrors and glossy floors: `reflections.enabled=True`; soft shadows: `lighting.area_lights="ltc"`) |
+| RGB for evaluation, demos, sim-to-real checks | the [default](#default); the quality recipe for 2 x 2 samples per pixel |
+| matching an Omniverse RTX render | the RTX look recipe |
+
+The default, `FAST` and every recipe render on prebuilt kernels: switching between them compiles
+nothing ([how the kernels work](performance.md#how-the-kernels-work)). `Renderer.explain()` prints
+what a settings object resolves to on a scene: its cost class (geometry, unlit, fast, default,
+quality, converged) and each feature with the setting that turned it on or off.
+
+### Default
+
+`rw.RenderSettings()`, every group at its own defaults, chosen by measurement:
+
+| group | default | why |
+| --- | --- | --- |
+| `lighting` | `area_lights="ltc"`, `max_exact=4`, `light_grid="auto"` | LTC area lights. The 4 strongest lights of a point are shaded exactly, the others diffusely (large interior, L4, 16 x 256^2: -44 % frame time, FLIP 0.06 vs every light exact). The light grid from 8 lights. |
+| `shadows` | `max_casters=4`, `samples=1`, `translucent="transmittance"` | one fixed shadow ray to each of the 4 strongest casters; tinted sun shadows through glass |
+| `reflections` | `enabled=True`, `max_exact=2`, `shadows="off"` | glossy reflections, 2 unshadowed lights at reflection hits (`shadows="sun"` keeps sunlight out of indoor reflections for +10-49 % frame time on RTX) |
+| `transparency` | `max_layers=4` | 4 translucent layers |
+| `surfaces` | `anisotropy=8` | anisotropic texture filtering, 8 taps at grazing angles (+2-5 % on an L4) |
+| `aa` | `spp=1` | one sample per pixel |
+| `gi` | on | probe GI (0.5 m, 256 rays, 8 updates). Mean FLIP vs Mitsuba at 512 px: window-lit room 0.70 -> 0.12, closed workcell 0.55 -> 0.14, sunlit tabletop 0.071 -> 0.038. |
+| `post` | `tone_mapper="pbr_neutral"` | keeps base colors (RTX's ACES approximation turned HDRI-lit tabletops milky: +0.3 to +0.9 EV) |
+| `exposure` | `mode="auto"`, `adaptation="locked"` | automatic exposure, locked after the first metered frame per world and camera |
+
+An environment map's sun is a shadowed directional light by default (`rw.SceneOptions(env_sun=...)`,
+an upload option). Frame time against `FAST` (RTX PRO 6000, 512 worlds x 512^2): Office 2.4x,
+other interiors 2.7-3.1x, the showcase room 1.6x, Sponza 1.4x, robot / HDRI tabletops 1.2-1.3x.
+
+### Fast field set
+
+`rw.FAST` is the field set for maximum training throughput, still PBR:
+
+```python
+fast = rw.RenderSettings().replace(rw.FAST)
+print(dict(rw.FAST))
+```
+
+| field | `FAST` | default |
+| --- | --- | --- |
+| `lighting.area_lights` | `"point"` | `"ltc"` |
+| `lighting.max_exact` | `None` (every light exact: cheaper than ranking for point lights) | 4 |
+| `lighting.visible_lights` | `False` (area lights show no emitting surface; -1.4 to -2.2 % on RTX) | `True` |
+| `shadows.max_casters` | 2 | 4 |
+| `shadows.translucent` | `"off"` (opaque shadows) | `"transmittance"` |
+| `reflections.enabled` | `False` (a MuJoCo `reflectance` stays a specular F0) | `True` |
+| `reflections.max_exact` | `None` | 2 |
+| `transparency.max_layers` | 2 | 4 |
+| `surfaces.anisotropy` | 1 (isotropic filtering) | 8 |
+
+Against the default (RTX PRO 6000, 512 worlds x 512^2): Office -58 % frame time (70.7 vs 169.7
+ms), other interiors -63 to -67 %, the showcase room -38 %, Sponza -29 %, robot / HDRI tabletops
+about -20 %.
+
+Two run-time speed knobs:
+
+- `reflections.enabled=False` on the default: Office -29 % (169.7 -> 119.8 ms). Only the
+  reflections change.
+- `gi.enabled=False`: on `FAST` it saves 3.5-3.8 % (Office, showcase room) to 12.7 % (Franka). On
+  the default it is within run-to-run drift on static scenes. Keep GI on indoors
+  ([dark interiors](faq.md#dark-interiors)); turn it off for open outdoor scenes:
+
+```python
+outdoor_fast = rw.RenderSettings().replace(rw.FAST).replace(gi={"enabled": False})
+assert rw.RenderSettings().replace(rw.FAST).diff(outdoor_fast) == {"gi.enabled": False}
+```
+
+### Recipes
+
+The other looks are plain field changes of the default. Each is prebuilt.
+
+<!-- SHOWCASE: settings/recipes.webp (docs/assets/SHOTS.md) -->
+![unlit, FAST, default, quality](assets/settings/recipes.webp)
+
+```python
+# Shape and color, no lighting cues: base color x texture x instance color, plus emission.
+# No lights, shadows, environment, reflections or GI (1.5-13x faster than PBR); isotropic filtering.
+unlit = rw.RenderSettings().replace({"surfaces.shading": "unlit", "surfaces.anisotropy": 1})
+
+# Evaluation, dataset generation, high-resolution policies: 2 x 2 samples per pixel, 2 soft-shadow
+# rays for 16 casters, 8 lights exact (4 at reflection hits), sun shadows in reflections.
+quality = rw.RenderSettings().replace(
+  {
+    "aa.spp": 2,
+    "shadows.samples": 2,
+    "shadows.max_casters": 16,
+    "lighting.max_exact": 8,
+    "reflections.max_exact": 4,
+    "reflections.shadows": "sun",
+    "transparency.max_layers": 8,
+  }
+)
+
+# Per-frame comparison target (a finite-sample approximation, not ground truth): 2 x 2 samples
+# per pixel, 8 soft-shadow rays for every caster, every light exact.
+reference = rw.RenderSettings().replace(
+  {
+    "aa.spp": 2,
+    "shadows.samples": 8,
+    "shadows.max_casters": 16,
+    "lighting.max_exact": None,
+    "reflections.max_exact": None,
+    "reflections.shadows": "sun",
+    "transparency.max_layers": 8,
+  }
+)
+
+# Side by side with Omniverse RTX RealTimePathTracing (Isaac Sim, Newton ViewerRTX): RTX's ACES
+# approximation, clear glass shadows; the base of the USD settings mapping.
+rtx_look = rw.RenderSettings().replace(
+  {
+    "gi.normal_bias": 0.3,
+    "lighting.max_exact": None,
+    "lighting.light_grid_cell": 0.5,
+    "reflections.max_exact": None,
+    "reflections.shadows": "sun",
+    "shadows.max_casters": 8,
+    "shadows.translucent": "clear",
+    "post.tone_mapper": "aces_rtx",
+  }
+)
+```
+
+Single-field changes off these recipes are mostly prebuilt too. The few that compile once on first
+use (for example `shadows.samples` alone, or `aa.spp=2` on the default) are listed in
+[Zero compiles](performance.md#zero-compiles).
 
 ## Compiled in or runtime
 
-Every discrete setting is **compiled in**: it is resolved, with the scene's capabilities, into a
-`Features` key (`raywarp/core/build/variants/resolve.py`). Continuous values are **runtime**: they reach the
-kernels through a small parameter struct or per-world tables, and changing them never recompiles.
-Some fields also rebuild a baked structure (the GI / sky probe volume, the light grid) on the next
-render.
-
-**Kernel tiers.** The kernels compiled are a few fixed **tiers** (`raywarp/core/build/variants/tiers.py`): the
-default's (`default`), the fast field set's (`fast`) and unlit shading's (`unlit`), each with a few
-variants (2 x 2 supersampling, sampled shadows, the caps and budgets read at run
-time, ...; the geometry-only outputs share one unshaded kernel). A tier compiles its settings'
-effects; each frame can turn two of them off without another kernel: GI (in scenes without a
-lighting environment, where GI off shows the plain ambient) and traced reflections. So any
-configuration that keeps a tier's compile-time settings, or only turns those switches off,
-renders with that tier's kernels: switching between the default, `FAST` and the recipes,
-toggling a switch or changing any runtime field never compiles, and a prebuilt
-bundle (one per GPU architecture, downloaded on first use: only what a renderer uses) ships every tier. The outputs
-(`outputs.*`, their dtypes and conventions) and the exposure mode are run-time data: every build
-compiles every output store and each frame selects from an output word, so requesting another
-output or dtype never changes the kernels (on OptiX a module of the same PTX; the bundle's module
-pack holds the tiers' outputs and the fast tier's single-output changes). A compile-time value
-no tier uses (e.g. `shadows.max_casters=8`, `shadows.samples=4`, fog, the grading) lands on a tier
-variant that reads it at run time or compiles it in. The variants and programs the bundle leaves
-out compile on first use: `outputs.motion` (but on the fast tier), the lens cameras' render
-programs (but the fast tier's fisheye / OpenCV-distortion program), the sampled-shadow variants
-(`shadows.samples` > 1 without the counted recipes' other values) and, on the default tier,
-`reflections.shadows="sun"` and a caster budget below the default's (the "Zero compiles" section of `performance.md`).
-`Renderer.explain()` says which: `kernels: tier 'default', switched off at run time: gi`, or
-`kernels: own (outside the tiers; nearest 'default' differs in budget)`.
-
-**Prebuilt or scene kernels (`performance.kernels`).** The default, `"prebuilt"`, serves the tier's
-build resolved without the scene: counts, ids and table sizes are read at run time, and the scene
-only picks one of the build's prebuilt variants (its feature classes: translucent surfaces, clear
-coat, layered lobes, texture maps, environment, analytic primitives, ...). A new scene or a scene
-change then compiles nothing, and with the bundle installed a cold start compiles nothing either; a
-build missing from the bundle warns and compiles once (cached). `"scene"` compiles the settings'
-own build specialised on this scene (its light count and kinds, its materials and shapes) on first
-use, cached on disk: a few percent faster per frame (the prebuilt build is 7-13 % slower on RTX,
-512 worlds, the `FAST` field set, over six interiors and robot scenes), at the cost of a compile for every
-new scene or compile-time change. `Renderer.explain()` names the build (`kernels: scene ...`).
-
-`Renderer.update_settings(**changes)` takes the same keys as `replace` and changes either kind;
-a captured CUDA graph is stale afterwards (`RenderGraph.launch` raises `rw.StaleBinding`;
-`render` runs one eager frame and records its graph again).
+Change settings on a live renderer with `Renderer.update_settings(**changes)`. It takes the same
+keys as `replace`.
 
 ```python
 import mujoco
@@ -91,19 +187,281 @@ r.update_settings(**{"shadows.enabled": False})  # compiled in: another prebuilt
 assert r.features != before
 ```
 
-Values that a kernel cannot see collapse to one `Features` (one build for all of them): every
-shading field of a depth / segmentation-only render, shadow fields with shadows off, a shadow
-budget covering every light, light caps where no capped loop
-is built, and so on (`canonical.canonical`, tested by `tests/unit/test_canonical_features.py`). Values
-`"auto"` resolve against the scene: `environment.enabled="auto"` is on when the scene has an
-environment map that lights it, `transparency.enabled="auto"` when something is translucent,
-`surfaces.textures="auto"` when a material binds a texture.
+Each field has a kind, shown in the [field table](#all-fields):
 
-The table is generated from the field metadata (`python tools/settings_table.py --write`; the
-docs test fails when it is stale), so it is the source of truth. Kinds: "runtime" (a parameter or
-table, never a kernel), "output word" (run-time output selection: no kernel change), "tier switch"
-(compile-time in the settings' own build, but compiled into every prebuilt tier build and switched
-at run time), "compiled in" (a compile-time field, served by the prebuilt tiers as above):
+| kind | changing it |
+| --- | --- |
+| runtime | a number read every frame: never compiles |
+| output word | picks which outputs a frame writes: never compiles |
+| tier switch | an effect every prebuilt build carries, turned on or off per frame |
+| compiled in | picks another prebuilt build (or, off the documented settings, compiles once) |
+| "rebuilds ..." | also re-bakes the GI probes or the light grid on the next render |
+
+The terms are explained once in [how the kernels work](performance.md#how-the-kernels-work).
+
+> **Requires an RT-core GPU** (OptiX) for output changes without any compile: on the software
+> path (A100, H100, CPU) a new output set can compile its kernel once.
+
+- After `update_settings`, a captured CUDA graph is stale: `RenderGraph.launch` raises
+  `rw.StaleBinding`, and `render` runs one eager frame and records again.
+- Values a kernel cannot see collapse to one build: shading fields of a depth-only render, shadow
+  fields with shadows off, a shadow budget covering every light, and so on.
+- `"auto"` values resolve against the scene. `environment.enabled="auto"` is on when an environment
+  map lights the scene; `transparency.enabled="auto"` when something is translucent;
+  `surfaces.textures="auto"` when a material binds a texture.
+- `performance.kernels="prebuilt"` (the default) serves every scene from the same builds, so a new
+  scene compiles nothing. `"scene"` compiles a build specialised on this scene, once (cached): a
+  few percent faster per frame (prebuilt is 7-13 % slower on RTX, 512 worlds, `FAST`, six
+  interiors and robot scenes), at the cost of a compile per new scene.
+
+Also run time, outside `RenderSettings`: camera clip planes (`Renderer.set_clip`), camera rays
+(`set_camera_rays`), the semantic table (`set_semantics`), the rendered worlds
+(`render(active=...)`), every per-world table (`Renderer.per_world`, [robotics](robotics.md)) and
+the MuJoCo model's aliased arrays (`m.geom_rgba`, `m.geom_matid`, ...).
+
+## What each group does
+
+Costs are relative to the same frame without the feature.
+
+**`outputs`.** One field per output, each a typed spec or None. Only requested outputs are
+allocated and written. `rw.Outputs.of("rgb", "depth")` requests by name; `rw.Outputs.parse`
+reads plain data (JSON, a command line). The specs carry the conventions:
+
+| spec | options |
+| --- | --- |
+| `DepthOutput` | `convention="planar" \| "radial"`, `miss="zero" \| "inf" \| "far"` (MuJoCo Warp / Isaac Lab / `mujoco.Renderer`) |
+| `ColorOutput` | `channels=3, planar=True, dtype="float16"`: channels-first for a policy, written by the kernel (-0.3 to +1.9 % frame time, RTX PRO 6000) |
+| `NormalOutput` | `frame="shading" \| "geometric"` |
+| `ShadowOutput` | `light=` |
+| every float output | `dtype="float16"` |
+
+Without a shaded output (only depth, seg, semantic, position, uv, material, a geometric normal,
+motion), the render takes the geometry-only kernel. What each output holds and costs:
+[robotics](robotics.md#outputs-what-you-can-request-and-what-it-costs).
+
+**`aa`** (anti-aliasing).
+
+- `aa.spp=2`: 2 x 2 samples per pixel everywhere. The best quality of every variant studied at
+  128 x 128.
+- No temporal accumulation, reprojection or denoiser: a frame never depends on earlier ones.
+- Specular anti-aliasing is always on. It widens roughness by the normal variance in the pixel,
+  which keeps glints from flickering.
+- `aa.post=True` (run time, off by default) runs FXAA on geometric edges only: silhouettes, the
+  sky's edge, thin wires, cut-outs, creases. Texture and shadow edges stay as rendered. It needs a
+  `depth` output (float32 finds shallower creases than float16) and an `rgb` or `luminance`
+  output; otherwise `ValueError`. Off, it costs nothing.
+
+<!-- SHOWCASE: settings/aa.webp (docs/assets/SHOTS.md) -->
+![Anti-aliasing: aa.spp=1, aa.post (FXAA), aa.spp=2 (2x crops)](assets/settings/aa.webp)
+
+**`shadows`.** One shadow ray per light per sample, for the `max_casters` strongest casters of each
+point. The others are scaled by the traced ones' visibility.
+
+- `samples > 1` samples soft shadows over the light's size. Ray cost grows with the count.
+- Area lights and sized suns use fixed targets: the light's center at one sample (a hard shadow),
+  else a fixed pattern shifted per pixel and light. Point-bulb shadows use random points.
+- `enabled=False` is the largest single saving of a lit render after reflections.
+
+<!-- SHOWCASE: settings/shadows.webp (docs/assets/SHOTS.md) -->
+![Shadows: hard (FAST), soft LTC area light, shadows.samples=8](assets/settings/shadows.webp)
+
+`shadows.area_rays` (0 = off, the default) softens the shadows of large, near area lights in a pass
+after the render. For each area light that matters at a pixel, it traces `area_rays` shadow rays
+to points of the light. They replace the hard center-ray shadow.
+
+- It needs `lighting.area_lights="ltc"` and `aa.spp=1` (`ValueError` otherwise).
+- On, the render also writes the position and normal outputs.
+- Off, it costs nothing. On, about 2.5-3x the frame where near area lights light most pixels
+  (RTX PRO 6000, 512 worlds x 512^2, default, 4 rays).
+
+`shadows.translucent` lets shadow rays through translucent casters, attenuated by each caster's
+transmittance once. It is free where a ray meets none.
+
+**`lighting`.**
+
+| field | what |
+| --- | --- |
+| `area_lights` | `"ltc"`: rect, disk, sphere and tube lights as area lights (soft highlights and shadows). `"point"` (`FAST`): as points, cheaper. |
+| `max_exact` | shade only the strongest lights of a point exactly, the rest diffusely. Default 4; `None` (`FAST`): every light; 8 in the quality recipe. Office, L4, 16 x 256^2: -44 % frame time, FLIP 0.06. |
+| `light_grid` | limits each point to the lights its cell can see; built on the first render, cached. `"auto"` builds it from 8 lights (below that its lookup costs more than it culls); `True` always. |
+| `emissive_lights` | flat emissive panels become rect lights |
+| `camera_light` | MuJoCo's headlight, a camera-attached light (`"auto"`: as the model says) |
+| `fill`, `fill_color` | a run-time ambient fill ([dark interiors](faq.md#dark-interiors)) |
+| `contact_ao` | contact shadows under moving objects (below) |
+
+<!-- SHOWCASE: settings/contact_ao.webp (docs/assets/SHOTS.md) -->
+![lighting.contact_ao off / on](assets/settings/contact_ao.webp)
+
+`lighting.contact_ao` (0 = off, up to 1) darkens the static scenery's indirect light around moving
+objects: a robot's links, grasped or randomised objects. The GI probes do not see those objects.
+
+- Each moving instance is a box proxy (spheres stay spheres), posed every frame.
+- The occlusion is analytic: deterministic, no noise, no history.
+- It adds a planar depth output if none is requested. The moving objects themselves are not darkened.
+- Off, it costs nothing. On, RTX PRO 6000, 512 worlds x 512^2: +0.6-0.8 ms where nothing moves.
+  The cost grows with the moving parts near what the pixels see.
+- Orthographic, fisheye and distorted cameras get an approximate occlusion.
+- Request a depth output yourself to avoid an output change on first use.
+
+**`environment`.** Image-based lighting from the scene's environment map (`enabled`), and the map
+as background (`background`, else `background_color`). Without GI the environment lights every
+surface unoccluded; the GI probes keep the sky out of rooms.
+
+**`reflections`.** One traced ray along the GGX dominant direction, for surfaces smoother than
+`max_roughness`. On by default, off in `FAST` (a run-time switch).
+
+- `shadows="sun"` keeps sunlight out of indoor reflections. `max_exact` caps lights at hits.
+- The traced ray stands for the lobe's sharp core only (99.8 % of chrome at roughness 0.05, 39 %
+  at 0.25). The rest is the blurred environment / GI term, so rough metals do not read as mirrors.
+- A MuJoCo `reflectance` is a specular F0, reflected like any glossy surface. MuJoCo's default
+  shininess 0.5 is roughness 0.5: no ray. A mirror needs a low roughness.
+
+<!-- SHOWCASE: settings/reflections.webp (docs/assets/SHOTS.md) -->
+![reflections.enabled off / on](assets/settings/reflections.webp)
+
+**`transparency`.** Translucent layers composited front to back, up to `max_layers` (run time; a
+change re-bakes GI). Compiled in only when the scene has something translucent.
+
+- `enabled=False` renders every surface opaque with the same kernels.
+- Past the budget, the last surface shows the background along the ray through its
+  transmittance. So stacked panes stay see-through at 2 layers (`FAST`).
+- A closed pane's exit face is no layer: two layers see through a glass block.
+
+**`gi`.** Shared irradiance probes, baked from static scenery on the first frame (or updated every
+`update_every` frames). They bring bounce light and let emissive surfaces light a room. On by
+default and in `FAST`; spacing about 0.5 m in a furnished room, 256 rays, 8 bake updates.
+
+- Worlds with equal lights, materials and environment share one probe set. A few randomised
+  variants get one set each. Continuous randomisation shares one set, tinted per world.
+- Moving and per-world geometry stays out of the bake.
+- GI field changes re-bake the probes. Memory: +0.3 GiB for the probe volume (512 worlds).
+
+<!-- SHOWCASE: settings/gi.webp (docs/assets/SHOTS.md) -->
+![gi.enabled off / on](assets/settings/gi.webp)
+
+`gi.relight` (run time) decides when a continuously randomised world is re-lit by rays:
+
+- `"on_change"` (the default): on the frame its GI inputs change.
+- `"on_request"`: only when `Renderer.request_gi_relight(worlds)` names it (a (nworld,) bool device
+  mask; captured graphs stay valid). Use it once per episode reset of a generator that randomises
+  materials every frame.
+
+In both modes, changes of light colours, intensities, on / off and environment intensity need no
+rays. Material, light-position and environment-map changes do. Exposure is not a GI input.
+
+**`surfaces`.** `textures` (`"auto"`), `backface_culling`, `anisotropy` (8 texture taps at grazing
+angles against moire, +2-5 % on an L4), `shading="unlit"` (the unlit recipe).
+
+**`post`.** `tone_mapper`, run time:
+
+| value | look |
+| --- | --- |
+| `"pbr_neutral"` (default) | Khronos PBR Neutral: keeps base colors |
+| `"aces_rtx"` | RTX's ACES approximation (the RTX look recipe): closest to Omniverse RTX, but HDRI-lit tabletops turn milky (+0.3 to +0.9 EV) |
+| `"aces"` | filmic ACES |
+| `"clamp"` | no curve |
+
+<!-- SHOWCASE: settings/tone_mapper.webp (docs/assets/SHOTS.md) -->
+![post.tone_mapper: pbr_neutral, aces_rtx, aces](assets/settings/tone_mapper.webp)
+
+**`exposure`.** `mode="auto"` (the default) meters each camera image: middle grey 0.18 on the
+10-90 % histogram band, highlights protected. `mode="manual"` uses `ev100` (higher is darker;
+per world: `"exposure"`). Switching never recompiles. Light units: [scenes](scenes.md#light-units-and-exposure).
+
+**`grading`.** White balance, the ASC CDL and saturation, applied by the display pass. Its values
+can be set per world.
+
+**`sensor`** (all run time, all off by default; off runs no pass and allocates nothing). A pass
+after the display, on the final `rgb` / `luminance` and `depth`. The scene-referred outputs stay
+clean. Per world: `env=["sensor.noise", "sensor.vignette", "sensor.response"]`. Costs:
+[performance](performance.md#sensor-effects-and-multi-gpu).
+
+| fields | effect |
+| --- | --- |
+| `rolling_shutter`, `motion_blur` | along `outputs.motion` |
+| `vignette`, `aberration` | lens vignetting, lateral chromatic aberration |
+| `noise`, `full_well`, `read_noise` | Poisson shot noise and read noise, seeded per world, pixel and frame |
+| `bits` | the ADC's quantisation (0: none) |
+| `response` | the camera response curve |
+| `depth="stereo"`, `baseline`, `disparity_noise`, `disparity_step` | active-stereo depth: disparity noise, quantisation, occlusion band (RealSense D400-like defaults) |
+| `depth="range"`, `range_noise` | time of flight / structured light: noise sigma0 + k (z - z0)^2 m (Kinect v1's fit) |
+| `min_depth`, `max_depth`, `dropout`, `edge_dropout`, `edge_threshold` | depth range, random dropout, flying pixels at depth jumps |
+
+**`atmosphere`.** Distance fog and exponential haze. On where `end > start` or `haze > 0`, or
+where `fog.range` is declared per world. Color, range and haze are run time and per world (a
+domain-randomisation knob). Off, it is free.
+
+<!-- SHOWCASE: settings/fog.webp (docs/assets/SHOTS.md) -->
+![atmosphere off / fog / haze](assets/settings/fog.webp)
+
+**`performance`** (never changes pixels).
+
+| field | what |
+| --- | --- |
+| `kernels` | `"prebuilt"` or `"scene"` ([above](#compiled-in-or-runtime)) |
+| `traversal` | `"auto"`: OptiX on GPUs with RT cores, the software BVH elsewhere ([OptiX](performance.md#optix)) |
+| `render_order` | `"world"` helps when every world renders nearly the same image |
+| `rebuild_every` | rebuild per-world trees every N frames (default 64) instead of refitting forever; 0: refit only |
+
+Launch tuning (block sizes, register caps, the BVH builder) is not a setting: it never changes
+pixels.
+
+## Store textures in less GPU memory
+
+Material textures are the largest GPU allocation of big scenes. Each texture stores only its
+distinct channels. Textures with equal texels are stored once. A one-value texture is stored as a
+single texel.
+
+```python
+host = rw.SceneBuilder().build()
+gpu = rw.upload(host, options=rw.SceneOptions(textures=raywarp.core.pipeline.textures.formats.EXACT_STORAGE))
+```
+
+`rw.SceneOptions(textures=TextureStorage(...))` (from `raywarp.core.pipeline.textures.formats`)
+picks how 8-bit sRGB color is stored and caps the resolution:
+
+| option | values |
+| --- | --- |
+| `color` | `"srgb8"` (default on CUDA): 4 bytes per texel, 1 for grey without alpha; filtered in linear values, mip 0 exact. `"float16"`: linear, 8 bytes per texel, exact. |
+| `max_size` | textures larger than N texels are halved until they fit. Default `MAX_TEXTURE_SIZE` (1024), applied by every adapter; 0 keeps every level. |
+
+- Data textures (ORM, opacity, roughness, linear color) and normal maps are always exact.
+- HDR color is always float16. On the CPU, 8-bit color is float16.
+- `EXACT_STORAGE` keeps every texel exact, with the same size cap.
+- Built textures are cached on disk ([caches](performance.md#disk-caches)).
+- The option is `upload`'s, and `rw.integrations.mujoco.scene`'s `options=`.
+
+Block compression (BC7 / BC4 / BC5) is not offered. On an L4 it saved 1.1-1.2 GB on the Isaac
+Office and Bistro, but changed Bistro visibly (FLIP 0.035) and made the cold upload 2.6x slower.
+8-bit sRGB color stays within 3 levels of exact everywhere.
+
+## USD stages
+
+`rw.formats.usd.settings(stage)` maps a stage's Omniverse render settings onto a
+`RenderSettings`. It is explicit: a stage's settings never apply by themselves.
+
+```python
+# docs: requires pxr
+from pxr import Usd
+
+stage = Usd.Stage.CreateInMemory()
+stage.GetRootLayer().customLayerData = {"renderSettings": {"rtx:rendermode": "RaytracedLighting"}}
+assert rw.formats.usd.settings(stage) == rw.RenderSettings()
+```
+
+- It reads `rtx:*` in the layer's `renderSettings` metadata and `omni:rtx:*` on RenderSettings /
+  RenderProduct prims.
+- The base comes from `rtx:rendermode`: RealTimePathTracing and PathTracing (or unset) -> the RTX
+  look recipe; RaytracedLighting -> the default; MinimalRendering -> `FAST`; or your own `base=`.
+- Then it applies the authored shadows, reflections, translucency, GI, sampled lighting, tone
+  mapper, face culling, background and camera exposure (f-stop, shutter, ISO -> a manual `ev100`).
+- Ignored keys (AA, DLSS, denoiser, caches) go to `report=` (a `rw.scene.LoadReport`). It never
+  touches `outputs` or `performance`.
+
+## All fields
+
+The table is generated from the field metadata, so it is the source of truth. Kinds:
+[above](#compiled-in-or-runtime).
 
 <!-- settings-table:begin (generated by tools/settings_table.py from RenderSettings.fields_table(); do not edit) -->
 | setting | default | kind | a change also |
@@ -213,10 +571,6 @@ at run time), "compiled in" (a compile-time field, served by the prebuilt tiers 
 | `performance.rebuild_every` | `64` | runtime |  |
 <!-- settings-table:end -->
 
-Color settings (`lighting.fill_color`, `background_color`, `atmosphere.color`, `grading.lift` /
-`gamma` / `gain`) take any three numbers: a tuple, a list or a (3,) NumPy array, stored as a
-tuple of floats (settings stay hashable and compare by value).
-
 The runtime fields, by group:
 
 <!-- runtime-fields:begin (generated by tools/settings_table.py; do not edit) -->
@@ -235,432 +589,9 @@ The runtime fields, by group:
 - `performance`: `render_order`, `rebuild_every`
 <!-- runtime-fields:end -->
 
-Also runtime, outside `RenderSettings`: cameras' clip planes (`Renderer.set_clip`), camera
-rays (`set_camera_rays`), the semantic table (`set_semantics`), the rendered worlds
-(`render(active=...)`), every per-world table (`Renderer.per_world`, [robotics](robotics.md)) and
-the MuJoCo model's aliased arrays (`m.geom_rgba`, `m.geom_matid`, ...).
-
-## Default
-
-`rw.RenderSettings()`, every group at its own defaults; the measured reasons:
-
-| group | default | why |
-| --- | --- | --- |
-| `lighting` | `area_lights="ltc"`, `max_exact=4`, `light_grid="auto"` | LTC area lights; the 4 strongest lights of a point shaded exactly, the others' irradiance diffusely (a large interior, L4 16 x 256^2: -44 % frame time; an open-plan interior's FLIP 0.06 vs every light exact); the light grid from 8 lights |
-| `shadows` | `max_casters=4`, `samples=1`, `translucent="transmittance"` | one fixed center shadow ray for each of the 4 strongest casters; tinted sun shadows through glass |
-| `reflections` | `enabled=True`, `max_exact=2`, `shadows="off"` | glossy reflections along the GGX dominant direction; 2 lights at reflection hits, unshadowed (`shadows="sun"` keeps sunlight out of indoor reflections for +10-49 % frame time on RTX) |
-| `transparency` | `max_layers=4` | 4 translucent layers |
-| `surfaces` | `anisotropy=8` | anisotropic texture filtering, 8 taps at grazing angles (+2-5 % on an L4) |
-| `aa` | `spp=1` | deterministic per frame: an observation never depends on earlier frames |
-| `gi` | on | probe GI resampled into the ambient cube (0.5 m / 256 rays / 8 updates; 16 or 32 updates matched the references no better); vs Mitsuba at 512 px mean FLIP: window-lit room 0.70 -> 0.12, closed workcell 0.55 -> 0.14, sunlit tabletop 0.071 -> 0.038 |
-| `post` | `tone_mapper="pbr_neutral"` | PBR Neutral keeps base colors (RTX's ACES approximation turned HDRI-lit tabletops milky, +0.3..+0.9 EV, FLIP 0.39-0.48) |
-| `exposure` | `mode="auto"`, `adaptation="locked"` | automatic exposure, locked after the first metered frame per world and camera |
-
-The environment map's sun is a shadowed directional light by default (`SceneOptions.env_sun`, an
-upload option). Single-field opt-ins served by the prebuilt kernels (no compile):
-the light caps and the caster budget up to 16 (on `FAST` and the default). `shadows.samples` alone, and on the
-default `aa.spp=2`, `reflections.shadows="sun"` and a caster budget below its own route to tier
-variants the bundle leaves out:
-their first use compiles (NVRTC, about 10-25 min, cached; `Renderer.warm` ahead), unless they come
-with the recipes' other values (quality, reference, RTX look are prebuilt; `performance.md`, "Not
-included in the prebuilt kernels"). One more exception on the software traversal (A100 / H100, CPU): its megakernel
-compiles the sample loop of the motion output's body, so `aa.spp >= 3`, or `aa.spp=2` together
-with `outputs.motion`, compiles that configuration's own kernels on its first frame
-(seconds to a minute, once per machine: Warp's kernel cache); `Renderer.warm` ahead of the run
-compiles them off the critical path. On OptiX `aa.spp` is run-time supersampling and every value
-is served.
-
-Frame time against the fast field set (RTX PRO 6000, 512^2 x 512 worlds): Office 2.4x, other
-interiors 2.7-3.1x, the showcase room 1.6x, Sponza 1.4x, robot / HDRI tabletops 1.2-1.3x.
-
-## Fast field set
-
-`rw.FAST` is the field set for maximum training throughput, still PBR:
-
-```python
-fast = rw.RenderSettings().replace(rw.FAST)
-print(dict(rw.FAST))
-```
-
-| field | `FAST` | default |
-| --- | --- | --- |
-| `lighting.area_lights` | `"point"` | `"ltc"` |
-| `lighting.max_exact` | `None` (every light exact: cheaper than the cap's ranking for point lights) | 4 |
-| `lighting.visible_lights` | `False` (area lights in view show no emitting surface; RTX: -1.4 to -2.2 % on Franka, Office, the showcase room, images identical where no light is in view) | `True` |
-| `shadows.max_casters` | 2 | 4 |
-| `shadows.translucent` | `"off"` (opaque shadows) | `"transmittance"` |
-| `reflections.enabled` | `False` (a MuJoCo `reflectance` stays a specular F0; its ray: +50 % GPU) | `True` |
-| `reflections.max_exact` | `None` | 2 |
-| `transparency.max_layers` | 2 | 4 |
-| `surfaces.anisotropy` | 1 (isotropic filtering) | 8 |
-
-Measured against the default (RTX PRO 6000, 512^2 x 512 worlds): Office -58 % frame time (70.7
-vs 169.7 ms), other interiors -63..-67 %, the showcase room -38 %, Sponza -29 %, robot / HDRI
-tabletops about -20 %. The bundle holds its own build (`fast` tier), so `FAST` compiles nothing.
-
-A run-time speed knob on the default: `reflections.enabled=False` (Office -29 %, 169.7 -> 119.8
-ms; the image is the same apart from the reflections). `gi.enabled=False` on the default is
-within run-to-run drift on static scenes; on `FAST` it saves 3.5-3.8 % (Office, the showcase room)
-to 12.7 % (Franka) (RTX PRO 6000, 512 worlds), and under domain randomisation
-also the relight.
-
-## Recipes
-
-The other looks are plain field changes of the default. Each routes to a prebuilt tier (zero
-compiles: `python -m tools.prebuilt.zero holes` walks them; `tools/recipes.py` holds the same
-table for the tooling).
-
-<!-- SHOWCASE: settings/recipes.webp (docs/assets/SHOTS.md) -->
-![unlit, FAST, default, quality](assets/settings/recipes.webp)
-
-```python
-# Shape and color, no lighting cues: the base color (material x texture x instance color) as is,
-# plus the emission; no lights, shadows, environment, reflections or GI (1.5-13x faster than PBR),
-# isotropic texture filtering (the unlit tier's own; anisotropy > 1 takes the sampled variant).
-unlit = rw.RenderSettings().replace({"surfaces.shading": "unlit", "surfaces.anisotropy": 1})
-
-# Evaluation, dataset generation, high-resolution policies: 2 x 2 samples per pixel, 2 fixed
-# soft-shadow rays for 16 casters, 8 lights exact (4 at reflection hits), sun shadows in reflections.
-quality = rw.RenderSettings().replace(
-  {
-    "aa.spp": 2,
-    "shadows.samples": 2,
-    "shadows.max_casters": 16,
-    "lighting.max_exact": 8,
-    "reflections.max_exact": 4,
-    "reflections.shadows": "sun",
-    "transparency.max_layers": 8,
-  }
-)
-
-# Per-frame comparison target (a finite-sample approximation, not physical ground truth): 2 x 2
-# samples per pixel, 8 fixed soft-shadow rays for every caster, every light exact.
-reference = rw.RenderSettings().replace(
-  {
-    "aa.spp": 2,
-    "shadows.samples": 8,
-    "shadows.max_casters": 16,
-    "lighting.max_exact": None,
-    "reflections.max_exact": None,
-    "reflections.shadows": "sun",
-    "transparency.max_layers": 8,
-  }
-)
-
-# Side by side with Omniverse RTX RealTimePathTracing (Isaac Sim, Newton ViewerRTX): RTX's ACES
-# approximation, clear glass shadows, per frame; the USD settings map's base.
-rtx_look = rw.RenderSettings().replace(
-  {
-    "gi.normal_bias": 0.3,
-    "lighting.max_exact": None,
-    "lighting.light_grid_cell": 0.5,
-    "reflections.max_exact": None,
-    "reflections.shadows": "sun",
-    "shadows.max_casters": 8,
-    "shadows.translucent": "clear",
-    "post.tone_mapper": "aces_rtx",
-  }
-)
-```
-
-Every recipe is deterministic per frame: an observation never depends on earlier frames.
-
-Any settings take any `Outputs`: a depth / segmentation-only request (`rw.Outputs.of("depth",
-"seg")`) compiles one geometry kernel whatever the shading settings. `Renderer.explain()` prints
-what a settings object resolves to on the scene: its cost class (geometry, unlit, fast, default,
-quality, converged) and every feature with the setting that asked for it and why it is on or off.
-
-**Choosing.** Start from the observation the policy needs:
-
-1. Depth / segmentation only: any settings with `outputs=rw.Outputs.of("depth", "seg")`.
-2. Shape and color, no lighting cues: the unlit recipe, rendered at the policy's resolution.
-3. RGB for training: the default; `FAST` for maximum throughput, then add back only what the task
-   needs to see (what a mirror or a glossy floor reflects: `reflections.enabled=True`; soft
-   shadows: `lighting.area_lights="ltc"`).
-4. RGB for evaluation, demos, sim-to-real checks: the default (probe GI, its Mitsuba comparison
-   in [Default](#default)); the quality recipe for spp 2.
-5. Matching an Omniverse RTX render: the RTX look recipe.
-
-## The groups: what each costs, when to turn it off
-
-Costs are relative to the same frame without the feature; evidence paths in brackets.
-
-**`outputs`.** One field per output (`rgb`, `depth`, `seg`, `semantic`, `hdr`, `albedo`,
-`normal`, `position`, `uv`, `material`, `roughness`, `metallic`, `emission`, `direct`,
-`indirect`, `shadow`, `luminance`, `motion`), each its typed spec or None: only requested
-outputs are allocated and written (whether another output set compiles: [Compiled in or
-runtime](#compiled-in-or-runtime)). `rw.Outputs.of("rgb", "depth")` requests by
-name with the default specs, `rw.Outputs.parse` from plain data (JSON, a command line). The
-specs carry the conventions: `DepthOutput(convention="planar" | "radial", miss="zero" | "inf" |
-"far")` (MuJoCo Warp / Isaac Lab / `mujoco.Renderer`), `ColorOutput(channels=3, planar=True,
-dtype="float16")` (the color channels-first for a policy's input, written by the kernel:
--0.3..+1.9 % frame time on an RTX PRO 6000; every layout world-major), `NormalOutput(frame="shading" |
-"geometric")`, `ShadowOutput(light=)`, and `dtype="float16"` on every float output. Without a
-shaded output (depth, seg, semantic, position, uv, material, a geometric normal, motion) the
-render takes the geometry-only kernel: one closest hit per pixel, no shading. What each output
-holds and what it costs: [robotics.md](robotics.md#outputs-what-you-can-request-and-what-it-costs).
-
-**`aa`** (anti-aliasing). The guidance:
-
-- `aa.spp=2` for small clean images: 2 x 2 samples everywhere (the best quality of every
-  variant studied at 128 x 128).
-- Every frame renders on its own (no temporal accumulation, reprojection or denoiser): a frame
-  never depends on earlier ones.
-- Specular anti-aliasing is always on: it widens roughness by the normal variance in the pixel
-  (cheap; keeps glints from flickering).
-- `aa.post=True` (off by default, runtime) runs FXAA 3.11 (quality) on the final color across
-  the geometric edges only: where the depth output is not one plane over a pixel and its
-  neighbours (silhouettes, the sky's edge, thin wires, alpha cut-outs, creases). It smooths those
-  at one sample per pixel and leaves texture and shadow edges exactly as rendered (a checker
-  floor keeps its lines). It needs a `depth` output (ValueError otherwise: the depth is the edge
-  source; float32 finds shallower creases than float16) and an `rgb` or `luminance` output, and
-  runs in the `sensor` pass before its other effects: two launches over the image that read the
-  depth and the display in place, no copy of the image. Off: no pass, no memory; switching
-  never compiles.
-
-<!-- SHOWCASE: settings/aa.webp (docs/assets/SHOTS.md) -->
-![Anti-aliasing: aa.spp=1, aa.post (FXAA), aa.spp=2 (2x crops)](assets/settings/aa.webp)
-
-**`shadows`.** One shadow ray per light per sample by default, only for the `max_casters`
-strongest casters of each point (the rest scaled by the traced ones' visibility).
-`samples > 1` samples soft shadows from the light's size (ray cost grows with the sample count).
-A small budget leaves visible variance at partially occluded edges. Area lights and finite-angle
-suns use fixed targets: the light center at one sample, producing a hard shadow, else a fixed
-low-discrepancy set shifted per pixel and light (larger sets can still show spatial sampling
-error). Punctual bulb shadows use random points per pixel when `samples > 1`.
-Off (`enabled=False`) when the task does
-not need shadows: the largest single saving of a lit render after reflections.
-
-<!-- SHOWCASE: settings/shadows.webp (docs/assets/SHOTS.md) -->
-![Shadows: hard (FAST), soft LTC area light, shadows.samples=8](assets/settings/shadows.webp)
-
-`area_rays` (0 = off, the default) softens the shadows of large, near area lights by a pass after
-the render (`core/shade/shadows/area.py`): per pixel, the pass shades the pixel's surface as the
-render does (its camera ray traced again: every lobe and layer), and for each area light of angular
-radius >= 0.05 rad that brings at least 1 / `max_casters` of those lights' light, `area_rays`
-shadow rays to points of the light (interleaved over 5 x 5 pixel blocks, the visible share then
-filtered over the pixel's surface) replace the centre ray's hard shadow. The render kernels are the
-same with it on or off (off costs nothing: their PTX is byte-identical); on, the render also writes
-the position (float32) and normal outputs and shows the image through the deferred display; it
-needs `lighting.area_lights="ltc"` and `aa.spp=1` (ValueError otherwise). Its
-programs are in the prebuilt bundle (the fill lists them); turning it on creates its OptiX module
-once. Cost on (RTX PRO 6000, 512 worlds x 512^2, default, 4 rays): about 2.5-3x the frame where
-near area lights light most pixels.
-
-**`lighting`.** `area_lights="ltc"` shades rect / disk / sphere / tube lights as area lights
-(LTC highlights, soft shadows); `"point"` shades them as points (cheaper, `FAST`).
-`max_exact` (default 4; None: every light, `FAST`; 8 in the quality recipe) shades only the strongest lights of a point exactly and the rest through their
-diffuse irradiance (Office, 16 x 256 x 256, L4: -44 % frame time, FLIP 0.06 against every light
-exact; Office candidate light entries per pixel 49.6 -> 3.2). `light_grid` limits each point to the lights its cell
-can see (needed with dozens of lights; built on the first render, cached on disk). `"auto"` (the
-default) builds it from 8 lights: below, its lookup costs more than it culls (robotics scenes
-with 1-5 lights: off 0-4 % faster; 8 lights in 4 closed rooms: on 7 % faster at 512 px on an
-L4); `True` forces it at any count.
-`emissive_lights` turns flat emissive panels into rect lights. `camera_light` is MuJoCo's headlight, a
-camera-attached light (`"auto"`: as the model says).
-
-<!-- SHOWCASE: settings/contact_ao.webp (docs/assets/SHOTS.md) -->
-![lighting.contact_ao off / on](assets/settings/contact_ao.webp)
-
-`contact_ao` (0 = off, the default; up to 1) darkens the indirect light of the static scenery
-around the dynamic objects: the per-world instances (a robot's links, grasped or randomised
-objects), which the GI probes and the environment's visibility do not see. Each such instance is
-a box proxy (a mesh's box, a primitive's extents; spheres stay spheres), posed every frame, and
-each pixel's occlusion is the analytic form factor of the proxies around it (from the depth
-output: contacts under objects, the robot's base and gripper on the table, at any distance on or
-off screen). It is deterministic (no taps, no noise, no history), applied by the deferred display,
-and adds a planar depth output if the outputs hold none. The dynamic objects themselves are not
-darkened, and static contacts stay the probes'. Off it costs nothing (its code is in a display
-kernel variant of its own, no proxies are gathered and no depth is written for it). On, at 512
-worlds x 512^2 on an RTX PRO 6000: +0.6-0.8 ms where nothing moves (the depth output alone: Office,
-the showcase room); on the Franka arm (about 60 moving parts) the first version measured +15 ms,
-the grouped and tiled one about 3x less on the CPU (re-measured at the next RTX gate). The cost
-grows with the moving parts near what the pixels see. It reconstructs points as a pinhole
-camera's: orthographic, fisheye and distorted cameras get an approximate occlusion. Turning it on
-without a requested depth changes the output word: the software path compiles that word's
-megakernel once, OptiX creates its module (request a depth output to keep the word).
-
-**`environment`.** Image-based lighting from the scene's environment map (`enabled`), the map as
-background (`background`, else `background_color`). Without GI the environment lights every
-surface unoccluded (the GI probes keep the sky out of rooms).
-
-**`reflections`.** Traced reflections (on by default, off in `FAST`: a run-time switch): one
-deterministic ray along the GGX dominant direction for surfaces smoother than `max_roughness`. A MuJoCo `reflectance` is the
-material's specular F0, reflected like any glossy surface (MuJoCo's default shininess 0.5 is
-roughness 0.5, at the default `max_roughness`: no ray; a mirror needs a low roughness). `shadows` at
-reflection hits (`"sun"`: keeps sunlight out of indoor reflections), `max_exact` at reflection
-hits. The traced reflection fades to the environment's specular term from half `max_roughness`;
-the dominant ray stands for the lobe's sharp core only (its share of the GGX lobe: 99.8 % for
-chrome at roughness 0.05, 39 % at 0.25), the rest is the blurred environment / GI term, so rough
-metals do not read as mirrors.
-
-<!-- SHOWCASE: settings/reflections.webp (docs/assets/SHOTS.md) -->
-![reflections.enabled off / on](assets/settings/reflections.webp)
-
-**`transparency`.** Translucent layers composited front to back, up to `max_layers` (run-time
-data: the layer loops' bound; a change re-bakes the GI probes); compiled in only when the scene
-has something translucent (`"auto"`). Turning them off on such a scene renders every surface
-opaque with the same kernels (a run-time setting of the prebuilt tier build). Past the budget the last surface
-closes the ray and the background along the ray (not traced: environment or background color)
-shows through its transmittance, so stacked panes stay see-through at 2 layers (`FAST`).
-A closed pane's or a solid's exit face is no layer: two layers see what is behind a glass block.
-
-`shadows.translucent` lets the shadow rays of every light through translucent casters, attenuated
-by each caster's transmittance once (one terminating walk per ray: free where a ray meets none).
-
-**`gi`.** Shared irradiance probes (DDGI-style), baked from static scenery (or updated every
-`update_every` frames): bounce light, emissive surfaces lighting the room. On by default and
-in `FAST` (probe spacing derived from the scene, about 0.5 m in a furnished room; 256 rays, 8 bake
-updates): against Mitsuba (512 px) it cut the mean FLIP of a window-lit room 0.70 -> 0.12, a
-closed workcell 0.55 -> 0.14 and a sunlit tabletop 0.071 -> 0.038 for a frame cost within noise. Worlds whose lights, materials,
-appearance and environment are equal share one set of probe maps; randomised worlds get their
-own (K stacked sets for K variants; under continuous randomisation one shared volume tinted per
-world), found from the data and tracked every frame (`raywarp/core/shade/gi/groups.py`).
-Dynamic/per-world geometry and deformables do not enter the bake or its placement bounds. Its
-field changes re-bake the volume.
-
-<!-- SHOWCASE: settings/gi.webp (docs/assets/SHOTS.md) -->
-![gi.enabled off / on](assets/settings/gi.webp)
-
-`gi.relight` (runtime) decides when a world of continuous randomisation (the shared volume tinted
-per world) whose GI inputs changed is re-lit by rays. `"on_change"` (the default) re-lights it on
-the frame of the change. `"on_request"` keeps its tint until `Renderer.request_gi_relight(worlds)`
-names it (a (nworld,) bool device mask: one launch, no host read, captured graphs stay valid),
-e.g. once per episode reset of a dataset generator that randomises materials every frame. In
-both, changes of the lights' colours, intensities and on / off state and of the environment
-intensity are recombined from the last re-light without rays, and the exposure is no GI input
-(it scales the image after the GI); material, light position and environment map changes need
-rays.
-
-*GI in `FAST` (on).* Without GI, `FAST` would light only what the lights and
-the sky reach directly: interiors lit through their openings get black
-ceilings and arcades (Office, Sponza). On static scenes the probes cost `FAST` 3.5-3.8 % on
-Office and the showcase room and 12.7 % on Franka (RTX PRO 6000, 512^2 x 512 worlds, GI off vs on;
-an earlier build measured no difference); the first frame bakes, and every world whose lights / materials are
-randomised gets its own bake. Turn it off for open outdoor scenes, or to skip the bake:
-
-```python
-outdoor_fast = rw.RenderSettings().replace(rw.FAST).replace(gi={"enabled": False})
-assert rw.RenderSettings().replace(rw.FAST).diff(outdoor_fast) == {"gi.enabled": False}
-```
-
-The default with and without GI at 512^2 x 512 worlds (RTX PRO 6000): Office 198.1 vs 198.3 ms,
-Bistro 288.0 vs 287.2, Hospital 176.5 vs 176.3 (within run-to-run drift); +0.3 GiB of device memory
-for the probe volume.
-
-**`surfaces`.** `textures` (`"auto"`), `backface_culling`, `anisotropy` (8
-texture taps at grazing angles against moire, +2-5 % on an L4, B66), `shading="unlit"` (the
-unlit recipe).
-
-**`post`.** `tone_mapper` (`"pbr_neutral"` Khronos PBR Neutral, which keeps base colors: the default;
-`"aces_rtx"` RTX's ACES approximation, the RTX look recipe's: closest to
-Omniverse RTX renders, but it turns HDRI-lit tabletops milky (+0.3..+0.9 EV);
-`"aces"`; `"clamp"`), runtime.
-
-<!-- SHOWCASE: settings/tone_mapper.webp (docs/assets/SHOTS.md) -->
-![post.tone_mapper: pbr_neutral, aces_rtx, aces](assets/settings/tone_mapper.webp)
-
-**`exposure`, `grading`.** `exposure.mode`: `"auto"` (the default: each camera image
-metered: middle grey 0.18 on the 10-90 % histogram band, highlights protected, temporal adaptation
-reset per world) or `"manual"` (`exposure.ev100`, the camera exposure, higher is darker, also per
-world `"exposure"`); switching between the two or changing the number never recompiles; `grading` (white balance, the ASC
-CDL, saturation; applied by the deferred display pass, its values per world). Lateral chromatic
-aberration (`sensor.aberration`, run in the deferred display: 0: off; per world, a
-camera-randomisation knob; with manual exposure a nonzero value turns the deferred display on),
-lens vignetting, sensor noise and the camera response are the `sensor` group's.
-
-**`sensor`** (all run time, all off by default: off runs no pass and allocates nothing). A pass after
-the display, on the final `rgb` / `luminance` and `depth` outputs (the scene-referred outputs stay
-clean); its kernels are prebuilt with every build's, so switching an effect never compiles.
-Camera: `rolling_shutter`, `motion_blur` (along `outputs.motion`), `vignette`, `noise` (Poisson shot
-noise of `full_well` electrons at white plus `read_noise` electrons rms, seeded per world, pixel
-and frame), `bits` (the ADC's quantisation of the linear signal; 0: none), `response` (the camera
-response curve). Per world: `env=["sensor.noise", "sensor.vignette", "sensor.response"]`.
-Depth: `depth="stereo"` (an active-stereo pair: disparity noise and quantisation, the occlusion
-band, RealSense D400-like defaults) or `depth="range"` (time of flight / structured light:
-noise of sigma0 + k (z - z0)^2 metres, Kinect v1's fit by default, any camera), with `min_depth`,
-`max_depth`, random `dropout`, and `edge_dropout` (pixels next to a depth jump of more than
-`edge_threshold` times their depth, the sensors' flying pixels). Cost: see `docs/performance.md`.
-
-**`atmosphere`.** Distance fog and exponential haze: on where `end > start` or `haze > 0` (the
-default 0 / 0 / 0 is off), or where `fog.range` is declared per world; color, range and haze are
-runtime and per world (a domain-randomisation knob; every tier build compiles the fog in, off at
-run time: free on the RTX PRO 6000).
-
-<!-- SHOWCASE: settings/fog.webp (docs/assets/SHOTS.md) -->
-![atmosphere off / fog / haze](assets/settings/fog.webp)
-
-**`performance`** (never changes pixels). `kernels` (`"prebuilt"` or `"scene"`, above), `traversal` (`"auto"`: OptiX on GPUs with RT
-cores, the software BVH elsewhere), `render_order` (`"world"` helps when every world renders nearly the same
-image), `rebuild_every` (rebuild the per-world trees every N frames, default 64, instead of refitting them
-forever: refit trees degrade as objects travel; 0: refit only).
-
-Not settings (never change pixels): the OptiX register caps, fixed per tier family (the default
-128; `FAST` 96, and 80 for its builds without clear coat, layered lobes or light culling; the
-unlit tier 96; geometry-only builds 64), and pure launch tuning (block size, the Warp register
-cap, the BVH builder, OptiX micromaps, the validation cadence): measured constants in
-`raywarp/core/pipeline/platform/tuning.py`, which benchmarks override with `tuning.override(...)`. The debug
-build counting lights, rays and layers per pixel (`Renderer.counters()`) is
-`tuning.override(counters=True)` around the Renderer's creation.
-
-## Texture storage (GPU memory)
-
-Material textures are the largest GPU allocation of big scenes. Each texture stores only its
-distinct channels (no constant-1 or copied channels), textures of equal texels are stored
-once, and a texture whose every texel is one value is stored as a single texel (sampled exactly
-as before). `rw.upload(host, options=rw.SceneOptions(textures=raywarp.core.pipeline.textures.formats.TextureStorage(...)))` picks how 8-bit sRGB color is stored
-and caps the resolution; data textures (ORM, opacity, roughness, linear color) and normal maps
-are always exact (8-bit texels as uint8, float textures as float16):
-
-- `color` (8-bit sRGB base color, emission): `"srgb8"` (default on CUDA: 8-bit sRGB RGBA, 4 bytes
-  / texel, 1 for a grey image without alpha, decoded by the texture unit per texel before the filter, so filtering stays linear and
-  mip 0 is exact; the mips are filtered in linear values) or `"float16"` (linear, 8 bytes / texel
-  for 4 channels: exact).
-- `max_size=N`: textures larger than N texels (longer side) are halved until they fit, as if
-  their finest mips were dropped. Default `raywarp.core.pipeline.textures.formats.MAX_TEXTURE_SIZE` (1024), the same cap the Newton
-  and USD adapters apply at decode (`SceneOptions.textures` is the one knob), so MuJoCo models
-  (whose textures arrive decoded in `MjModel`) are capped alike; `max_size=0` keeps every level.
-
-On the CPU 8-bit color is float16 (the CPU has no sRGB texture read). HDR color (texels outside
-[0, 1]) is always exact float16. `raywarp.core.pipeline.textures.formats.EXACT_STORAGE` keeps every stored texel exact (same size
-cap).
-
-Block compression (BC7 / BC4 / BC5) is not offered: on an L4 (the default, 128 worlds x 512^2) it
-saved 1.1-1.2 GB of fixed memory on the Isaac Office and Bistro (about 5 % of the worlds that fit
-in 24 GB) at the same frame time, but changed Bistro visibly (2.3 % of pixels more than 16 levels
-off, FLIP 0.035 against exact) and its encode made the cold upload 2.6x slower; 8-bit sRGB color
-stays within 3 levels of exact everywhere.
-
-Every built texture's levels are cached on disk by content (`$RAYWARP_CACHE_DIR/textures`; an
-empty value turns the cache off), with an entry per texture keyed by its every input (source
-images, channels, color spaces, wraps, storage, the code), so a repeat upload of the same scene
-reads the stored levels instead of converting, packing and filtering the images again.
-
-The option is `upload`'s (host scenes: USD, `SceneBuilder`, Newton's `scene`) and, as
-`options=rw.SceneOptions(textures=...)`, `rw.integrations.mujoco.scene`'s.
-
-```python
-host = rw.SceneBuilder().build()
-gpu = rw.upload(host, options=rw.SceneOptions(textures=raywarp.core.pipeline.textures.formats.EXACT_STORAGE))
-```
-
-## USD stages
-
-`rw.formats.usd.settings(stage)` maps a stage's Omniverse render settings (`rtx:*` in the layer's
-`renderSettings` metadata, `omni:rtx:*` on RenderSettings / RenderProduct prims) onto a
-`RenderSettings`: the base settings from `rtx:rendermode` (RealTimePathTracing and PathTracing ->
-the RTX look recipe, also when unset; RaytracedLighting -> the default; MinimalRendering ->
-`FAST`; or your own `base=`), then the authored shadows,
-reflections, translucency, GI, sampled lighting, tone mapper, face culling and
-background, camera exposure (f-stop, shutter, ISO -> a manual `exposure.ev100`). It is explicit: a stage's
-settings never apply by themselves. Keys it ignores (AA, DLSS, denoiser, caches) go to
-`report=` (a `rw.scene.LoadReport`). Its keys never touch `outputs` or `performance`.
-
-```python
-# docs: requires pxr
-from pxr import Usd
-
-stage = Usd.Stage.CreateInMemory()
-stage.GetRootLayer().customLayerData = {"renderSettings": {"rtx:rendermode": "RaytracedLighting"}}
-assert rw.formats.usd.settings(stage) == rw.RenderSettings()
-```
+## See also
+
+- [Performance and kernels](performance.md): the max-speed checklist, what compiles
+- [Scenes](scenes.md): lights, exposure, materials, cameras
+- [Robotics](robotics.md): outputs and per-world tables
+- [Troubleshooting](faq.md): dark images, changes that did not show

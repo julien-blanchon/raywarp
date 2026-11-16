@@ -1,83 +1,78 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="380" viewBox="0 0 960 380" font-family="sans-serif" font-size="13">
-  <title>From settings to a compiled kernel: resolve_features, canonical, Features and Params, kernel caches</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 924 304" role="img">
+  <title>From settings to a compiled kernel: resolve_features and canonical give Features (compile time, the kernel cache key) and Params (runtime values)</title>
   <style>
-    text { fill: #1f2328; }
-    .muted { fill: #57606a; font-size: 11px; }
-    .h { font-weight: bold; font-size: 14px; }
-    .line { stroke: #57606a; stroke-width: 1.6; fill: none; }
-    .head { fill: #57606a; }
-    .in { fill: #ddf4ff; stroke: #0969da; stroke-width: 1.4; }
-    .fn { fill: #dafbe1; stroke: #1a7f37; stroke-width: 1.4; }
-    .c { fill: #ffebe9; stroke: #cf222e; stroke-width: 1.4; }
-    .r { fill: #fff8c5; stroke: #9a6700; stroke-width: 1.4; }
-    @media (prefers-color-scheme: dark) {
-      text { fill: #e6edf3; }
-      .muted { fill: #9198a1; }
-      .line { stroke: #9198a1; }
-      .head { fill: #9198a1; }
-      .in { fill: #0c2d6b; stroke: #4493f8; }
-      .fn { fill: #04260f; stroke: #3fb950; }
-      .c { fill: #3c0a0d; stroke: #f85149; }
-      .r { fill: #3b2e00; stroke: #d29922; }
-    }
+    text { font-family: Inter, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 13px; fill: #1f2937; }
+    .t { font-size: 14px; font-weight: 600; fill: #111827; }
+    .d { fill: #374151; }
+    .c { fill: #7d8590; }
+    .ct { fill: #7d8590; font-weight: 600; }
+    .m { text-anchor: middle; }
+    .e { text-anchor: end; }
+    rect, .k { stroke-width: 1.5; }
+    .b { fill: #dbeafe; stroke: #2563eb; }
+    .g { fill: #dcfce7; stroke: #16a34a; }
+    .a { fill: #fef3c7; stroke: #d97706; }
+    .v { fill: #ede9fe; stroke: #7c3aed; }
+    .r { fill: #ffe4e6; stroke: #e11d48; }
+    .n { fill: #f1f5f9; stroke: #64748b; }
+    .f { fill: none; stroke: #7d8590; stroke-dasharray: 4 4; }
+    .ln { fill: none; stroke: #7d8590; stroke-width: 1.5; }
+    .ds { stroke-dasharray: 5 4; }
+    .ah { fill: #7d8590; }
   </style>
   <defs>
-    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path class="head" d="M0,0 L10,5 L0,10 z"/>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path class="ah" d="M0,0 L10,5 L0,10 z"/>
     </marker>
   </defs>
-
-  <rect class="in" x="20" y="20" width="220" height="56" rx="6"/>
-  <text class="h" x="130" y="42" text-anchor="middle">RenderSettings</text>
-  <text class="muted" x="130" y="62" text-anchor="middle">frozen groups; field metadata C / R</text>
-  <rect class="in" x="20" y="90" width="220" height="56" rx="6"/>
-  <text class="h" x="130" y="112" text-anchor="middle">RenderCaps</text>
-  <text class="muted" x="130" y="132" text-anchor="middle">scene capabilities, layout, cameras</text>
-  <rect class="in" x="20" y="160" width="220" height="56" rx="6"/>
-  <text class="h" x="130" y="182" text-anchor="middle">PerWorld declaration</text>
-  <text class="muted" x="130" y="202" text-anchor="middle">what may vary per world</text>
-  <rect class="in" x="20" y="230" width="220" height="56" rx="6"/>
-  <text class="h" x="130" y="252" text-anchor="middle">DeviceCaps</text>
-  <text class="muted" x="130" y="272" text-anchor="middle">core/device.py: OptiX, graphs</text>
-
-  <rect class="fn" x="300" y="110" width="200" height="86" rx="6"/>
-  <text class="h" x="400" y="134" text-anchor="middle">resolve_features</text>
-  <text class="muted" x="400" y="154" text-anchor="middle">core/resolve.py (pure, host)</text>
-  <text class="muted" x="400" y="170" text-anchor="middle">"auto" -&gt; scene capabilities</text>
-  <text class="muted" x="400" y="186" text-anchor="middle">then canonical(f)</text>
-  <path class="line" d="M240,48 L298,124" marker-end="url(#a)"/>
-  <path class="line" d="M240,118 L298,142" marker-end="url(#a)"/>
-  <path class="line" d="M240,188 L298,166" marker-end="url(#a)"/>
-  <path class="line" d="M240,258 L298,186" marker-end="url(#a)"/>
-
-  <rect class="c" x="560" y="40" width="190" height="86" rx="6"/>
-  <text class="h" x="655" y="64" text-anchor="middle">Features (C)</text>
-  <text class="muted" x="655" y="84" text-anchor="middle">kernels/features.py</text>
-  <text class="muted" x="655" y="100" text-anchor="middle">wp.static branches:</text>
-  <text class="muted" x="655" y="116" text-anchor="middle">off code is not emitted</text>
-  <rect class="r" x="560" y="190" width="190" height="86" rx="6"/>
-  <text class="h" x="655" y="214" text-anchor="middle">Params (R)</text>
-  <text class="muted" x="655" y="234" text-anchor="middle">kernels/structs.py</text>
-  <text class="muted" x="655" y="250" text-anchor="middle">+ per-world tables (Frame)</text>
-  <text class="muted" x="655" y="266" text-anchor="middle">changes never recompile</text>
-  <path class="line" d="M500,140 L558,96" marker-end="url(#a)"/>
-  <path class="line" d="M500,170 L558,220" marker-end="url(#a)"/>
-
-  <rect class="fn" x="800" y="20" width="145" height="56" rx="6"/>
-  <text class="h" x="872" y="42" text-anchor="middle">megakernel(f)</text>
-  <text class="muted" x="872" y="62" text-anchor="middle">functools.cache</text>
-  <rect class="fn" x="800" y="90" width="145" height="56" rx="6"/>
-  <text class="h" x="872" y="112" text-anchor="middle">Warp kernel cache</text>
-  <text class="muted" x="872" y="132" text-anchor="middle">on disk, by module hash</text>
-  <rect class="fn" x="800" y="160" width="145" height="56" rx="6"/>
-  <text class="h" x="872" y="182" text-anchor="middle">OptiX build</text>
-  <text class="muted" x="872" y="202" text-anchor="middle">launch.spec_key, PTX</text>
-  <path class="line" d="M750,70 L798,50" marker-end="url(#a)"/>
-  <path class="line" d="M750,90 L798,116" marker-end="url(#a)"/>
-  <path class="line" d="M750,110 L798,180" marker-end="url(#a)"/>
-  <path class="line" d="M750,240 C780,240 790,230 870,218" marker-end="url(#a)"/>
-
-  <text class="muted" x="20" y="320">C field changed (update_settings): another Features -&gt; the cached kernel for it, or a compile (seconds).</text>
-  <text class="muted" x="20" y="338">R field changed: new Params values next frame. metadata "rebuild" ("gi", "light_grid"): that structure is dropped and rebuilt.</text>
-  <text class="muted" x="20" y="356">canonical(): values the kernel cannot see (shadow fields with shadows off, ...) collapse, so equivalent settings share one kernel.</text>
+  <rect class="b" x="0" y="0" width="210" height="50" rx="6"/>
+  <text class="t m" x="105" y="20.9">RenderSettings</text>
+  <text class="d m" x="105" y="39.9">groups, fields C or R</text>
+  <path class="ln" d="M210,25 L268,88" marker-end="url(#ah)"/>
+  <rect class="b" x="0" y="60" width="210" height="50" rx="6"/>
+  <text class="t m" x="105" y="80.9">RenderCaps</text>
+  <text class="d m" x="105" y="99.9">scene capabilities</text>
+  <path class="ln" d="M210,85 L268,106" marker-end="url(#ah)"/>
+  <rect class="b" x="0" y="120" width="210" height="50" rx="6"/>
+  <text class="t m" x="105" y="140.9">PerWorld</text>
+  <text class="d m" x="105" y="159.9">what varies per world</text>
+  <path class="ln" d="M210,145 L268,124" marker-end="url(#ah)"/>
+  <rect class="b" x="0" y="180" width="210" height="50" rx="6"/>
+  <text class="t m" x="105" y="200.9">DeviceCaps</text>
+  <text class="d m" x="105" y="219.9">OptiX, CUDA graphs</text>
+  <path class="ln" d="M210,205 L268,142" marker-end="url(#ah)"/>
+  <rect class="a" x="270" y="60" width="200" height="110" rx="6"/>
+  <text class="t m" x="370" y="93.9">resolve_features</text>
+  <text class="d m" x="370" y="112.9">pure host function:</text>
+  <text class="d m" x="370" y="129.9">"auto" -&gt; capabilities,</text>
+  <text class="d m" x="370" y="146.9">then canonical(f)</text>
+  <rect class="v" x="530" y="0" width="180" height="100" rx="6"/>
+  <text class="t m" x="620" y="37.4">Features (C)</text>
+  <text class="d m" x="620" y="56.4">the kernel cache key;</text>
+  <text class="d m" x="620" y="73.4">off code is not emitted</text>
+  <rect class="g" x="530" y="130" width="180" height="100" rx="6"/>
+  <text class="t m" x="620" y="158.9">Params (R)</text>
+  <text class="d m" x="620" y="177.9">runtime values and</text>
+  <text class="d m" x="620" y="194.9">per-world tables:</text>
+  <text class="d m" x="620" y="211.9">never recompile</text>
+  <path class="ln" d="M470,96 L528,58" marker-end="url(#ah)"/>
+  <path class="ln" d="M470,134 L528,170" marker-end="url(#ah)"/>
+  <rect class="v" x="760" y="0" width="160" height="48" rx="6"/>
+  <text class="t m" x="840" y="19.9">megakernel(f)</text>
+  <text class="d m" x="840" y="38.9">functools.cache</text>
+  <path class="ln" d="M710,50 L758,24" marker-end="url(#ah)"/>
+  <rect class="v" x="760" y="56" width="160" height="48" rx="6"/>
+  <text class="t m" x="840" y="75.9">Warp kernel cache</text>
+  <text class="d m" x="840" y="94.9">on disk, prebuilt</text>
+  <path class="ln" d="M710,50 L758,80" marker-end="url(#ah)"/>
+  <rect class="v" x="760" y="112" width="160" height="48" rx="6"/>
+  <text class="t m" x="840" y="131.9">OptiX build</text>
+  <text class="d m" x="840" y="150.9">keyed by spec_key</text>
+  <path class="ln" d="M710,50 L758,136" marker-end="url(#ah)"/>
+  <rect class="g" x="760" y="180" width="160" height="50" rx="6"/>
+  <text class="t m" x="840" y="200.9">next frame</text>
+  <text class="d m" x="840" y="219.9">reads new values</text>
+  <path class="ln" d="M710,195 L758,205" marker-end="url(#ah)"/>
+  <text class="c" x="0" y="262">A C field changed (update_settings): another Features, the cached kernel for it or one compile. An R field: new Params next frame.</text>
+  <text class="c" x="0" y="282">canonical() collapses values the kernel cannot see (shadow fields with shadows off, ...), so equivalent settings share one kernel.</text>
 </svg>

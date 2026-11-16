@@ -1,9 +1,11 @@
-"""The public benchmark's scene files on the release's public bucket (`benchmarks/run.py`), one
-directory per scene-file version (`benchmarks.run.key()`: the `.rayw` format and the USD converter).
+"""The public benchmark's scene files on the public assets bucket (`blanchon/raywarp-assets`,
+tools/prebuilt/buckets.env's ASSETS_BUCKET; `benchmarks/run.py` downloads them), one directory per
+scene-file version (`benchmarks/<key>/`, `benchmarks.run.key()`: v<.rayw format>-c<USD converter>).
 
   python -m tools.release.benchmark_scenes layout SRC OUT    # SRC: franka.tar, showcase.rayw,
-  sponza.rayw, cameras.json python -m tools.release.benchmark_scenes publish OUT [--bucket
-  OWNER/NAME] [--prefix P]  # user-approved
+                                                             # sponza.rayw, cameras.json
+  python -m tools.release.benchmark_scenes publish OUT [--bucket OWNER/NAME] [--prefix P]
+                                                             # user-approved
 
 `layout`: SRC's scene files and their cameras (built by the development repository's
 public-scenes script) become `OUT/benchmarks/<key>/`: each xz-compressed and
@@ -20,9 +22,12 @@ import argparse
 import subprocess
 from pathlib import Path
 
-from benchmarks.run import CAMERAS, FILES, key
+from benchmarks.run import ASSETS_BUCKET, CAMERAS, FILES, key
 from raywarp.core.build.kernel_cache import store
-from tools.release.kernels import BUCKET, _compress, _published
+from tools.release.kernels import _compress, _published
+
+# The public assets bucket (tools/prebuilt/buckets.env's ASSETS_BUCKET), not the kernels'.
+BUCKET = ASSETS_BUCKET
 
 
 def layout(src: Path, out: Path) -> Path:

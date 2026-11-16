@@ -5,7 +5,8 @@ first-frame time and the compile count, and saves one PNG.
   fast|default]
 
 Scenes (downloaded on first use into the cache directory, `<cache>/benchmarks/<key>/`, from the
-release's public bucket, every file checked against its sha256; README.md: sources and licences):
+public assets bucket `blanchon/raywarp-assets`, `benchmarks/v<format>-c<converter>/`, every file
+checked against its sha256; README.md: sources and licences):
   franka    MuJoCo Menagerie's MJX Panda pick scene with three cubes (MJCF: the `mujoco`
             extra; Apache-2.0)
   showcase  raywarp's showcase room: a furnished room, a window, a robot (`.rayw`)
@@ -39,17 +40,18 @@ FILES: Final = {"franka": "franka.tar", "showcase": "showcase.rayw", "sponza": "
 FRANKA_XML: Final = "franka/scene.xml"
 # Each scene's benchmark camera: {scene: [eye, target, fovy]} (world units, degrees).
 CAMERAS: Final = "cameras.json"
-# A mirror of the scenes' remote (else the kernels' public bucket, `store.remote`).
+# The public bucket of the scenes (tools/prebuilt/buckets.env's ASSETS_BUCKET), and a mirror of it.
+ASSETS_BUCKET: Final = "blanchon/raywarp-assets"
 URL_ENV: Final = "RAYWARP_BENCHMARKS_URL"
 
 
 def key() -> str:
   """The scene files' version: the `.rayw` format and the USD converter
-  (`w<format>-c<converter>`)."""
+  (`v<format>-c<converter>`)."""
   from raywarp.formats.usd import version
   from raywarp.scene.model import rayw
 
-  return f"w{rayw.VERSION}-c{version.CONVERTER}"
+  return f"v{rayw.VERSION}-c{version.CONVERTER}"
 
 
 def scene_file(name: str) -> tuple[Path, tuple[tuple[float, float, float], tuple[float, float, float], float]]:
@@ -65,7 +67,8 @@ def scene_file(name: str) -> tuple[Path, tuple[tuple[float, float, float], tuple
   root = cache_dir()
   if root is None:
     raise RuntimeError("caching is off (RAYWARP_CACHE_DIR is empty): the benchmark scenes need a cache directory")
-  local, url = root / "benchmarks" / key(), f"{(os.environ.get(URL_ENV) or store.remote()).rstrip('/')}/benchmarks/{key()}"
+  remote = os.environ.get(URL_ENV) or store.bucket_url(ASSETS_BUCKET)
+  local, url = root / "benchmarks" / key(), f"{remote.rstrip('/')}/benchmarks/{key()}"
   rel = FILES[name]
   failed = store.fetch(local, url, store.listing(local, url, None), [rel, CAMERAS])
   if failed:

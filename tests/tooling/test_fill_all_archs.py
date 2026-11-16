@@ -30,7 +30,9 @@ case $3 in
     shift 3; tag=""
     with=""
     while [ "$1" != -- ]; do [ "$1" != --tag ] || tag=$2; [ "$1" != --flavor ] || flavor=$2; [ "$1" != --with ] || with="$with $2"; shift; done
-    rid="$(date -u +%F)-$tag"; dir=$jobs/$rid; mkdir -p "$dir/tmp"
+    rid="$(date -u +%F)-$tag"; dir=$jobs/$rid
+    if [ -e "$dir" ]; then echo "run $rid exists: pick another --tag" >&2; exit 1; fi  # as tools.hf
+    mkdir -p "$dir/tmp"
     echo "$flavor" > "$dir/flavor"; echo "$with" > "$dir/with"
     cmd=${2//$DATA/@DATA@}; cmd=${cmd//$CACHE/@CACHE@}; cmd=${cmd//\/tmp\//$dir/tmp/}; cmd=${cmd//@DATA@/$DATA}; cmd=${cmd//@CACHE@/$CACHE}
     ( cd "$STUB_REPO" && PATH="$STUB_BIN:$PATH" HF_DEADLINE=$(( $(date +%s) + 3600 )) bash -c "$cmd" > "$dir/log" 2>&1; echo $? > "$dir/exit" ) < /dev/null > /dev/null 2>&1 &
@@ -360,7 +362,10 @@ def _day() -> str:
 def test_in_ci_a_job_out_of_relaunches_fails_the_fill_at_once(tmp_path: Path) -> None:
   """CI (FAIL_FAST=1): the sm_80 Warp shard fails every launch; after RETRIES relaunches the refill
   kills every other running job of the wave (sm_80's merge waits for that shard: without the kill
-  it waited to its cap, the 6 h workflow with it) and exits nonzero with the reason, in seconds."""
+  it waited to its cap, the 6 h workflow with it) and exits nonzero with the reason, in seconds.
+  Rerun after the fix, the same state resumes: the failed and killed jobs relaunch under new run
+  names (GitHub run 43976510973 instead failed at once on the restored state's exhausted shard);
+  a state of another build is refused."""
   env = _env(tmp_path, DRY="1", CI="true", RETRIES="1", STUB_FAIL="w80", PINS=str(tmp_path / "pins.json"))
   (tmp_path / "data" / "runs").mkdir(parents=True)
   done = subprocess.run(
@@ -372,3 +377,26 @@ def test_in_ci_a_job_out_of_relaunches_fails_the_fill_at_once(tmp_path: Path) ->
   assert any(k.endswith("-t-sm80-merge") for k in killed)
   tries = (tmp_path / "state" / "t.tries").read_text().split("\n")[:-1]
   assert tries and all(line.startswith("sm80-w") for line in tries)  # only the failing shards relaunched
+
+  # The fix, then the same build again (the workflow resumes its saved state): the failed and the
+  # killed jobs relaunch (relaunch counts reset) under run names never used, and the fill ends.
+  env.pop("STUB_FAIL")
+  again = subprocess.run(
+    ["bash", str(FILL_ALL), "refill", "t"], cwd=ROOT, env=env, capture_output=True, text=True, timeout=240, check=False
+  )
+  assert again.returncode == 0, again.stdout + again.stderr
+  assert "relaunch sm80-w0" in again.stdout and "relaunch sm80-merge" in again.stdout
+  assert "exists" not in again.stdout + again.stderr
+  assert (tmp_path / "state" / "t.stage").read_text().split() == ["wave1", "wave2"]
+
+  # Another build (here: other architectures) never resumes this state.
+  other = subprocess.run(
+    ["bash", str(FILL_ALL), "refill", "t"],
+    cwd=ROOT,
+    env=env | {"ARCHS": "120"},
+    capture_output=True,
+    text=True,
+    timeout=60,
+    check=False,
+  )
+  assert other.returncode == 2 and "FILL REFUSED" in other.stderr and "belongs to another build" in other.stderr

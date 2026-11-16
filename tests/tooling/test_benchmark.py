@@ -45,3 +45,51 @@ def test_scene_download_render_and_png(mirror: Path) -> None:
 def test_layout_refuses_missing_files(tmp_path: Path) -> None:
   with pytest.raises(SystemExit, match="missing scene files"):
     benchmark_scenes.layout(tmp_path, tmp_path / "out")
+
+
+def test_compare_table_marks_errors_and_shows_flip_of_same_scene_renderers(tmp_path: Path) -> None:
+  from benchmarks import compare_table
+
+  def row(renderer: str, mode: str, worlds: int, status: str = "ok", **extra: object) -> dict:
+    base = {
+      "renderer": renderer,
+      "mode": mode,
+      "scene": "franka",
+      "res": 512,
+      "worlds": worlds,
+      "outputs": "rgb",
+      "status": status,
+    }
+    return {
+      **base,
+      **({"images_per_s": 2000.0 * worlds, "ms_per_frame": 0.5, "peak_mem_mb": 2048.0} if status == "ok" else {}),
+      **extra,
+    }
+
+  data = {
+    "meta": {"gpu": ["RTX"]},
+    "renderers": {"raywarp": {"label": "Raywarp"}, "maniskill": {"label": "ManiSkill"}},
+    "rows": [
+      row("raywarp", "fast", 512, first_frame_s=1.25),
+      row("raywarp", "fast", 1),
+      row("maniskill", "minimal", 512),
+      row("maniskill", "minimal", 1, status="error", error="OOM"),
+    ],
+    "quality": {"flip": {"raywarp/fast": 0.0712, "maniskill/minimal": 0.3}},
+  }
+  path = tmp_path / "compare.json"
+  path.write_text(json.dumps(data))
+  text = compare_table.tables(json.loads(path.read_text()))
+  assert "| Raywarp fast | 2.0k | 1.02M |" in text and "| ManiSkill minimal | err | 1.02M |" in text
+  assert "| Raywarp fast | 0.5 | 1.02M | - | 1.2 s | 2.0 GB | 0.071 |" in text  # FLIP: same MJCF, same lights
+  assert "| ManiSkill minimal | 0.5 | 1.02M | - | - | 2.0 GB | - |" in text  # rebuilt scene: no FLIP
+  assert [b["label"] for b in compare_table.bars(data)] == ["Raywarp fast", "Raywarp fast", "ManiSkill minimal"]
+
+
+def test_scenes_bucket_is_buckets_env_assets_bucket() -> None:
+  """The benchmark scenes live in the public assets bucket buckets.env names, one directory per
+  .rayw format and USD converter version."""
+  from tools.prebuilt import build_cache
+
+  assert build_cache.buckets()["ASSETS_BUCKET"] == run.ASSETS_BUCKET == benchmark_scenes.BUCKET
+  assert run.key().startswith("v") and "-c" in run.key()

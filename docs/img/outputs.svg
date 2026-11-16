@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 924 304" role="img">
+  <title>One ray hit fans out into outputs: geometry outputs (depth, seg, semantic, normal, position, uv, material, albedo, motion), shaded outputs (rgb, hdr, ...), and derived ones (point cloud, NOCS, camera info)</title>
+  <style>
+    text { font-family: Inter, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 13px; fill: #1f2937; }
+    .t { font-size: 14px; font-weight: 600; fill: #111827; }
+    .d { fill: #374151; }
+    .c { fill: #7d8590; }
+    .ct { fill: #7d8590; font-weight: 600; }
+    .m { text-anchor: middle; }
+    .e { text-anchor: end; }
+    rect, .k { stroke-width: 1.5; }
+    .b { fill: #dbeafe; stroke: #2563eb; }
+    .g { fill: #dcfce7; stroke: #16a34a; }
+    .a { fill: #fef3c7; stroke: #d97706; }
+    .v { fill: #ede9fe; stroke: #7c3aed; }
+    .r { fill: #ffe4e6; stroke: #e11d48; }
+    .n { fill: #f1f5f9; stroke: #64748b; }
+    .f { fill: none; stroke: #7d8590; stroke-dasharray: 4 4; }
+    .ln { fill: none; stroke: #7d8590; stroke-width: 1.5; }
+    .ds { stroke-dasharray: 5 4; }
+    .ah { fill: #7d8590; }
+  </style>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path class="ah" d="M0,0 L10,5 L0,10 z"/>
+    </marker>
+  </defs>
+  <rect class="n" x="10" y="128" width="44" height="32" rx="4"/>
+  <path class="n k" d="M54,136 L72,128 V160 L54,152 z"/>
+  <text class="c m" x="41" y="182">camera</text>
+  <path class="ln" d="M74,144 L180,144" marker-end="url(#ah)"/>
+  <text class="c m" x="124" y="136">ray</text>
+  <path class="ln" style="stroke-width:3" d="M168,90 L200,200"/>
+  <circle class="r k" cx="184" cy="144" r="6"/>
+  <text class="c m" x="184" y="222">first hit</text>
+  <path class="ln" d="M190,140 L246,72" marker-end="url(#ah)"/>
+  <path class="ln" d="M190,148 L246,214" marker-end="url(#ah)"/>
+  <rect class="f" x="250" y="0" width="400" height="144" rx="8"/>
+  <text class="ct" x="262" y="20">geometry, first hit</text>
+  <rect class="b" x="262" y="32" width="120" height="28" rx="6"/>
+  <text class="d m" x="322" y="50.7">depth</text>
+  <rect class="b" x="390" y="32" width="120" height="28" rx="6"/>
+  <text class="d m" x="450" y="50.7">seg / semantic</text>
+  <rect class="b" x="518" y="32" width="120" height="28" rx="6"/>
+  <text class="d m" x="578" y="50.7">normal</text>
+  <rect class="b" x="262" y="68" width="120" height="28" rx="6"/>
+  <text class="d m" x="322" y="86.7">position</text>
+  <rect class="b" x="390" y="68" width="120" height="28" rx="6"/>
+  <text class="d m" x="450" y="86.7">uv / material</text>
+  <rect class="b" x="518" y="68" width="120" height="28" rx="6"/>
+  <text class="d m" x="578" y="86.7">albedo</text>
+  <rect class="b" x="262" y="104" width="120" height="28" rx="6"/>
+  <text class="d m" x="322" y="122.7">motion / flow</text>
+  <rect class="f" x="250" y="160" width="400" height="108" rx="8"/>
+  <text class="ct" x="262" y="180">shaded</text>
+  <rect class="a" x="262" y="192" width="120" height="28" rx="6"/>
+  <text class="d m" x="322" y="210.7">rgb</text>
+  <rect class="a" x="390" y="192" width="120" height="28" rx="6"/>
+  <text class="d m" x="450" y="210.7">hdr</text>
+  <rect class="a" x="518" y="192" width="120" height="28" rx="6"/>
+  <text class="d m" x="578" y="210.7">direct / indirect</text>
+  <rect class="a" x="262" y="228" width="120" height="28" rx="6"/>
+  <text class="d m" x="322" y="246.7">emission</text>
+  <rect class="a" x="390" y="228" width="120" height="28" rx="6"/>
+  <text class="d m" x="450" y="246.7">shadow</text>
+  <rect class="a" x="518" y="228" width="120" height="28" rx="6"/>
+  <text class="d m" x="578" y="246.7">luminance</text>
+  <path class="ln" d="M650,72 H688" marker-end="url(#ah)"/>
+  <rect class="f" x="690" y="0" width="230" height="180" rx="8"/>
+  <text class="ct" x="702" y="20">derived, on request</text>
+  <rect class="v" x="702" y="32" width="206" height="28" rx="6"/>
+  <text class="d m" x="805" y="50.7">point cloud</text>
+  <rect class="v" x="702" y="68" width="206" height="28" rx="6"/>
+  <text class="d m" x="805" y="86.7">NOCS</text>
+  <rect class="v" x="702" y="104" width="206" height="28" rx="6"/>
+  <text class="d m" x="805" y="122.7">camera-frame normals</text>
+  <rect class="v" x="702" y="140" width="206" height="28" rx="6"/>
+  <text class="d m" x="805" y="158.7">camera info</text>
+  <text class="c" x="690" y="212">Each output: a device array</text>
+  <text class="c" x="690" y="230">(nworld, ncam, H, W), written</text>
+  <text class="c" x="690" y="248">by the same launch; enable</text>
+  <text class="c" x="690" y="266">only what you read.</text>
+</svg>

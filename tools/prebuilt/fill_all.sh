@@ -440,9 +440,19 @@ cache_ls() {  # PREFIX: the cache bucket's files under PREFIX (paths from its ro
   command $HF_CLI buckets list "$CACHE_BUCKET/$1" -R --format quiet
 }
 
+build_id() {  # what a STATE belongs to: the tree and the requested architectures and options
+  echo "$(git rev-parse HEAD) archs=$ARCHS dry=$DRY force=$FORCE only=$ONLY fill_args=$FILL_ARGS"
+}
+
 keys() {  # once per STATE: every key, the architectures to build (ARCHS: those whose key the pins
-  # lack; git and the standard library only: seconds)
+  # lack; git and the standard library only: seconds). A STATE of another build (commit,
+  # architectures, options: `build_id`) is refused: it is never resumed by another build.
   local a keys="{" sep="" scenes built
+  if [ -f "$STATE.build" ] && [ "$(cat "$STATE.build")" != "$(build_id)" ]; then
+    echo "FILL REFUSED: $STATE belongs to another build ($(cat "$STATE.build")), not this one ($(build_id)): use another TAG" >&2
+    exit 2
+  fi
+  [ -f "$STATE.build" ] || build_id > "$STATE.build"
   if [ ! -f "$STATE.archs" ]; then
     scenes=$(mktemp) && all_scenes > "$scenes"
     $PY "$FILL_ALL_TOOLS/buildkey.py" census --scenes "$scenes" > "$STATE.census-key"
@@ -574,7 +584,7 @@ ended_ok() {  # RUN: the run's status says exit 0
 
 follow() {  # NAME...: until each job ended ok (relaunching a failed one up to RETRIES times); 1: one
   # gave up (FAIL_FAST=1: at once, the others killed)
-  local running name rid tries left gave_up
+  local running name rid tries left gave_up n
   while true; do
     running=$(hf ps --limit 1000) || { echo "$(date -u +%H:%M) job list failed: retrying"; sleep "$WATCH_EVERY"; continue; }
     left=0 gave_up=0
@@ -591,9 +601,13 @@ follow() {  # NAME...: until each job ended ok (relaunching a failed one up to R
         continue
       fi
       echo "$name $rid" >> "$STATE.tries"
+      # The run name of this launch: never one of an earlier attempt (a rerun resets the relaunch
+      # count, `.tries`, not the attempts, `.attempts`: a reused run name is refused by tools.hf).
+      echo "$name $rid" >> "$STATE.attempts"
+      n=$(grep -c "^$name " "$STATE.attempts")
       echo "$(date -u +%H:%M) relaunch $name (was $rid)"
-      record "$name" "$tag-$name-r$((tries + 1))"
-      start "$name" "$tag-$name-r$((tries + 1))"
+      record "$name" "$tag-$name-r$n"
+      start "$name" "$tag-$name-r$n"
       left=$((left + 1))
     done
     (( left )) || return "$gave_up"

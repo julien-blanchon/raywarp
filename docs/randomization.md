@@ -1,84 +1,133 @@
-# Randomising everything for dataset generation (draft)
+# Dataset generation: every knob and ground truth
 
-What a dataset generator (SLAM, 3D reconstruction, 3D learning, robotics) can randomise with
-raywarp, at which granularity, and what a change costs. Every row marked **run time** is written
-into a device table between frames: no compile, no new kernel, no host round trip, the same
-captured CUDA graph keeps replaying. How to declare and write the tables:
-[domain_randomisation.md](domain_randomisation.md).
+What a dataset generator (SLAM, 3D reconstruction, 3D learning, robotics) can vary with Raywarp,
+at which granularity, and the ground truth it can export. How to declare and write the per-world
+tables is on [domain randomisation](domain_randomisation.md).
 
-**Gran.**: W = per world (each world of the batch its own value), C = per camera, R = per
-renderer (every world), F = may change every frame. **Build** = chosen once when the Renderer is
-constructed (a declaration or a setting), then run time.
+## Quick start
 
-## Camera
+Render a Newton + USD batch and export depth, segmentation, camera-frame normals, NOCS and the
+cameras, all on the device:
 
-| quantity | how | gran. | notes |
-| --- | --- | --- | --- |
-| pose, trajectories (any jump) | `r.camera_pose`; MuJoCo `m.cam_pos` / `m.cam_quat`; mounts | W C F | free |
-| multi-camera rigs, stereo pairs | `cameras=[...]`, `CameraSpec(mount=, local=)`; baseline per world through `camera_pose` | W F | |
-| field of view, intrinsics | `PerWorld(camera=["fovy", "intrinsics"])` | W C F | free |
-| lens distortion (OpenCV, Kannala-Brandt) | `PerWorld(camera=["distortion"])` | W C F | build: the lens model |
-| camera model (pinhole, fisheye, orthographic) | `CameraSpec.projection` | C | mix them in one rig |
-| resolution | `resolution=`, `CameraSpec.resolution` | R / C | a new Renderer |
-| exposure | `PerWorld(env=["exposure"])` | W F | free: no GI input (it scales the image after the GI) |
-| white balance, lift / gamma / gain, saturation | `PerWorld(env=["grading.*"])` | W F | |
-| sensor noise, vignette, response, chromatic aberration | `PerWorld(env=["sensor.noise", "sensor.vignette", "sensor.response", "sensor.aberration"])` | W F | |
-| tone mapper, motion blur, rolling shutter, quantisation bits | `r.update_settings(...)` | R | a host step per change (re-captures a graph); no host read but for a background / fog colour or tone mapper not seen before |
-| depth sensors (active stereo, ToF noise) | `sensor.depth`, `sensor.*` | R | |
-| clip planes | `r.set_clip` | C | |
-| depth of field, bloom | not available | | |
+```python
+import newton
+import newton.examples
+import numpy as np
+import warp as wp
 
-## Objects
+import raywarp as rw
+import raywarp.integrations.newton
 
-| quantity | how | gran. | notes |
-| --- | --- | --- | --- |
-| simulated poses, articulated robots | the simulator's state | W F | |
-| static prop poses | `PerWorld(pose=[...])` + `per_world.columns("instance.pos"/"instance.rot", ...)` | W F | the props leave the shared tree (one refit per frame) |
-| primitive sizes | `PerWorld(size=[...])` | W F | primitives only; meshes: the next row |
-| mesh scale (uniform) | `PerWorld(pose=[...])` + `per_world.columns("instance.rot", ...)` written s R (s > 0) | W F | pose data: no recompile, no mesh copy (the rays are mapped by s, its normals stay unit); one refit per frame as any pose. Uniform only: a non-uniform scale is a different mesh (author it, or `PerWorld(mesh=[...])`). A primitive's rotation stays a rotation (its size scales it) |
-| show / hide (object pools, distractors) | `PerWorld(visible=[...])` | W F | free |
-| mesh swap among the scene's meshes | `PerWorld(mesh=[...])` | W F | |
-| different objects per world | Newton `build.pooled`, Isaac Lab prototypes, a pool + `visible` | W | |
-| albedo, roughness, metallic, specular weight / IOR, emission | `PerWorld(material=[...])` | W F | with GI on, a change re-lights that world's GI by rays (`gi.relight` below) |
-| instance colour, material assignment, glass per world | `material=["color", "instance.material"]` | W F | glass: build (`world_optics`), slower traversal |
-| texture swap, UV offset / rotation, hue, contrast, repeat | `material=["texture", "tex_variation", "tex_affine", "tex_repeat"]`, `rw.randomize` | W F | among the scene's textures (a procedural bank built with the scene) |
+robot = newton.ModelBuilder()
+robot.add_usd(newton.examples.get_asset("ant.usda"))
+builder = newton.ModelBuilder()
+builder.add_ground_plane()
+builder.replicate(robot, 4)
+model = builder.finalize()
+state = model.state()
+scene = rw.integrations.newton.scene(model, lighting=rw.Lighting.studio())
 
-## Lighting and scene
+outputs = rw.Outputs.of("rgb", "depth", "seg", "normal", motion=rw.settings.MotionOutput(status=True))
+r = rw.Renderer(
+  scene,
+  nworld=model.world_count,
+  cameras=[rw.CameraSpec(fovy=60)],
+  resolution=(64, 48),
+  settings=rw.RenderSettings().replace(rw.FAST).replace(outputs=outputs),
+)
+r.camera_pose.fill_(wp.transformf((0.0, -3.0, 1.2), wp.quat_from_axis_angle(wp.vec3(1.0, 0.0, 0.0), 1.35)))
+out = r.render(state)
 
-| quantity | how | gran. | notes |
-| --- | --- | --- | --- |
-| environment map, rotation, intensity | `PerWorld(env=["id", "yaw", "intensity"])` over a bank | W F | sun direction: a bank of `rw.scene.sun_sky` maps + yaw, or a distant light's `light.dir` |
-| light on / off (count), colour, strength, position, direction, radius, cone, range | `PerWorld(light=[...])` | W F | add every light a world may use, switch with `active`; with GI on, on / off, colour and strength recombine the GI without rays (also after a world's materials changed), the others re-light it by rays |
-| light type, area shape and size | `light=["type", "shape", "size", "axis"]` | W F | build: the profiles / area lights |
-| shadows per light | `light=["cast_shadow"]` | W F | quality: R |
-| fog | `PerWorld(env=["fog.color", "fog.range"])` | W F | |
-| GI | automatic | W | each world's GI follows its lights, materials and environment: colour / strength / on-off / environment-intensity changes recombine without rays, other changes re-light the world by rays on that frame; `gi.relight="on_request"` holds those until `r.request_gi_relight(worlds)` (e.g. once per episode at reset) |
-| another scene | a new Renderer (same kernels: nothing compiles) | | 0.25-0.65 s warm switch ([datagen.md](datagen.md)) |
-| several scenes in one batch | not available: one scene per Renderer (pool the objects and switch them with `visible`) | | |
+cameras = r.camera_info()  # per world and camera: K, lens, OpenCV camera-to-world pose
+normals = r.camera_normals()  # (nworld, pixels) normals in each camera's OpenCV frame
+nocs = r.nocs(state)  # (nworld, pixels) normalised object coordinates
+assert cameras.k.numpy().shape == (4, 1, 3, 3) and nocs.shape == (4, 64 * 48)
+depth, seg, flow_status = out.depth.numpy(), out.seg.numpy(), out.flow_status.numpy()
+```
 
-## Ground truth
+Nothing here reads back to the host until you call `.numpy()`. Save frames without stalling the
+render loop: [data generation](datagen.md#saving).
 
-| output | notes |
-| --- | --- |
-| depth | planar or radial (`DepthOutput(convention=)`) |
-| normals | world space, shading or geometric; camera frame (OpenCV): `r.camera_normals()` after a render (a post pass, nothing when not called) |
-| NOCS | `r.nocs(sim)` after a render: each pixel's hit in its instance's frame, centred on the instance's box over its diagonal, + 0.5 (from depth, seg and the instance poses; a post pass) |
-| camera parameters | `r.camera_info()`: per world and camera K (pixels), lens model + coefficients, camera-to-world pose (OpenCV frame), resolution, frame index; device arrays, no host read |
-| instance / semantic segmentation | per-world ids: `set_segment_table`, `set_semantics(rules, worlds=)` (no host read; the first per-world call makes captured graphs stale) |
-| albedo, position, uv, material id, roughness, metallic, emission, direct, indirect, shadow | output words, any combination |
-| optical flow | backward motion vectors + a validity status (`MotionOutput(status=True)`) |
-| point clouds | `r.point_cloud(...)`, on the device |
-| saving | your writer: [data generation](datagen.md#saving) (rgb, depth, seg; the cameras of every frame from `r.camera_info()`) |
-| not yet | 2D / 3D boxes, visibility fraction, keypoints, forward flow, COCO / BOP / KITTI writers |
+<a id="ground-truth"></a>
+
+## Export ground truth for a dataset
+
+> **New in 0.4.0:** `r.camera_info()`, `r.camera_normals()` and `r.nocs(sim)`.
+
+| ground truth | how | notes |
+| --- | --- | --- |
+| depth | the `depth` output | planar or radial (`DepthOutput(convention=)`) |
+| normals | the `normal` output; camera frame: `r.camera_normals()` | world space, shading or geometric; camera frame in OpenCV axes (x right, y down, z forward) |
+| NOCS | `r.nocs(sim)` after a render | each pixel's hit in its object's frame, scaled into the unit cube; needs `depth` and `seg` |
+| camera parameters | `r.camera_info()` | per world and camera: K in pixels, lens model and coefficients, camera-to-world pose (OpenCV), resolution, frame index |
+| instance / semantic segmentation | the `seg` and `semantic` outputs | per-world ids: `r.set_segment_table(table)`, `r.set_semantics(rules, worlds=)` |
+| optical flow | the `motion` output, with `MotionOutput(status=True)` for a validity status | backward motion vectors in pixels ([status values](robotics.md#outputs-what-you-can-request-and-what-it-costs)) |
+| point clouds | `r.point_cloud(...)` | on the device ([point clouds](robotics.md#point-clouds-and-per-world-labels)) |
+| albedo, position, uv, material id, roughness, metallic, emission, direct, indirect, shadow | outputs of the same names | any combination ([outputs](robotics.md#outputs-what-you-can-request-and-what-it-costs)) |
+| not yet | | 2D / 3D boxes, visibility fraction, keypoints, forward flow, COCO / BOP / KITTI writers |
+
+`camera_info`, `camera_normals` and `nocs` cost nothing unless called. Each runs one launch with
+no host read, and takes `out=` to write an earlier result in place.
 
 <!-- SHOWCASE: randomization/ground_truth.webp (docs/assets/SHOTS.md) -->
 ![Ground truth: rgb, NOCS, camera-frame normals, motion status, camera frustums](assets/randomization/ground_truth.webp)
 
-## Check it on your setup
+## Every knob
 
-To prove a generator never compiles, turn compiling off for the process and run its loop: a
-configuration whose kernels are not prebuilt then raises `rw.kernels.KernelsNotPrebuilt`, naming
-it, instead of compiling ([install](install.md#prebuilt-kernels)).
+**Granularity**: W = per world, C = per camera, R = per renderer (every world), F = may change
+every frame. Every W row is a per-world table written between frames: no compile, no host round
+trip, and a captured CUDA graph keeps replaying.
+
+### Camera
+
+| quantity | how | gran. | notes |
+| --- | --- | --- | --- |
+| pose, trajectories (any jump) | `r.camera_pose`; MuJoCo `m.cam_pos` / `m.cam_quat`; mounted cameras | W C F | free |
+| multi-camera rigs, stereo pairs | `cameras=[...]`, `CameraSpec(mount=, local=)`; per-world baseline through `camera_pose` | W F | |
+| field of view, intrinsics | `PerWorld(camera=["fovy", "intrinsics"])` | W C F | free |
+| lens distortion (OpenCV, Kannala-Brandt) | `PerWorld(camera=["distortion"])` | W C F | the lens model is picked at construction |
+| camera model (pinhole, fisheye, orthographic) | `CameraSpec.projection` | C | mix them in one rig |
+| resolution | `resolution=`, `CameraSpec.resolution` | R / C | a new Renderer |
+| exposure | `PerWorld(env=["exposure"])` | W F | free; it does not touch the GI |
+| white balance, lift / gamma / gain, saturation | `PerWorld(env=["grading.*"])` | W F | |
+| sensor noise, vignette, response, chromatic aberration | `PerWorld(env=["sensor.noise", "sensor.vignette", "sensor.response", "sensor.aberration"])` | W F | |
+| tone mapper, motion blur, rolling shutter, quantisation | `r.update_settings(...)` | R | a host step per change; a captured graph is captured again |
+| depth sensors (active stereo, ToF noise) | `sensor.depth`, `sensor.*` | R | |
+| clip planes | `r.set_clip` | C | |
+| depth of field, bloom | not available | | |
+
+### Objects
+
+| quantity | how | gran. | notes |
+| --- | --- | --- | --- |
+| simulated poses, articulated robots | the simulator's state | W F | |
+| static prop poses | `PerWorld(pose=[...])`, then `per_world.columns("instance.pos" / "instance.rot", ...)` | W F | the props get one copy per world |
+| primitive sizes | `PerWorld(size=[...])` | W F | primitives only |
+| mesh scale (uniform) | `PerWorld(pose=[...])`, then write `instance.rot` as s R (s > 0) | W F | no mesh copy; non-uniform scale is a different mesh |
+| show / hide (object pools, distractors) | `PerWorld(visible=[...])` | W F | free |
+| mesh swap among the scene's meshes | `PerWorld(mesh=[...])` | W F | |
+| different objects per world | Newton models with different shapes per world, Isaac Lab prototypes, a pool + `visible` | W | |
+| albedo, roughness, metallic, specular weight / IOR, coat, emission | `PerWorld(material=[...])` (OpenPBR names) | W F | with GI on, a change re-lights that world's GI |
+| instance colour, material assignment, glass per world | `material=["color", "instance.material"]` | W F | glass per world is slower in large scenes |
+| texture swap, UV offset / rotation, hue, contrast, repeat | `material=["texture", "tex_variation", "tex_affine", "tex_repeat"]`, `rw.randomize` | W F | among the scene's textures; no texture copy |
+
+### Lighting and scene
+
+| quantity | how | gran. | notes |
+| --- | --- | --- | --- |
+| environment map, rotation, intensity | `PerWorld(env=["id", "yaw", "intensity"])` over a bank of maps | W F | sun direction: a bank of `rw.scene.sun_sky` maps + yaw, or a distant light's `light.dir` |
+| light on / off (count), colour, strength, position, direction, radius, cone, range | `PerWorld(light=[...])` | W F | add every light a world may use, switch with `active` |
+| light type, area shape and size | `light=["type", "shape", "size", "axis"]` | W F | the extra light code is picked at construction |
+| shadows per light | `light=["cast_shadow"]` | W F | shadow quality: R |
+| fog | `PerWorld(env=["fog.color", "fog.range"])` | W F | |
+| GI | automatic | W | follows each world's lights, materials and environment ([below](#gi-under-randomisation-per-frame-or-per-episode)) |
+| another scene | a new Renderer: nothing compiles | | 0.25-0.65 s warm switch ([data generation](datagen.md)) |
+| several scenes in one batch | not available: one scene per Renderer | | pool the objects and switch them with `visible` |
+
+## Prove a generator never compiles
+
+Turn compiling off for the process and run the generator's loop. A configuration whose GPU code
+is not prebuilt then raises `rw.kernels.KernelsNotPrebuilt`, naming it, instead of compiling:
 
 ```python
 # docs: skip (a fragment: your generator's loop)
@@ -89,12 +138,14 @@ for frame in range(100):
   r.render(sim)
 ```
 
+What is prebuilt: [how the kernels work](performance.md#how-the-kernels-work).
+
 ## GI under randomisation: per frame or per episode
 
-With GI on, a world whose materials, light positions / shapes or environment map change is re-lit
-by rays on that frame (a few ms per changed world on RTX; on the CPU about a second per frame
-for 4 worlds). A generator that randomises every frame and does not need the GI to follow each
-frame exactly can re-light once per episode:
+With GI on, a world whose materials, light positions or environment map change is re-lit by rays
+on that frame. That takes a few ms per changed world on an RTX GPU, and about a second per frame
+for 4 worlds on the CPU. A generator that does not need the GI to follow every frame can re-light once per
+episode:
 
 ```python
 # docs: skip (a fragment of a generator's loop)
@@ -104,5 +155,12 @@ r.request_gi_relight(reset_mask)  # (nworld,) bool device array: the worlds rese
 r.render(sim)
 ```
 
-Worlds not requested keep their GI until requested (their lights' colours, strengths, on / off
-and the environment intensity still follow every frame, recombined without rays).
+Worlds not requested keep their GI. Their light colours, strengths, on / off and environment
+intensity still follow every frame, without rays. What each change costs:
+[GI under randomisation](domain_randomisation.md#gi-under-randomisation).
+
+## See also
+
+- [Domain randomisation](domain_randomisation.md): how to declare and write the tables, per simulator.
+- [Data generation](datagen.md): many scenes, warm-up, saving to disk.
+- [Robotics recipes: outputs](robotics.md#outputs-what-you-can-request-and-what-it-costs): every output.

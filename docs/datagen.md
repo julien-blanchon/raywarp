@@ -1,36 +1,60 @@
 # Data generation over many scenes
 
-The workload: hundreds of scenes with very different configurations (lights, textures, features),
-each rendered for episodes with domain randomisation, scene after scene, with the frames saved to
-disk. This page gives the recommended loop and what each part costs, as measured on 35 scenes.
+Render hundreds of different scenes one after another, randomise each for a few episodes, and
+save the frames to disk without slowing the render loop. Costs are measured on 35 scenes.
 
-## The loop
+## Quick start
 
-1. **Warm every scene once, ahead of the run** (a separate process, once per machine and
-   driver). On a fresh machine, a scene's first frame compiles kernels, creates OptiX modules
-   and runs its bakes. `Renderer.warm` stores all of them on disk: call it with the real run's
-   constructor arguments (world count, resolution, cameras, per-world declaration and settings;
-   [performance](performance.md#first-frame-prebuilt-kernels-caches-and-warm)):
+One Renderer per scene: create it, render its episodes, save, close it, move on.
+
+```python
+import numpy as np
+
+import raywarp as rw
+
+
+def room(color: tuple[float, float, float]) -> rw.Scene:
+  """A tiny host scene; a real generator loads one (rw.Scene.load("scene.rayw"), rw.formats.usd.load(path))."""
+  b = rw.SceneBuilder()
+  paint = b.add_material(rw.Material(base_color=color))
+  b.add_instance("box", material=paint, size=(2.0, 0.05, 1.2), xform=np.c_[np.eye(3), [0.0, 2.0, 1.2]], path="wall")
+  b.add_instance("box", material=paint, size=(0.3, 0.3, 0.3), xform=np.c_[np.eye(3), [0.3, 0.5, 0.3]], path="crate")
+  b.add_light(rw.Light.point((0.0, 0.0, 2.2), intensity=80.0, radius=0.05))
+  return b.build()
+
+
+eye = np.tile(np.array([0.0, -1.9, 1.3, 0.45, 0.0, 0.0, 0.893], np.float32), (4, 1, 1))  # position, quaternion
+for i, host in enumerate([room((0.8, 0.2, 0.2)), room((0.2, 0.4, 0.8))]):
+  r = rw.Renderer(rw.upload(host), nworld=4, cameras=[rw.CameraSpec(fovy=70.0)], resolution=(32, 24))
+  r.camera_pose.assign(eye)
+  for t in range(2):
+    out = r.render(seed=t)
+    np.save(f"scene{i}_rgb_{t:06d}.npy", out.rgb.numpy()[..., :3])  # (nworld, ncam, H, W, 3) uint8
+  r.close()
+```
+
+`.numpy()` waits for the GPU. A real generator saves through a readback ring instead
+([below](#saving)).
+
+## Switch between many scenes
+
+1. **Warm every scene once, ahead of the run** (once per machine and driver). The first frame of
+   a scene loads its GPU code and runs its one-time precomputations. `Renderer.warm` stores them
+   on disk. Call it with the real run's arguments:
 
    ```python
+   # docs: skip (needs a scene and a GPU)
    rw.Renderer.warm(scene, nworld=16, resolution=(512, 512), settings=rw.RenderSettings().replace(rw.FAST)).result()
    ```
 
-   Or run the loop below once with one step per scene and saving off.
-   USD and glTF scenes go through their memory-mapped `.rayw` cache (on by default:
-   `rw.formats.usd.load(path)`; `cache=dir` to keep it elsewhere), so later loads skip parsing.
+   USD and glTF scenes are kept as `.rayw` files (on by default), so later loads skip parsing.
 
-2. **Iterate** over the scenes. For each scene: create one Renderer, run its episodes, then
-   `close` it and drop it.
-   - Load scene k + 1 **on the host** on a worker thread while scene k renders: map its
-     `.rayw`, or load its compiled MuJoCo model (below).
-   - Upload it and create its Renderer on the render thread, or on the worker too (Renderers are
-     safe on several threads; their device work then shares the GPU with the frames).
-   - Save through a pinned readback ring with a writer thread, so the render loop never waits
-     for the disk.
-   - No `gc.collect()` between scenes: a closed Renderer and its scene are freed when dropped.
-     Call `gc.freeze()` once after the warm-up, so Python's own occasional full collections only
-     scan what was made since.
+2. **Iterate** over the scenes:
+   - Load scene k + 1 on the host, on a worker thread, while scene k renders.
+   - Upload it and create its Renderer on the render thread, or on the worker too.
+   - Save through a readback ring with a writer thread, so the render loop never waits for disk.
+   - `close` each Renderer and drop it. No `gc.collect()` is needed between scenes.
+   - Call `gc.freeze()` once after the warm-up, so Python's full collections skip start-up objects.
 
 ```python
 # docs: skip (needs scenes, a GPU and disk)
@@ -57,79 +81,67 @@ for i in range(len(rayw_paths)):
       out = r.render(seed=t)
       ring.submit(out, t)  # pack + async copy to pinned memory; a writer thread saves it
   r.close()
-  del r, host  # freed now: no reference cycle holds the scene's device memory
+  del r, host  # freed now
 ```
 
 `ring` is your readback ring ([saving](#saving)); `randomise` writes the per-world tables
 ([domain randomisation](domain_randomisation.md)).
 
-**Threads.** Several Renderers may be built, warmed, rendered and closed on several threads, beside
-your own Warp work. raywarp never changes Warp's process-wide current stream or default device
-(Warp's own `array.numpy()` does, for a moment: two of your threads calling it at once can leave
-the null stream current for the process; read device arrays back on one thread, or with
-`wp.copy(host_array, a, stream=...)`), and a Warp module loads on one thread at a time.
+**Threads.** Renderers may be built, warmed, rendered and closed on several threads. Raywarp
+never changes Warp's current stream or default device. Warp's own `array.numpy()` does, briefly:
+read device arrays back on one thread, or with `wp.copy(host_array, a, stream=...)`.
 
-**MuJoCo scenes: cache the compiled model.** The host load of a MuJoCo scene is MuJoCo's: the spec
-build (reading the XML and every mesh and texture file) and `MjSpec.compile` (meshes, convex hulls,
-inertias). Save each compiled model once with `mujoco.mj_saveModel(model, "scene.mjb")` and load
-it with `mujoco.MjModel.from_binary_path("scene.mjb")`: the same model bit for bit, in about the
-compile's time, without the spec build and the asset reads (Franka 0.08 s / 40 MB, aloha_clutter
-0.47 s / 266 MB, Unitree G1 0.17 s / 80 MB), one file instead of hundreds, which matters on
-network storage. A `.mjb` is specific to the MuJoCo version: key the file by `mujoco.__version__`.
-raywarp's own conversion (`rw.integrations.mujoco.scene`) takes 0.5-1 s on the CPU for these scenes.
+**MuJoCo scenes: cache the compiled model.** A MuJoCo scene's host load is MuJoCo's: reading the
+XML and assets, then compiling. Save each compiled model once with
+`mujoco.mj_saveModel(model, "scene.mjb")` and load it with `mujoco.MjModel.from_binary_path("scene.mjb")`.
+It is the same model, without the asset reads, in one file (Franka 0.08 s, aloha_clutter 0.47 s,
+Unitree G1 0.17 s). A `.mjb` is specific to the MuJoCo version: key the file by
+`mujoco.__version__`.
 
 ## What a switch costs
 
-RTX PRO 6000, 16 worlds x 512^2, `FAST`, OptiX with the prebuilt kernel bundle, 35
-different scenes (MuJoCo Menagerie robots, USD interiors, glTF assets, procedural and random
-feature-space scenes):
+RTX PRO 6000, 16 worlds x 512², `FAST`, OptiX with the prebuilt kernels, 35 different scenes
+(MuJoCo Menagerie robots, USD interiors, glTF assets, procedural scenes):
 
 | stage | median | worst | what it is |
 | --- | --- | --- | --- |
-| host load | 0.02 s | 23.6 s (aloha_clutter; menagerie robots 4.5-8 s) | `.rayw` map, code build, MJCF compile + meshes: **hidden by the host prefetch** |
-| upload | 0.05 s | 5.1 s (free_boxes, 1000 bodies) | `rw.upload` / MuJoCo Warp `put_model` + `rw.integrations.mujoco.scene` |
-| Renderer | 0.26 s | 2.6 s (first Renderer of the process) | tables, layout, features, backend |
-| first frame, warm disk caches | 0.02-0.36 s | 1.8 s (Office), 15.6 s (free_boxes) | kernel / module loads, bakes from disk, frame 0 |
-| first frame, first visit on the machine | 1.9 s | 38 s (Franka: 15 MuJoCo Warp compiles) | OptiX modules not in the bundle (1-9 s each), MuJoCo Warp kernels |
-| teardown: `close` | 0.001 s | 0.008 s | releases the build; no longer waits for OptiX modules created ahead |
-| teardown: `gc.collect()` | not needed | | a closed scene leaves no Warp array in a reference cycle (CPU check) |
+| host load | 0.02 s | 23.6 s (aloha_clutter; Menagerie robots 4.5-8 s) | `.rayw` map or MJCF compile: **hidden by loading ahead** |
+| upload | 0.05 s | 5.1 s (free_boxes, 1000 bodies) | `rw.upload`, or `put_model` + `rw.integrations.mujoco.scene` |
+| Renderer | 0.26 s | 2.6 s (first Renderer of the process) | tables, layout, acceleration structures |
+| first frame, warm disk caches | 0.02-0.36 s | 1.8 s (Office), 15.6 s (free_boxes) | loads from disk, frame 0 |
+| first frame, first visit on the machine | 1.9 s | 38 s (Franka: 15 MuJoCo Warp compiles) | OptiX setup (1-9 s each), MuJoCo Warp's own kernels |
+| `close` | 0.001 s | 0.008 s | |
 
 <!-- SHOWCASE: datagen/scene_switch.webp (docs/assets/SHOTS.md) -->
 [![Scene after scene: Franka, the showcase room, Sponza, fixtures](assets/datagen/scene_switch.webp)](assets/datagen/scene_switch.mp4)
 
-- **Compiles:** zero raywarp kernel compiles over all 35 scenes, cold, thanks to the bundle.
-  MuJoCo Warp compiled 45 kernels for its own models (Franka 15, Aloha 10, G1 9, ...). A warm
-  start then loads them from Warp's cache.
-- **Switch, warm process (disk caches filled by the warm-up):** upload + Renderer + first frame
-  took 0.25-0.65 s for the tabletop / feature / procedural scenes and 3.0 s for Office; teardown
-  adds ~1 ms (`close`; no collection). The Renderer takes 0.03-0.7 s of it: build it on the
-  prefetch worker (below) to take it off the switch.
-- **Memory:** device memory after each teardown stays at the high-water mark of the largest
-  scene so far (Warp's memory pool keeps freed blocks), with no growth over 35 switches
-  (6.3 GB after Bistro, then flat within +-0.2 GB). Live allocations after teardown were
-  550-690 MB once Bistro had been loaded, about 50 MB of them the readback ring (measured before
-  two fixes: the loop no longer holds the previous scene, and a closed scene leaves no Warp
-  array alive).
+- **Compiles:** zero Raywarp compiles over all 35 scenes, cold. MuJoCo Warp compiled 45 kernels
+  for its own models; a warm start loads them from Warp's cache.
+- **Warm switch:** upload + Renderer + first frame took 0.25-0.65 s for tabletop and procedural
+  scenes, 3.0 s for Office. With the Renderer built on the loading thread too, a switch is just
+  its first frame: 13 ms for the tabletop, 3.1 s for Office.
+- **Memory:** device memory stays at the high-water mark of the largest scene so far (Warp's
+  memory pool keeps freed blocks). It did not grow over 35 switches (6.3 GB after Bistro, then
+  flat within 0.2 GB).
 
-With the Renderer built on the prefetch worker too, a warm switch is its first frame: 13 ms for the tabletop, 0.11-0.15 s for
-primitives and the Cornell box, 0.47 s for a flex scene, 3.1 s for Office (its first frame).
+<a id="saving"></a>
 
-## Saving
+## Save frames without stalling the render loop
 
-Same machine, Franka (MuJoCo Warp physics, 2 substeps per frame), 16 x 512^2, 64 steps. Images/s
-are rendered images (worlds x cameras per second):
+Same machine, Franka (MuJoCo Warp physics, 2 substeps per frame), 16 x 512², 64 steps. Images/s
+counts worlds x cameras per second:
 
-| sink | images/s | overhead | size per 512^2 image | notes |
+| sink | images/s | overhead | size per 512² image | notes |
 | --- | --- | --- | --- | --- |
 | no readback | 574 | - | - | render + physics only |
-| readback ring only | 569 | 1 % | - | RGBA8 -> RGB8 pack kernel, async copy to pinned memory |
-| **npy** (raw uint8 RGB, one `.npy` per output and episode) | 573 | **0 %** | 768 KB | written straight from the pinned buffer; writer 1.2 GB/s |
-| jpeg (Pillow, quality 90, thread pool) | 491 | 10 % | 37 KB | encoding takes the GIL often enough to slow the render thread |
-| mp4 (libx264 per world, ffmpeg processes) | 502 | 8 % | 1.7 KB | the render thread blocked 0.15 s at episode boundaries |
+| readback ring only | 569 | 1 % | - | RGBA to RGB pack, async copy to pinned memory |
+| **npy** (raw uint8 RGB) | 573 | **0 %** | 768 KB | written straight from the pinned buffer; writer 1.2 GB/s |
+| jpeg (Pillow, quality 90, thread pool) | 491 | 10 % | 37 KB | encoding holds the GIL often enough to slow the render thread |
+| mp4 (libx264 per world, ffmpeg processes) | 502 | 8 % | 1.7 KB | the render thread blocked 0.15 s at episode ends |
 
-A readback ring: a few pinned host buffers, filled by asynchronous copies on the render stream,
-emptied by a writer thread once each copy's event has completed. The render thread never waits
-for the disk, only for a slot when the writer falls behind:
+A readback ring is a few pinned host buffers. Asynchronous copies fill them on the render stream;
+a writer thread empties them once each copy is done. The render thread waits only when every
+slot is still being written:
 
 ```python
 # docs: skip (needs a GPU, a renderer `r` and disk)
@@ -165,35 +177,34 @@ full.put(None)
 thread.join()
 ```
 
-**Default: npy.** It is the fastest: there is no encode, so the cost is one pack kernel and
-one copy, and the writer thread does a single `write` per frame. The limit is the disk. Raw
-512^2 RGB is 0.75 MB per image, so a disk that sustains 1.2 GB/s keeps up with about 1,600
-images/s. Above that rate, or when storage matters, record MP4: the video recorder
-([recording](recording.md)) encodes on NVENC from device memory, and its
-documented cost is a few tens of microseconds of the render thread per frame. JPEG costs about 10 %
-of the frame rate and gives files 20 times smaller than raw.
+Which format:
 
-## Reusing a Renderer across scenes
+- **npy** is the fastest: no encoding, one copy, one `write` per frame. The disk is the limit:
+  raw 512² RGB is 0.75 MB, so a 1.2 GB/s disk keeps up with about 1,600 images/s.
+- **MP4** when storage matters: the [video recorder](recording.md) encodes on the GPU from device
+  memory.
+- **JPEG** costs about 10 % of the frame rate for files 20 times smaller than raw.
 
-There is no `Renderer.set_scene`. Everything a Renderer builds depends on its scene:
+Record each frame's cameras with `r.camera_info()` ([ground truth](randomization.md#ground-truth)).
 
-- the camera rig (scene cameras);
-- the shared / per-world instance layout;
-- the per-world tables, sized by the scene's materials, lights and instances;
-- the validation ranges;
-- the resolved features, which select the kernels (the tier build);
-- the backend's acceleration structures.
+<a id="reusing-a-renderer-across-scenes"></a>
 
-A `set_scene` would redo all of that. The only parts that do not depend on the scene are the
-output buffers and the compiled kernels, and both are already reused:
+## Reuse output buffers across scenes
 
-- **Output buffers**: allocate them once and bind them to every Renderer with
-  `Renderer(output_arrays={"rgb": rgb, ...})`. The readback ring and anything
-  else holding the arrays (a torch view, a recorder) keep pointing at the same memory across
-  scenes.
-- **Kernels**: scenes of the same tier share their compiled modules, both in the process and on
-  disk. Scene data is run-time data, so a new scene never recompiles a kernel that another scene
-  already compiled.
+There is no `Renderer.set_scene`: a Renderer's cameras, tables and acceleration structures all
+depend on its scene. What does not depend on the scene is already reused:
 
-A captured CUDA graph belongs to one Renderer (it records that scene's pointers). When
-replaying graphs, capture again for each scene.
+- **Output buffers:** allocate them once and pass them to every Renderer with
+  `Renderer(output_arrays={"rgb": rgb, ...})`. A readback ring, a torch view or a recorder keeps
+  pointing at the same memory across scenes.
+- **GPU code:** scenes share it, in the process and on disk. A new scene never recompiles what
+  another scene already loaded.
+
+A captured CUDA graph belongs to one Renderer: capture again for each scene.
+
+## See also
+
+- [Dataset generation: every knob and ground truth](randomization.md): what to vary and export.
+- [Domain randomisation](domain_randomisation.md): writing the per-world tables.
+- [Recording video](recording.md): MP4 at render speed.
+- [Performance and kernels](performance.md#how-the-kernels-work): what is prebuilt, the caches.

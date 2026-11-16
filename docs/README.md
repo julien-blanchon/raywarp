@@ -1,73 +1,65 @@
 # Raywarp documentation
 
-Raywarp is a batched, physically based ray tracer for robot learning and dataset generation: one
-launch renders thousands of worlds x cameras of a MuJoCo Warp, mjlab, Newton, Isaac Lab, USD or
-glTF scene, on NVIDIA GPUs (CUDA, OptiX RT cores) or on the CPU.
+Raywarp renders thousands of simulated worlds in one call, physically based, on NVIDIA GPUs or the CPU.
 
-## Getting started
+## Quick start
 
-| page | read it for |
-| --- | --- |
-| [Features](features.md) | what Raywarp does and why, with pictures: batching, outputs, randomisation, cameras, lighting, recording |
-| [Install](install.md) | the extras, supported GPUs and drivers, the CPU device, the prebuilt kernels downloaded on first use, offline machines |
-| [Quickstart](quickstart.md) | a first render with MuJoCo Warp, USD / glTF, Newton, mjlab and Isaac Lab, a few lines each; the first frame and warm start |
-| [Concepts](concepts.md) | scene, renderer, worlds, cameras, settings recipes, per-world randomisation, kernels and first use: the model behind the API |
+```bash
+pip install "raywarp[newton,usd]"   # or [mujoco], [gltf], [all]
+```
 
-## Integrations
+Pick your simulator or format:
 
-| page | read it for |
-| --- | --- |
-| [Quickstart](quickstart.md) | MuJoCo Warp (aliased model arrays, a drop-in for its renderer), Newton (`SensorCamera`, the headless viewer), mjlab camera sensors, the Isaac Lab renderer |
-| [Robotics recipes](robotics.md) | zero-copy torch observations, step + render in one CUDA graph, selected worlds, sensor effects, CPU workers, the Isaac Lab lifecycle |
-| [Scenes](scenes.md) | lights, environment maps, light units and exposure, materials (OpenPBR) and textures, cameras and lenses, segmentation, the load report |
+| integration | what you get | minimal example |
+| --- | --- | --- |
+| **Newton + USD** | a USD stage loaded into Newton, every world rendered with its materials and lights | [quickstart](quickstart.md#quick-start), [stage materials](quickstart.md#newton-with-the-stages-own-materials-and-lights) |
+| Newton drop-ins | `SensorCamera` and a headless viewer with Newton's own API, PBR shaded | [SensorCamera](quickstart.md#newtons-camera-sensor-sensorcamera), [examples/newton_sensor.py](../examples/newton_sensor.py) |
+| MuJoCo Warp | an MJCF model and its batched `mjw.Data`, or a drop-in for its renderer | [quickstart](quickstart.md#mujoco-warp), [examples/mujoco_render.py](../examples/mujoco_render.py) |
+| Isaac Lab | a camera renderer next to Isaac's Newton Warp and RTX renderers | [quickstart](quickstart.md#isaac-lab) |
+| mjlab | an RGB backend of mjlab's camera sensors | [quickstart](quickstart.md#mjlab) |
+| USD / glTF files | a static stage or asset, rendered as authored | [quickstart](quickstart.md#usd-and-gltf-without-a-simulator), [examples/usd_scene.py](../examples/usd_scene.py) |
 
-## Outputs
+See it first: the [Demo gallery](gallery.md) shows looping clips of runnable demos.
 
-| page | read it for |
-| --- | --- |
-| [Robotics recipes: outputs](robotics.md#outputs-what-you-can-request-and-what-it-costs) | rgb, depth, segmentation, normals, albedo, motion vectors and the rest: layouts, dtypes, what each costs |
-| [Robotics recipes: point clouds](robotics.md#point-clouds-and-per-world-labels) | point clouds and per-world labels on the device |
-| [Randomising everything: ground truth](randomization.md#ground-truth) | NOCS, camera-frame normals, camera export (intrinsics, lens, pose), optical flow |
-| [Recording video](recording.md) | MP4 files of one view or a whole batch at render speed: NVENC from device memory or pipelined CPU encoding |
-
-## Randomisation and datasets
+## Concepts
 
 | page | read it for |
 | --- | --- |
-| [Domain randomisation](domain_randomisation.md) | every randomisable quantity per world, per adapter, GI under randomisation, costs, a cookbook |
-| [Randomising everything](randomization.md) | the dataset-generator view: each camera, object, lighting and scene knob, its granularity and what a change costs |
-| [Data generation](datagen.md) | many scenes one after another: warm-up, fast switching, saving frames without stalling the render loop, measured costs |
+| [Concepts](concepts.md) | the mental model: scene, renderer, worlds, cameras, settings, per-world randomisation |
+| [Features](features.md) | a tour with pictures of what Raywarp does |
 
-## Performance and kernels
-
-| page | read it for |
-| --- | --- |
-| [Settings](settings.md) | the default, `rw.FAST` and the recipes; each settings group, its cost and when to turn it off; compiled-in vs runtime fields |
-| [Performance](performance.md) | batching, the max-speed checklist, OptiX vs the software BVH, the first frame (prebuilt kernels, caches, warm), zero compiles, CPU, multi-GPU |
-| [FAQ](faq.md) | black or dark images, missing textures, slow first frames, changes that did not take effect, `StaleBinding`, OptiX errors |
-
-## Tools
+## How-to
 
 | page | read it for |
 | --- | --- |
+| [Quickstart](quickstart.md) | render a first batch with Newton + USD, MuJoCo Warp, mjlab, Isaac Lab or a USD / glTF file |
+| [Robotics recipes](robotics.md) | feed torch with no copy, pick outputs, point clouds, sensor effects, CUDA graphs, skip finished episodes |
+| [Domain randomisation](domain_randomisation.md) | give every world its own look, per simulator, with a cookbook |
+| [Data generation](datagen.md) | switch between many scenes and save frames to disk without stalling |
+| [Dataset generation: every knob and ground truth](randomization.md) | every knob with its granularity; export NOCS, normals, cameras and flow |
+| [Recording video](recording.md) | record one view or a whole batch to MP4 at render speed |
+| [Scenes](scenes.md) | light a scene, use environment maps, materials, textures and cameras |
+
+## Reference
+
+| page | read it for |
+| --- | --- |
+| [Settings](settings.md) | every setting, the recipes and what each group costs |
+| [Outputs](robotics.md#outputs-what-you-can-request-and-what-it-costs) | every output: layout, dtype, meaning, cost |
+| [Cameras](scenes.md#cameras) | projections, lenses, mounts, intrinsics |
+| [Performance and kernels](performance.md) | batching, the max-speed checklist, prebuilt kernels, the first frame, multi-GPU |
+| [Install](install.md) | extras, supported GPUs and drivers, the CPU, offline machines |
 | [Command line](cli.md) | `raywarp`: view, record, convert, prepare, kernels, cache, info |
-| [Benchmark](benchmark.md) | `python -m benchmarks.run`: ms/frame, images/s, first frame and compiles on three scenes |
-| [Examples](../examples/) | small runnable scripts: MuJoCo Warp, USD, Newton, outputs, domain randomisation |
+| [Benchmark](benchmark.md) | `python -m benchmarks.run`: ms per frame, images/s, first frame |
+| [Troubleshooting](faq.md) | dark images, missing textures, slow first frames, changes that did not take effect |
+| [About](about.md) | citation, licence, acknowledgements, asset credits |
 
-## Development
+Contributors: the [developer guide](DEVELOPMENT.md), the [changelog](../CHANGELOG.md) and the
+[shot list](assets/SHOTS.md) of every image on these pages.
 
-| page | read it for |
-| --- | --- |
-| [Developer guide](DEVELOPMENT.md) | architecture with diagrams, standards, testing, adding a feature or an adapter |
-| [Changelog](../CHANGELOG.md) | what changed in each release |
-| [About](about.md) | citation, licence, acknowledgements, scene and asset credits |
-| [Shot list](assets/SHOTS.md) | every image and clip of these pages: scene, settings, camera, size |
+## See also
 
-## Notes on these pages
-
-Every Python block of these pages runs in the test suite (`tests/tooling/test_docs.py`) on the
-CPU device with tiny scenes; blocks marked `# docs: requires ...` run only where their
-dependencies are available, and `# docs: skip` blocks are fragments. Performance numbers name the
-GPU and configuration they were measured on; they are records, not a fresh measurement of your
-machine (`python -m benchmarks.run` measures it). The reference recipe is the renderer's own
-approximations at more samples, not physical ground truth.
+- Every Python block of these pages runs in the test suite on the CPU, with tiny scenes. Blocks
+  marked `# docs: requires ...` run where their dependencies are installed.
+- Performance numbers name the GPU and settings they were measured with. They are records, not a
+  measurement of your machine: `python -m benchmarks.run` measures yours.

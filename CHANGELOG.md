@@ -139,7 +139,7 @@
   writes s R (the column's initial values hold it); a plain R renders the mesh at scale 1.
   Non-uniform, sheared and mirrored scales are still baked into a mesh copy (one per distinct
   shape). Bindings that write rigid rotations (Newton, Isaac Lab) keep every scale baked.
-- **`.rayw` format 15 (was `.wpbr` format 13), scene converter 13: prepare scenes again.** An
+- **`.rayw` format 15 (was `.wpbr` format 13), scene converter 15: prepare scenes again.** An
   older file is refused, never read wrongly: a `rw.usd.load` cache is rebuilt from its sources on the next load,
   prepared scenes must be prepared again (`rw.usd.bake`, `python -m tools.hf prepare`). Images of
   equal content are stored once and the second UV set's / vertex colors' corner indices only for
@@ -529,7 +529,8 @@
   512 px on an L4: grid off 0-4 % faster; 8 lights in closed rooms: grid on 7 % faster);
   `light_grid=True` forces it. Pixels: identical on open scenes; few-light scenes with walls move
   by FLIP <= 0.014 (lights the grid culled now compete for the shadow budget and light caps).
-- **`balanced` (the `RenderSettings()` default) renders without probe GI** (user decision,
+- **`balanced` (the `RenderSettings()` default) rendered without probe GI for part of this cycle;
+  the released default has probe GI on again (`gi.enabled=True`, docs/settings.md)** (user decision,
   robotics defaults): against a Mitsuba path tracer at 512 px, after the probe-placement fix, GI
   off is closer on the robotics tabletops (pick table FLIP 0.09 vs 0.17, with the Panda 0.13 vs
   0.18, env-lit bin 0.46 vs 0.56; G1 outdoors 0.061 vs 0.053) and 12-27 % cheaper per frame.

@@ -30,7 +30,9 @@ Options: `--worlds N` (default 64), `--res R` (square images, default 512), `--s
 
 ## Scenes
 
-The scene files download on first use into the cache directory (`RAYWARP_CACHE_DIR`, else
+The scene files download on first use from the public bucket
+[`blanchon/raywarp-assets`](https://huggingface.co/buckets/blanchon/raywarp-assets) (`benchmarks/v<format>-c<converter>/`,
+beside the USD sources and their licences) into the cache directory (`RAYWARP_CACHE_DIR`, else
 `~/.cache/raywarp`, under `benchmarks/<version>/`), each checked against its sha256. They are
 converted ahead per `.rayw` format and USD converter version; a mirror: `RAYWARP_BENCHMARKS_URL`.
 

@@ -1,72 +1,65 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="210" viewBox="0 0 960 210" font-family="sans-serif" font-size="13">
-  <title>Adapter playbook: coverage table, Ingest, Bind, conformance kit, settings map, integration</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 924 260" role="img">
+  <title>Adapter playbook: coverage table, Ingest, Bind, conformance kit (the gate), optional settings map and integration drop-ins</title>
   <style>
-    text { fill: #1f2328; }
-    .muted { fill: #57606a; font-size: 11px; }
-    .h { font-weight: bold; font-size: 13px; }
-    .line { stroke: #57606a; stroke-width: 1.6; fill: none; }
-    .head { fill: #57606a; }
-    .req { fill: #dafbe1; stroke: #1a7f37; stroke-width: 1.4; }
-    .opt { fill: #ddf4ff; stroke: #0969da; stroke-width: 1.4; stroke-dasharray: 5 3; }
-    .gate { fill: #ffebe9; stroke: #cf222e; stroke-width: 1.4; }
-    @media (prefers-color-scheme: dark) {
-      text { fill: #e6edf3; }
-      .muted { fill: #9198a1; }
-      .line { stroke: #9198a1; }
-      .head { fill: #9198a1; }
-      .req { fill: #04260f; stroke: #3fb950; }
-      .opt { fill: #0c2d6b; stroke: #4493f8; }
-      .gate { fill: #3c0a0d; stroke: #f85149; }
-    }
+    text { font-family: Inter, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 13px; fill: #1f2937; }
+    .t { font-size: 14px; font-weight: 600; fill: #111827; }
+    .d { fill: #374151; }
+    .c { fill: #7d8590; }
+    .ct { fill: #7d8590; font-weight: 600; }
+    .m { text-anchor: middle; }
+    .e { text-anchor: end; }
+    rect, .k { stroke-width: 1.5; }
+    .b { fill: #dbeafe; stroke: #2563eb; }
+    .g { fill: #dcfce7; stroke: #16a34a; }
+    .a { fill: #fef3c7; stroke: #d97706; }
+    .v { fill: #ede9fe; stroke: #7c3aed; }
+    .r { fill: #ffe4e6; stroke: #e11d48; }
+    .n { fill: #f1f5f9; stroke: #64748b; }
+    .f { fill: none; stroke: #7d8590; stroke-dasharray: 4 4; }
+    .ln { fill: none; stroke: #7d8590; stroke-width: 1.5; }
+    .ds { stroke-dasharray: 5 4; }
+    .ah { fill: #7d8590; }
   </style>
   <defs>
-    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path class="head" d="M0,0 L10,5 L0,10 z"/>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path class="ah" d="M0,0 L10,5 L0,10 z"/>
     </marker>
   </defs>
-
-  <rect class="req" x="10" y="30" width="140" height="100" rx="6"/>
-  <text class="h" x="80" y="54" text-anchor="middle">1 coverage table</text>
-  <text class="muted" x="80" y="76" text-anchor="middle">source feature -&gt;</text>
-  <text class="muted" x="80" y="92" text-anchor="middle">converted /</text>
-  <text class="muted" x="80" y="108" text-anchor="middle">approximated / dropped</text>
-
-  <rect class="req" x="170" y="30" width="150" height="100" rx="6"/>
-  <text class="h" x="245" y="54" text-anchor="middle">2 Ingest</text>
-  <text class="muted" x="245" y="76" text-anchor="middle">scene(source) -&gt; Scene</text>
-  <text class="muted" x="245" y="92" text-anchor="middle">via SceneBuilder;</text>
-  <text class="muted" x="245" y="108" text-anchor="middle">LoadReport counters</text>
-
-  <rect class="req" x="340" y="30" width="150" height="100" rx="6"/>
-  <text class="h" x="415" y="54" text-anchor="middle">3 Bind</text>
-  <text class="muted" x="415" y="76" text-anchor="middle">binding(scene, source)</text>
-  <text class="muted" x="415" y="92" text-anchor="middle">-&gt; Binding[S]: slots(sim)</text>
-  <text class="muted" x="415" y="108" text-anchor="middle">no host round trip</text>
-
-  <rect class="gate" x="510" y="30" width="150" height="100" rx="6"/>
-  <text class="h" x="585" y="54" text-anchor="middle">4 conformance kit</text>
-  <text class="muted" x="585" y="76" text-anchor="middle">compare, report,</text>
-  <text class="muted" x="585" y="92" text-anchor="middle">no recompile,</text>
-  <text class="muted" x="585" y="108" text-anchor="middle">graph replay (CUDA)</text>
-
-  <rect class="opt" x="680" y="30" width="130" height="100" rx="6"/>
-  <text class="h" x="745" y="54" text-anchor="middle">5 settings map</text>
-  <text class="muted" x="745" y="76" text-anchor="middle">source render</text>
-  <text class="muted" x="745" y="92" text-anchor="middle">settings -&gt;</text>
-  <text class="muted" x="745" y="108" text-anchor="middle">RenderSettings</text>
-
-  <rect class="opt" x="830" y="30" width="120" height="100" rx="6"/>
-  <text class="h" x="890" y="54" text-anchor="middle">6 integration</text>
-  <text class="muted" x="890" y="76" text-anchor="middle">drop-ins:</text>
-  <text class="muted" x="890" y="92" text-anchor="middle">SensorCamera,</text>
-  <text class="muted" x="890" y="108" text-anchor="middle">ViewerRaywarpHeadless</text>
-
-  <path class="line" d="M150,80 H168" marker-end="url(#a)"/>
-  <path class="line" d="M320,80 H338" marker-end="url(#a)"/>
-  <path class="line" d="M490,80 H508" marker-end="url(#a)"/>
-  <path class="line" d="M660,80 H678" marker-end="url(#a)"/>
-  <path class="line" d="M810,80 H828" marker-end="url(#a)"/>
-
-  <text class="muted" x="10" y="164">solid green: required (HostAdapter / DirectAdapter, tests/fixtures/conformance.py); red: the gate (ConformanceCase,</text>
-  <text class="muted" x="10" y="180">tests/contracts/test_conformance.py); dashed blue: optional. Code used by two or more adapters goes to raywarp/_common.</text>
+  <rect class="g" x="0" y="0" width="280" height="84" rx="6"/>
+  <text class="t m" x="140" y="29.4">1 coverage table</text>
+  <text class="d m" x="140" y="48.4">each source feature: converted,</text>
+  <text class="d m" x="140" y="65.4">approximated or dropped</text>
+  <rect class="g" x="320" y="0" width="280" height="84" rx="6"/>
+  <text class="t m" x="460" y="29.4">2 Ingest</text>
+  <text class="d m" x="460" y="48.4">scene(source) -&gt; Scene via a</text>
+  <text class="d m" x="460" y="65.4">SceneBuilder; LoadReport counters</text>
+  <path class="ln" d="M280,42 H318" marker-end="url(#ah)"/>
+  <rect class="g" x="640" y="0" width="280" height="84" rx="6"/>
+  <text class="t m" x="780" y="29.4">3 Bind</text>
+  <text class="d m" x="780" y="48.4">binding(scene, source) -&gt; Binding[S]:</text>
+  <text class="d m" x="780" y="65.4">slots(sim), no host copy</text>
+  <path class="ln" d="M600,42 H638" marker-end="url(#ah)"/>
+  <rect class="r" x="0" y="120" width="280" height="84" rx="6"/>
+  <text class="t m" x="140" y="140.9">4 conformance kit</text>
+  <text class="d m" x="140" y="159.9">compare, report_mismatches,</text>
+  <text class="d m" x="140" y="176.9">check_no_recompile,</text>
+  <text class="d m" x="140" y="193.9">check_graph_replay</text>
+  <rect class="n ds" x="320" y="120" width="280" height="84" rx="6"/>
+  <text class="t m" x="460" y="149.4">5 settings map</text>
+  <text class="d m" x="460" y="168.4">source render settings -&gt;</text>
+  <text class="d m" x="460" y="185.4">RenderSettings, explicitly</text>
+  <path class="ln" d="M280,162 H318" marker-end="url(#ah)"/>
+  <rect class="n ds" x="640" y="120" width="280" height="84" rx="6"/>
+  <text class="t m" x="780" y="140.9">6 integration</text>
+  <text class="d m" x="780" y="159.9">drop-ins for the source's renderer:</text>
+  <text class="d m" x="780" y="176.9">SensorCamera,</text>
+  <text class="d m" x="780" y="193.9">ViewerRaywarpHeadless, ...</text>
+  <path class="ln" d="M600,162 H638" marker-end="url(#ah)"/>
+  <path class="ln" d="M780,84 V102 H140 V118" marker-end="url(#ah)"/>
+  <rect class="g" x="0" y="225" width="22" height="14" rx="3"/>
+  <text class="c" x="30" y="236">required</text>
+  <rect class="r" x="105.84" y="225" width="22" height="14" rx="3"/>
+  <text class="c" x="135.84" y="236">the gate: tests/fixtures/conformance.py</text>
+  <rect class="n ds" x="388.09" y="225" width="22" height="14" rx="3"/>
+  <text class="c" x="418.09" y="236">optional</text>
 </svg>

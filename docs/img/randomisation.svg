@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 884 286" role="img">
+  <title>Per-world randomisation: a PerWorld declaration allocates (nworld, n) device tables, written in place between frames; world w reads row w; zero recompiles</title>
+  <style>
+    text { font-family: Inter, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 13px; fill: #1f2937; }
+    .t { font-size: 14px; font-weight: 600; fill: #111827; }
+    .d { fill: #374151; }
+    .c { fill: #7d8590; }
+    .ct { fill: #7d8590; font-weight: 600; }
+    .m { text-anchor: middle; }
+    .e { text-anchor: end; }
+    rect, .k { stroke-width: 1.5; }
+    .b { fill: #dbeafe; stroke: #2563eb; }
+    .g { fill: #dcfce7; stroke: #16a34a; }
+    .a { fill: #fef3c7; stroke: #d97706; }
+    .v { fill: #ede9fe; stroke: #7c3aed; }
+    .r { fill: #ffe4e6; stroke: #e11d48; }
+    .n { fill: #f1f5f9; stroke: #64748b; }
+    .f { fill: none; stroke: #7d8590; stroke-dasharray: 4 4; }
+    .ln { fill: none; stroke: #7d8590; stroke-width: 1.5; }
+    .ds { stroke-dasharray: 5 4; }
+    .ah { fill: #7d8590; }
+  </style>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path class="ah" d="M0,0 L10,5 L0,10 z"/>
+    </marker>
+  </defs>
+  <rect class="b" x="0" y="24" width="220" height="96" rx="6"/>
+  <text class="t m" x="110" y="59.4">PerWorld(</text>
+  <text class="d m" x="110" y="78.4">material=["base_color"],</text>
+  <text class="d m" x="110" y="95.4">light=["strength"])</text>
+  <text class="c m" x="110" y="140">declared at construction</text>
+  <path class="ln" d="M220,72 H288" marker-end="url(#ah)"/>
+  <text class="c m" x="254" y="64">allocates</text>
+  <rect class="g" x="290" y="0" width="250" height="150" rx="6"/>
+  <text class="t m" x="415" y="21">(nworld, n) device tables</text>
+  <text class="d m" x="400" y="42">base_color</text>
+  <text class="d m" x="490" y="42">strength</text>
+  <text class="d" x="304" y="66">world 0</text>
+  <rect x="365" y="52" width="70" height="17" rx="3" fill="#e11d48"/>
+  <text class="d m" x="490" y="66">1.0</text>
+  <text class="d" x="304" y="89">world 1</text>
+  <rect x="365" y="75" width="70" height="17" rx="3" fill="#2563eb"/>
+  <text class="d m" x="490" y="89">0.6</text>
+  <text class="d" x="304" y="112">world 2</text>
+  <rect x="365" y="98" width="70" height="17" rx="3" fill="#d97706"/>
+  <text class="d m" x="490" y="112">1.4</text>
+  <text class="d" x="304" y="135">world 3</text>
+  <rect x="365" y="121" width="70" height="17" rx="3" fill="#16a34a"/>
+  <text class="d m" x="490" y="135">0.8</text>
+  <path class="ln" d="M540,72 H598" marker-end="url(#ah)"/>
+  <text class="c m" x="569" y="64">reads</text>
+  <rect class="g" x="600" y="24" width="280" height="96" rx="6"/>
+  <text class="t m" x="740" y="59.4">render(sim)</text>
+  <text class="d m" x="740" y="78.4">world w reads row w,</text>
+  <text class="d m" x="740" y="95.4">same compiled kernel every frame</text>
+  <rect class="a" x="250" y="190" width="330" height="84" rx="6"/>
+  <text class="t m" x="415" y="219.4">write in place, between frames</text>
+  <text class="d m" x="415" y="238.4">numpy, torch or warp: per_world[f].assign(x),</text>
+  <text class="d m" x="415" y="255.4">or inside a captured CUDA graph</text>
+  <path class="ln" d="M415,190 V152" marker-end="url(#ah)"/>
+  <rect class="v" x="620" y="190" width="260" height="84" rx="6"/>
+  <text class="t m" x="750" y="219.4">zero recompiles</text>
+  <text class="d m" x="750" y="238.4">the declaration decides the kernel;</text>
+  <text class="d m" x="750" y="255.4">writes never do</text>
+</svg>

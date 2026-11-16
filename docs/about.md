@@ -1,6 +1,8 @@
 # About: citation, licence, credits
 
-## Citation
+How to cite Raywarp, its licence, and the projects and assets it builds on.
+
+## Quick start
 
 If Raywarp helps your research, please cite it:
 
@@ -37,3 +39,8 @@ Scenes and assets used in the documentation, its images and the benchmarks:
 
 NVIDIA Omniverse and Isaac Sim sample scenes are used only in the maintainers' internal tests;
 they are not redistributed and do not appear in the published images.
+
+## See also
+
+- [Changelog](../CHANGELOG.md): what changed in each release.
+- [Documentation index](README.md).

@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 924 254" role="img">
+  <title>Render pipeline: scene source, host Scene, GpuScene and Renderer once; every render(sim) refits, traces, shades, post-processes and writes device arrays</title>
+  <style>
+    text { font-family: Inter, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 13px; fill: #1f2937; }
+    .t { font-size: 14px; font-weight: 600; fill: #111827; }
+    .d { fill: #374151; }
+    .c { fill: #7d8590; }
+    .ct { fill: #7d8590; font-weight: 600; }
+    .m { text-anchor: middle; }
+    .e { text-anchor: end; }
+    rect, .k { stroke-width: 1.5; }
+    .b { fill: #dbeafe; stroke: #2563eb; }
+    .g { fill: #dcfce7; stroke: #16a34a; }
+    .a { fill: #fef3c7; stroke: #d97706; }
+    .v { fill: #ede9fe; stroke: #7c3aed; }
+    .r { fill: #ffe4e6; stroke: #e11d48; }
+    .n { fill: #f1f5f9; stroke: #64748b; }
+    .f { fill: none; stroke: #7d8590; stroke-dasharray: 4 4; }
+    .ln { fill: none; stroke: #7d8590; stroke-width: 1.5; }
+    .ds { stroke-dasharray: 5 4; }
+    .ah { fill: #7d8590; }
+  </style>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path class="ah" d="M0,0 L10,5 L0,10 z"/>
+    </marker>
+  </defs>
+  <text class="ct" x="0" y="12">once, when the scene loads</text>
+  <rect class="b" x="0" y="22" width="191" height="56" rx="6"/>
+  <text class="t m" x="95.5" y="45.9">scene source</text>
+  <text class="d m" x="95.5" y="64.9">Newton, USD, MJCF, glTF</text>
+  <rect class="a" x="243" y="22" width="191" height="56" rx="6"/>
+  <text class="t m" x="338.5" y="45.9">host Scene</text>
+  <text class="d m" x="338.5" y="64.9">NumPy, .rayw cache file</text>
+  <path class="ln" d="M191,50 H241" marker-end="url(#ah)"/>
+  <rect class="g" x="486" y="22" width="191" height="56" rx="6"/>
+  <text class="t m" x="581.5" y="45.9">GpuScene</text>
+  <text class="d m" x="581.5" y="64.9">rw.upload: device arrays</text>
+  <path class="ln" d="M434,50 H484" marker-end="url(#ah)"/>
+  <rect class="g" x="729" y="22" width="191" height="56" rx="6"/>
+  <text class="t m" x="824.5" y="45.9">Renderer</text>
+  <text class="d m" x="824.5" y="64.9">nworld, cameras, settings</text>
+  <path class="ln" d="M677,50 H727" marker-end="url(#ah)"/>
+  <rect class="f" x="0" y="104" width="920" height="140" rx="8"/>
+  <path class="ln" d="M824,78 V102" marker-end="url(#ah)"/>
+  <text class="c" x="832" y="96">render(sim)</text>
+  <text class="ct" x="14" y="126">every render(sim) call: all worlds and cameras in one launch</text>
+  <rect class="g" x="14" y="138" width="164" height="68" rx="6"/>
+  <text class="t m" x="96" y="167.9">refit BVH</text>
+  <text class="d m" x="96" y="186.9">acceleration structures</text>
+  <rect class="g" x="196" y="138" width="164" height="68" rx="6"/>
+  <text class="t m" x="278" y="167.9">trace</text>
+  <text class="d m" x="278" y="186.9">OptiX or Warp BVH</text>
+  <path class="ln" d="M178,172 H194" marker-end="url(#ah)"/>
+  <rect class="g" x="378" y="138" width="164" height="68" rx="6"/>
+  <text class="t m" x="460" y="159.4">shade</text>
+  <text class="d m" x="460" y="178.4">materials, lights,</text>
+  <text class="d m" x="460" y="195.4">shadows, reflections</text>
+  <path class="ln" d="M360,172 H376" marker-end="url(#ah)"/>
+  <rect class="g" x="560" y="138" width="164" height="68" rx="6"/>
+  <text class="t m" x="642" y="159.4">post</text>
+  <text class="d m" x="642" y="178.4">exposure, tone map,</text>
+  <text class="d m" x="642" y="195.4">AA, sensor</text>
+  <path class="ln" d="M542,172 H558" marker-end="url(#ah)"/>
+  <rect class="b" x="742" y="138" width="164" height="68" rx="6"/>
+  <text class="t m" x="824" y="159.4">outputs</text>
+  <text class="d m" x="824" y="178.4">device arrays</text>
+  <text class="d m" x="824" y="195.4">(nworld, ncam, H, W)</text>
+  <path class="ln" d="M724,172 H740" marker-end="url(#ah)"/>
+  <path class="ln" d="M196,214 v6 H542 v-6"/>
+  <text class="c m" x="369" y="236">one GPU kernel (OptiX or Warp)</text>
+</svg>
