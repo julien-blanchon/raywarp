@@ -31,6 +31,7 @@ from raywarp.core.pipeline.platform.device import host_copy
 from raywarp.core.pipeline.platform.launches import CachedLaunch
 from raywarp.core.pipeline.worlds.validator_kernels import Word, raise_flag
 from raywarp.integrations.mujoco import materials as mj_materials
+from raywarp.integrations.mujoco.flex import flex_materials
 from raywarp.integrations.mujoco.hfield import HeightFields
 from raywarp.integrations.mujoco.textures import OPAQUE_U8, MjTextureId, texels
 
@@ -111,7 +112,7 @@ def content(mjm: mujoco.MjModel, m: mjw.Model, rendered: Mask[int]) -> Content:
   """The `Content` of the rendered geoms (`rendered`: (ngeom,) mask) and flexes over every row of
   `m`."""
   matid = host_copy(m.geom_matid)[:, rendered]
-  flex_matid = np.asarray(mjm.flex_matid)
+  flex_matid = flex_materials(mjm)
   materials = np.unique(np.concatenate([matid[matid >= 0], flex_matid[flex_matid >= 0]])).astype(np.int64)
   by_row = host_copy(m.mat_texid)[:, materials] if mjm.nmat else np.full((1, 0, NTEXROLE), -1, np.int32)
   opacity = np.any(by_row[..., int(TexRole.OPACITY)] >= 0, axis=0)

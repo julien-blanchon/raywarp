@@ -698,10 +698,9 @@ A test file imports helpers of its own directory or of `fixtures/` (and `conftes
 CPU; run them on a CUDA machine or an HF GPU job (`python -m tools.hf run --flavor l4x1 -- 'python -m pytest
 tests/optix_backend ...'`).
 
-The lock has a second fork for Newton's SolverMuJoCo: the
-`newton-sim` dependency group holds Newton's `[sim]` MuJoCo / MuJoCo Warp pins, older than the
-latest pair the `mujoco` extra locks. Use a separate environment for it:
-`UV_PROJECT_ENVIRONMENT=.venv-sim uv run --group newton-sim --group bench --extra newton ...`.
+The lock holds one MuJoCo / MuJoCo Warp pair: the `newton` extra holds Newton's `[sim]` (Newton's
+SolverMuJoCo), whose pin the `mujoco` extra shares (`tests/tooling/test_packaging.py`). Alone, the
+`mujoco` extra also installs MuJoCo / MuJoCo Warp 4.
 
 `conftest.py` (at the repository root) renders MuJoCo scenes from inline XML (fixture `scene(xml, ...)`, every
 extra keyword a `RenderSettings.replace` key) and points the bake cache at a temporary directory.

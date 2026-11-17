@@ -7,20 +7,18 @@ from importlib import metadata
 import pytest
 from conftest import REPO
 from packaging.requirements import Requirement
-from packaging.version import Version
 
 ROOT = REPO
 
 
 @pytest.mark.slow
 @pytest.mark.skipif(shutil.which("uv") is None, reason="needs uv")
-@pytest.mark.parametrize("extras", ["mujoco,newton", "newton,usd", "mujoco,newton+sim"])
+@pytest.mark.parametrize("extras", ["mujoco,newton", "newton,usd"])
 def test_extras_resolve(tmp_path, extras):
-  """B37: also beside Newton's own `[sim]` extra (it pins MuJoCo / MuJoCo Warp 3.15 on Newton
-  1.7)."""
+  """B37: the `newton` extra holds Newton's `[sim]` (its MuJoCo / MuJoCo Warp pin) beside the
+  `mujoco` extra."""
   requirements = tmp_path / "requirements.in"
-  extras, _, sim = extras.partition("+")
-  requirements.write_text(f"raywarp[{extras}] @ {ROOT.as_uri()}\n" + ("newton[sim]\n" if sim else ""))
+  requirements.write_text(f"raywarp[{extras}] @ {ROOT.as_uri()}\n")
   cmd = ["uv", "pip", "compile", str(requirements), "--python", "3.13", "--no-header"]
   cmd += ["--extra-index-url", "https://pypi.nvidia.com/", "--index-strategy", "unsafe-best-match"]
   result = subprocess.run(cmd, capture_output=True, text=True, timeout=600, check=False)
@@ -28,7 +26,7 @@ def test_extras_resolve(tmp_path, extras):
     pytest.skip("no network")
   assert result.returncode == 0, result.stderr[-2000:]
   pins = dict(line.split("==", 1) for line in result.stdout.splitlines() if "==" in line and not line.startswith(" "))
-  assert "newton" in pins and "pyglet" in pins
+  assert "newton" in pins and "pyglet" in pins and "mujoco-warp" in pins
   if "mujoco" in extras:
     assert "mujoco" in pins and "mujoco-warp" in pins
 
@@ -54,15 +52,16 @@ def sim_pin_mismatches(requires: list[str], installed: dict[str, str]) -> list[s
 
 
 @pytest.mark.skipif(shutil.which("uv") is None, reason="needs uv")
-def test_newton_sim_group_locks_newtons_mujoco_pins():
-  """The `newton-sim` fork of the lock (Newton's SolverMuJoCo) holds
-  the MuJoCo / MuJoCo Warp of Newton's `[sim]` extra; the default development fork keeps the
-  latest pair (MuJoCo Warp 3.17 dropped the `Model.stat` Newton 1.7's solver reads)."""
-  sim = locked("--group", "newton-sim", "--group", "bench", "--extra", "newton")
-  dev = locked("--group", "bench", "--extra", "mujoco")
-  assert sim["newton"] == dev["newton"] == metadata.version("newton")  # Newton's own Requires-Dist below
-  assert sim_pin_mismatches(metadata.requires("newton") or [], sim) == []
-  assert Version(dev["mujoco-warp"]) >= Version(sim["mujoco-warp"])
+def test_one_lock_holds_newtons_mujoco_pins():
+  """The lock has one MuJoCo / MuJoCo Warp pair, inside Newton's `[sim]` pins (Newton's
+  SolverMuJoCo), whichever extras and groups a selection holds."""
+  pairs = [
+    locked(*selection)
+    for selection in (("--group", "bench", "--extra", "newton"), ("--extra", "mujoco"), ("--all-extras", "--group", "dev"))
+  ]
+  assert {(p["mujoco"], p["mujoco-warp"]) for p in pairs} == {(pairs[0]["mujoco"], pairs[0]["mujoco-warp"])}
+  assert pairs[0]["newton"] == metadata.version("newton")  # Newton's own Requires-Dist below
+  assert sim_pin_mismatches(metadata.requires("newton") or [], pairs[0]) == []
 
 
 def test_only_the_library_ships() -> None:

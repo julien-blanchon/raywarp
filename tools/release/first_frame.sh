@@ -43,7 +43,7 @@ for package in packages:
 extras = next(p for p in packages if p["name"] == "raywarp")["optional-dependencies"]
 for extra in sys.argv[2:]:
     for dep in extras[extra]:
-        # A forked resolution (the newton-sim group's MuJoCo) names the extra's version.
+        # A forked resolution (several versions of one package) names the extra's version.
         if "version" not in dep and len(versions[dep["name"]]) != 1:
             sys.exit(f"uv.lock: {dep['name']} has several versions and {extra} names none")
         print(f"{dep['name']}=={dep.get('version') or versions[dep['name']][0]}")

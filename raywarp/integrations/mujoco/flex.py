@@ -20,7 +20,24 @@ SURFACE: Final = 2
 VOLUME: Final = 3
 
 
-def _part(mjm: mujoco.MjModel, f: int, *, shown: bool) -> Part:
+def flex_materials(mjm: mujoco.MjModel) -> np.ndarray[[int], np.dtype[np.int32]]:
+  """(nflex,) material id of every flex. MuJoCo 4 stores one per element (`nflexelem` rows, read at
+  `flex_elemadr`), MuJoCo 3 one per flex; a flex whose elements differ raises (one material per
+  part)."""
+  matid = np.asarray(mjm.flex_matid, np.int32)
+  if matid.shape[0] == mjm.nflex:
+    return matid
+  out = np.empty(mjm.nflex, np.int32)
+  for f in range(mjm.nflex):
+    adr, num = int(mjm.flex_elemadr[f]), int(mjm.flex_elemnum[f])
+    ids = np.unique(matid[adr : adr + num])
+    if ids.size > 1:
+      raise NotImplementedError(f"flex {f}: per-element materials {ids.tolist()} (one material per flex is rendered)")
+    out[f] = ids[0] if ids.size else -1
+  return out
+
+
+def _part(mjm: mujoco.MjModel, f: int, material: int, *, shown: bool) -> Part:
   """Flex `f` as a core part: dim 1 its edges; dim 2 its triangles and shell (boundary) edges; dim 3
   its shell (surface) triangles. A flex not `shown` (outside the rendered groups) is a curve with no
   segments: no primitive, and part i stays flex i (segmentation writes ngeom + f)."""
@@ -48,7 +65,7 @@ def _part(mjm: mujoco.MjModel, f: int, *, shown: bool) -> Part:
     edges=edges,
     faces=faces,
     borders=borders,
-    material=MaterialId(int(mjm.flex_matid[f])),
+    material=MaterialId(material),
     texcoord=texcoord,
     face_texcoord=face_texcoord,
   )
@@ -79,5 +96,6 @@ def shown(mjm: mujoco.MjModel, geom_groups: Sequence[int]) -> Mask[int]:
 def deformables(mjm: mujoco.MjModel, mjd: mujoco.MjData, rendered: Mask[int], device: wp.Device) -> Deformables:
   """The model's flex objects at the vertex positions of `mjd` (after `mj_forward`), on `device`;
   `rendered`: (nflex,) the flexes shown (`shown`; the others have no primitive)."""
-  parts = [_part(mjm, f, shown=bool(rendered[f])) for f in range(mjm.nflex)]
+  materials = flex_materials(mjm)
+  parts = [_part(mjm, f, int(materials[f]), shown=bool(rendered[f])) for f in range(mjm.nflex)]
   return Deformables.create(parts, np.asarray(mjd.flexvert_xpos, np.float32).reshape(-1, 3), device=device)

@@ -53,8 +53,11 @@ def _run(normals, directions, roughness=0.0):
 def test_snell_refraction_tir_and_thin_walls():
   """Entering a solid at 45 degrees bends to asin(sin 45 / 1.5), unabsorbed; leaving it (the back
   face) bends back, absorbed by its medium over the distance inside; past the critical angle the
-  ray reflects; a thin wall keeps the ray straight, unabsorbed; roughness widens the cone by
-  2 alpha."""
+  ray reflects; a thin wall keeps the ray straight, unabsorbed. Roughness widens the cone by
+  what a microfacet tilted by alpha turns the refracted ray, |1 - n_in / n_out| alpha: 1/3 alpha
+  entering IOR 1.5, 1/2 alpha leaving, 5/6 alpha through a thin wall (both faces), 2 alpha at
+  total internal reflection; not a reflection's 2 alpha per crossing, which read glass's
+  surroundings through mips 4-6x too blurry (a milky glass sphere under a bright HDRI)."""
   s45 = math.sqrt(0.5)
   inside = math.sin(math.radians(60.0))
   normals = [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)]
@@ -70,10 +73,11 @@ def test_snell_refraction_tir_and_thin_walls():
   np.testing.assert_allclose(tint[1], 1.0)
   np.testing.assert_allclose(d[2], (s45, 0, s45), atol=1e-5)  # back out at 45 degrees
   np.testing.assert_allclose(tint[2], np.exp(-0.5 * np.array([1.0, 2.0, 3.0])), rtol=1e-5)
-  np.testing.assert_allclose(spread, 2 * 0.25)
+  np.testing.assert_allclose(spread, np.array([1 / 3, 5 / 6, 1 / 2, 5 / 6]) * 0.25, rtol=1e-5)
   # Total internal reflection: leaving at 60 degrees inside (critical angle 41.8).
-  d, _, _ = _run([(0, 0, 1)], [(inside, 0, 0.5)])
+  d, _, spread = _run([(0, 0, 1)], [(inside, 0, 0.5)], roughness=0.5)
   np.testing.assert_allclose(d[0], (inside, 0, -0.5), atol=1e-5)
+  np.testing.assert_allclose(spread, 2 * 0.25, rtol=1e-5)
 
 
 def test_material_optics_rows():

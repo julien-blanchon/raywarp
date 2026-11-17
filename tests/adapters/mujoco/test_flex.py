@@ -213,3 +213,23 @@ def test_flex_back_face_does_not_hide_the_front_face_behind_it(scene, culling):
   assert s.seg()[0][8, 8] == s.scene.flex_segment
   # Culling sees the second tetrahedron (y = 4), not the first one's far side (y < 2).
   assert (s.depth()[0][8, 8] > 3.5) == culling
+
+
+def test_flex_materials_are_one_per_flex():
+  """`flex_materials` gives each flex its material id: MuJoCo 3 stores one per flex, MuJoCo 4 one
+  per element (the same id over a flex's elements)."""
+  import mujoco
+
+  from raywarp.integrations.mujoco.flex import flex_materials
+
+  xml = (
+    _XML.format(extra="")
+    .replace("<worldbody>", '<asset><material name="red" rgba="1 0 0 1"/></asset><worldbody>')
+    .replace(
+      "</flexcomp>",
+      '</flexcomp><flexcomp name="rope" type="grid" count="6 1 1" spacing="0.12 0.12 0.12" pos="0 0 0.6"'
+      ' radius="0.04" dim="1" material="red"/>',
+    )
+  )
+  mjm = mujoco.MjModel.from_xml_string(xml)
+  assert flex_materials(mjm).tolist() == [-1, mujoco.mj_name2id(mjm, mujoco.mjtObj.mjOBJ_MATERIAL, "red")]

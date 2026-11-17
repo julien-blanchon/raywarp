@@ -55,6 +55,7 @@ if TYPE_CHECKING:
   from raywarp.core.pipeline.renderer import Renderer
 
 ClearData = NewtonSensorCamera.ClearData
+DeformableSurfaceMode = NewtonSensorCamera.DeformableSurfaceMode
 RenderConfig = NewtonSensorCamera.RenderConfig
 TextureProjectionMode = NewtonSensorCamera.TextureProjectionMode
 # RenderSettings fields the sensor sets itself (after the render options).
@@ -98,7 +99,9 @@ class SensorCamera:
     the first world showing the shape).
   * Height fields render as Newton's watertight mesh of them; the model's triangles over particles
     (cloth, soft-body skins) render as deformable surfaces read from ``state.particle_q`` at every
-    update (cloth thickened by the particle radius); loose particles and Gaussians are not rendered.
+    update (cloth thickened by the particle radius); loose particles, Gaussians and Newton's
+    deformable visual meshes are not rendered (``deformable_surface_mode``: ``BOTH`` or
+    ``SIMULATION_ONLY``, the simulation triangles).
   * ``RenderConfig``: ``enable_textures``, ``enable_shadows``, ``enable_ambient_lighting``,
     ``enable_backface_culling``, ``output_color_space``, ``anti_aliasing`` and
     ``max_distance`` map to raywarp settings (fast math is always on: ``enable_fast_math`` is
@@ -127,6 +130,7 @@ class SensorCamera:
 
   AntiAliasing = NewtonSensorCamera.AntiAliasing
   ClearData = NewtonSensorCamera.ClearData
+  DeformableSurfaceMode = NewtonSensorCamera.DeformableSurfaceMode
   GaussianRenderMode = NewtonSensorCamera.GaussianRenderMode
   RenderConfig = NewtonSensorCamera.RenderConfig
   RenderOrder = NewtonSensorCamera.RenderOrder
@@ -149,6 +153,7 @@ class SensorCamera:
     default_clear_data: ClearData | None = None,
     default_render_config: RenderConfig | None = None,
     load_textures: bool = True,
+    deformable_surface_mode: DeformableSurfaceMode = DeformableSurfaceMode.BOTH,
     lighting: Lighting | None = None,
     **render_options: object,
   ) -> None:
@@ -161,6 +166,8 @@ class SensorCamera:
       default_render_config: Render settings used by :meth:`update` when its
         ``render_config`` argument is ``None``. Defaults to ``RenderConfig()``.
       load_textures: Load mesh textures (shown with ``RenderConfig.enable_textures``).
+      deformable_surface_mode: ``BOTH`` or ``SIMULATION_ONLY``: the simulation triangles (the
+        model's deformable visual meshes are not rendered: ``BOTH`` warns when it has some).
       lighting: Lights, ambient, environment and headlight of the scene (Newton models carry
         none); None: :func:`raywarp.integrations.newton.default_lights` (or
         :meth:`create_default_light`).
@@ -169,7 +176,10 @@ class SensorCamera:
 
     Raises:
       TypeError: for a render option the sensor sets itself, or an unknown one.
+      NotImplementedError: for ``DeformableSurfaceMode.VISUAL_ONLY``.
     """
+    if deformable_surface_mode == DeformableSurfaceMode.VISUAL_ONLY:
+      raise NotImplementedError("SensorCamera: Newton's deformable visual meshes are not rendered (VISUAL_ONLY)")
     options = render_options_of(render_options, _RESERVED_OPTIONS, "SensorCamera")
     self.default_clear_data: ClearData = default_clear_data if default_clear_data is not None else ClearData()
     """Clear values used by :meth:`update` when its ``clear_data`` argument is ``None``."""
@@ -192,6 +202,11 @@ class SensorCamera:
     gaussians = model.gaussians_data
     if gaussians is not None and len(gaussians) > 0:
       warnings.warn("raywarp.integrations.newton.sensor.SensorCamera does not render Gaussians", stacklevel=2)
+    if deformable_surface_mode == DeformableSurfaceMode.BOTH and model.deformable_visual_mesh_count > 0:
+      warnings.warn(
+        "raywarp.integrations.newton.sensor.SensorCamera renders the simulation triangles, not the deformable visual meshes",
+        stacklevel=2,
+      )
     # Fails early for models whose worlds differ.
     self._get_scene()
 

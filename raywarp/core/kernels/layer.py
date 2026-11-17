@@ -33,6 +33,9 @@ wp.set_module_options({"enable_backward": False, "default_grid_stride": False})
 
 # Stop compositing translucent layers once the remaining weight cannot change an 8-bit pixel.
 MIN_THROUGHPUT: Final = 1.0 / 255.0
+# The cone widening per unit alpha of a rough thin-walled transmissive layer: both interfaces of a
+# wall of IOR 1.5, (1 - 1 / 1.5) entering + (1.5 - 1) leaving (`transmit_step`).
+_THIN_WALL_SPREAD: Final = 5.0 / 6.0
 
 # (Argument lists: the factories' docstrings; ruff format would put one argument type per line.)
 # fmt: off
@@ -115,21 +118,25 @@ def transmit_step(
     facing the ray), ior leaving; past the critical angle it reflects and stays inside (its
     medium's absorption: `absorb_exit` at the face it leaves through).
   * a thin-walled one (index 0) keeps the ray straight.
-  * a rough one (frosted glass) widens the ray's cone by 2 alpha (alpha = roughness^2, as a glossy
-    reflection's): what is behind is read through blurrier texture mips. Cheap: the geometry
-    behind stays sharp.
+  * a rough one (frosted glass) widens the ray's cone by what a microfacet tilted by alpha
+    (= roughness^2) turns the refracted ray, |1 - eta| alpha (eta = n_in / n_out: 1 / ior entering,
+    ior leaving), not a reflection's 2 alpha: glass of IOR 1.5 blurs 1/3 alpha entering, 1/2
+    alpha leaving. A thin wall crosses both interfaces at once, `_THIN_WALL_SPREAD` alpha. What
+    is behind is read through blurrier texture and environment mips. Cheap: the geometry behind
+    stays sharp.
   """
   ior = instance_optics[instance_id, wp.static(ROW_MEDIUM)][wp.static(MEDIUM_IOR)]
-  spread = spread + 2.0 * roughness * roughness
+  alpha = roughness * roughness
   if ior <= 0.0:
-    return direction, spread
+    return direction, spread + wp.static(_THIN_WALL_SPREAD) * alpha
   entering = wp.dot(normal, direction) < 0.0
   n = wp.where(entering, normal, -normal)
   eta = wp.where(entering, 1.0 / ior, ior)
   cosi = -wp.dot(n, direction)
   k = 1.0 - eta * eta * (1.0 - cosi * cosi)
   if k < 0.0:  # total internal reflection: the ray stays in the medium
-    return wp.normalize(direction + 2.0 * cosi * n), spread
+    return wp.normalize(direction + 2.0 * cosi * n), spread + 2.0 * alpha
+  spread = spread + wp.abs(1.0 - eta) * alpha
   return wp.normalize(eta * direction + (eta * cosi - wp.sqrt(k)) * n), spread
 
 

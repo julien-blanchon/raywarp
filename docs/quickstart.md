@@ -86,7 +86,7 @@ want to edit or save first.
 | what it is | a drop-in for `newton.sensors.SensorCamera`, PBR shaded |
 | how to use | change one import; the constructor and `update()` are Newton's |
 | outputs | `color_image` PBR shaded and tone mapped; depth, shape index, normal and albedo match Newton's |
-| limits | loose particles and Gaussians are not rendered; Newton 1.7 and main |
+| limits | loose particles and Gaussians are not rendered; Newton 1.8 and main |
 
 ```python
 from raywarp.integrations.newton.sensor import SensorCamera  # instead of: from newton.sensors import SensorCamera
@@ -134,8 +134,8 @@ frame = viewer.get_frame()  # the last frame
 Extra options: `lighting`, `usd` (use the stage's materials and lights), `scene_options` and any
 dotted settings field. Without lights it reproduces the look of Newton's ViewerGL.
 
-With Newton's SolverMuJoCo, also install Newton's own extra:
-`pip install "raywarp[mujoco,newton]" "newton[sim]"`. It pins the MuJoCo version the solver supports.
+The `newton` extra installs Newton with its `[sim]` extra: Newton's SolverMuJoCo and the MuJoCo /
+MuJoCo Warp version it pins.
 
 ## MuJoCo Warp
 

@@ -1,6 +1,6 @@
 """Newton + USD: a USD robot (Newton's cartpole asset) replicated into many worlds, simulated by
-Newton and rendered with the stage's own materials and lights; every world starts from its own
-pose and gets its own colours (per-world tables, no recompile).
+Newton's MuJoCo solver (MuJoCo Warp) and rendered with the stage's own materials and lights; every
+world starts from its own pose and gets its own colours (per-world tables, no recompile).
 
   python examples/demos/newton_usd_robots.py --worlds 64 --size 1280x720 --out newton_usd_robots.mp4
 """
@@ -68,7 +68,7 @@ def main(
     tint[:, robot, :3] = rng.uniform(0.1, 0.9, tint[:, robot, :3].shape)
     color.assign(tint)
 
-    solver = newton.solvers.SolverFeatherstone(model)
+    solver = newton.solvers.SolverMuJoCo(model)
     s0, s1, control = model.state(), model.state(), model.control()
     newton.eval_fk(model, model.joint_q, model.joint_qd, s0)
     with _common.record(out, _common.rgb_of(r), cols) as rec:

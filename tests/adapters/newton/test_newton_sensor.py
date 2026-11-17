@@ -517,3 +517,18 @@ def test_every_public_newton_method_is_on_the_drop_in():
   assert not missing
   for name in ("allocate_image_color_hdr", "compute_camera_transforms_usd", "sync_deformable_meshes"):
     assert callable(getattr(SensorCamera, name))
+
+
+def test_constructor_takes_newtons_keywords():
+  """Every keyword of Newton's constructor is accepted (drop-in parity). The deformable surface
+  mode: BOTH and SIMULATION_ONLY render the simulation triangles; VISUAL_ONLY (Newton's
+  deformable visual meshes only) raises."""
+  import inspect
+
+  ours = inspect.signature(SensorCamera.__init__).parameters
+  assert set(inspect.signature(NewtonSensorCamera.__init__).parameters) <= set(ours)
+  assert ours["deformable_surface_mode"].default == NewtonSensorCamera.DeformableSurfaceMode.BOTH
+  model, _state, _cams = _scene()
+  SensorCamera(model, deformable_surface_mode=SensorCamera.DeformableSurfaceMode.SIMULATION_ONLY)
+  with pytest.raises(NotImplementedError, match="VISUAL_ONLY"):
+    SensorCamera(model, deformable_surface_mode=SensorCamera.DeformableSurfaceMode.VISUAL_ONLY)

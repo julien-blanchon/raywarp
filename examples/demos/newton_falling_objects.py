@@ -1,6 +1,7 @@
 """Newton rigid bodies: boxes, spheres, capsules, cylinders and Newton's bunny (a USD mesh) dropped
 on the ground in every world, each world its own drop layout and colours (Newton's `shape_color`,
-re-read per world every frame). Newton's XPBD solver; raywarp reads `state.body_q` on the device.
+re-read per world every frame). Newton's MuJoCo solver (MuJoCo Warp, its own contacts); raywarp
+reads `state.body_q` on the device.
 
   python examples/demos/newton_falling_objects.py --worlds 16 --out newton_falling_objects.mp4
 """
@@ -43,14 +44,16 @@ def pile() -> newton.ModelBuilder:
   return b
 
 
-def scatter(state: newton.State, nworld: int, rng: np.random.Generator) -> None:
-  """Random drop positions and orientations in every world."""
-  q = state.body_q.numpy().reshape(nworld, OBJECTS, 7)
+def scatter(model: newton.Model, state: newton.State, nworld: int, rng: np.random.Generator) -> None:
+  """Random drop positions and orientations in every world: the bodies' free joints in `state`
+  (what SolverMuJoCo steps from) and their poses."""
+  q = state.joint_q.numpy().reshape(nworld, OBJECTS, 7)
   q[..., :2] = rng.uniform(-0.35, 0.35, (nworld, OBJECTS, 2))
   q[..., 2] = 0.3 + 0.35 * np.arange(OBJECTS) + rng.uniform(0.0, 0.1, (nworld, OBJECTS))
   quat = rng.normal(size=(nworld, OBJECTS, 4))
   q[..., 3:] = quat / np.linalg.norm(quat, axis=-1, keepdims=True)
-  state.body_q.assign(q.reshape(-1, 7))
+  state.joint_q.assign(q.reshape(-1))
+  newton.eval_fk(model, state.joint_q, state.joint_qd, state)
 
 
 def main(
@@ -75,17 +78,13 @@ def main(
     resolution, cols = _common.tile(size, worlds)
     r = rw.Renderer(scene, nworld=worlds, cameras=[rw.CameraSpec(fovy=45.0)], resolution=resolution)
     _common.pose_cameras(r, _common.look_at((1.6, -1.6, 1.2), (0.0, 0.0, 0.25)))
-    solver = newton.solvers.SolverXPBD(model, iterations=5)
-    collide = newton.CollisionPipeline(model)
-    contacts = collide.contacts()
     s0, s1, control = model.state(), model.state(), model.control()
-    scatter(s0, worlds, rng)
+    scatter(model, s0, worlds, rng)
+    solver = newton.solvers.SolverMuJoCo(model, njmax=1000, nconmax=500)
     with _common.record(out, _common.rgb_of(r), cols) as rec:
       for _ in range(frames):
         for _ in range(SUBSTEPS):
-          s0.clear_forces()
-          collide.collide(s0, contacts)
-          solver.step(s0, s1, control, contacts, 1.0 / (_common.FPS * SUBSTEPS))
+          solver.step(s0, s1, control, None, 1.0 / (_common.FPS * SUBSTEPS))
           s0, s1 = s1, s0
         r.render(s0)
         rec.write(_common.rgb_of(r))

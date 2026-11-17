@@ -813,3 +813,36 @@ def test_world_colors_off_keeps_world_0s_and_reports_it():
   gpu = rw_newton.scene(model, adapter=adapter)
   assert gpu.report.dropped["newton.shape_color(per world: world 0's shown)"] == 1
   assert rw_newton.build.WORLD_COLORS_META not in rw_newton.load(model, adapter=adapter).meta
+
+
+def test_renders_the_bodies_newtons_mujoco_solver_steps():
+  """Newton's SolverMuJoCo (MuJoCo Warp) steps the bodies' free joints and writes `state.body_q`:
+  a box dropped from 1 m in each of two worlds (its own start height per world, set in the
+  state's `joint_q`, what the solver steps from) lands on the ground, seen from above."""
+  scene = newton.ModelBuilder()
+  scene.add_ground_plane()
+  for _ in range(2):
+    world = newton.ModelBuilder()
+    body = world.add_body(xform=wp.transform((0.0, 0.0, 1.0), wp.quat_identity()))
+    world.add_shape_box(body, hx=0.2, hy=0.2, hz=0.2)
+    scene.add_world(world)
+  model = scene.finalize(device="cpu")
+  s0, s1, control = model.state(), model.state(), model.control()
+  q = s0.joint_q.numpy().reshape(2, 7)
+  q[1, 2] = 1.5
+  s0.joint_q.assign(q.reshape(-1))
+  newton.eval_fk(model, s0.joint_q, s0.joint_qd, s0)
+  settings = rw.RenderSettings(outputs=rw.Outputs.of("depth"), gi=rw.settings.GI(enabled=False))
+  r = rw.Renderer(_gpu(model), nworld=2, cameras=[rw.CameraSpec(fovy=20.0)], resolution=(5, 5), settings=settings)
+  r.camera_pose.assign(np.array([[(0.0, 0.0, 4.0, 0.0, 0.0, 0.0, 1.0)]] * 2, np.float32))
+
+  def top() -> np.ndarray:
+    r.render(s0)
+    return 4.0 - required(r.outputs.depth).numpy().reshape(2, 5, 5)[:, 2, 2]
+
+  np.testing.assert_allclose(top(), (1.2, 1.7), atol=1e-3)
+  solver = newton.solvers.SolverMuJoCo(model)
+  for _ in range(300):  # 1.5 s
+    solver.step(s0, s1, control, None, 0.005)
+    s0, s1 = s1, s0
+  np.testing.assert_allclose(top(), 0.4, atol=0.02)
