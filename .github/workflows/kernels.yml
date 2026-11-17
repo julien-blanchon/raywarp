@@ -193,7 +193,7 @@ jobs:
           # skipped architecture's pins entry is the earlier commit's).
           built=$(cat ".fill_all/${TAG}.archs")
           # shellcheck disable=SC2086
-          content=$(python3 -c 'import json, sys; b = json.load(open("raywarp/core/build/kernel_cache/kernels.json"))["bundles"]; print(", ".join(f"sm{a} bundle {b[a][\"content\"]}" for a in sys.argv[1:]))' $built)
+          content=$(python3 -c 'import json, sys; b = json.load(open("raywarp/core/build/kernel_cache/kernels.json"))["bundles"]; print(", ".join("sm%s bundle %s" % (a, b[a]["content"]) for a in sys.argv[1:]))' $built)
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -c "$branch"

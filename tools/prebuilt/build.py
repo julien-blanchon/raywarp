@@ -403,7 +403,7 @@ def plan_pack(
   if seed is not None:
     with tempfile.TemporaryDirectory() as scratch:
       published = open_seed(seed, Path(scratch), b.manifest.arch, driver)
-    held |= {n for n in names if prebuilt.module_path(n) in published.files.files}
+    held |= {n for n in names if published is not None and prebuilt.module_path(n) in published.files.files}
   return len(names - held), len(names)
 
 
@@ -552,16 +552,22 @@ class Seed:
   files: store.Listing
 
 
-def open_seed(url: str, local: Path, arch: int, driver: str) -> Seed:
+def open_seed(url: str, local: Path, arch: int, driver: str) -> Seed | None:
   """The published pack at `url` (its file list and manifest fetched into `local`) as a seed of a
   pack of SM version `arch` and NVIDIA driver `driver`: an earlier release's modules of unchanged
-  PTX and record (a module's name is `modules.digest` of both) are the same modules.
+  PTX and record (a module's name is `modules.digest` of both) are the same modules. None: no pack
+  is published there (a release of another driver: the pack job's driver changed, every module
+  is then made or taken from the build cache).
 
   Raises:
-    SystemExit: it cannot be fetched, or it is of another architecture or driver.
+    SystemExit: it is damaged, or of another architecture or driver.
   """
   try:
     files = store.listing(local, url, None)
+  except store.FetchError as e:
+    print(f"pack: no seed pack at {url} ({e}): its modules are made", flush=True)
+    return None
+  try:
     failed = store.fetch(local, url, files, [prebuilt.MANIFEST])
   except store.FetchError as e:
     raise SystemExit(f"the seed pack {url}: {e}") from e

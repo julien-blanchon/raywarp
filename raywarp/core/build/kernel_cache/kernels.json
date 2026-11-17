@@ -1,10 +1,15 @@
 {
- "bucket": "blanchon/warp-pbr-kernels",
+ "bucket": "blanchon/raywarp-kernels",
  "bundles": {
   "120": {
-   "content": "ba2ddf28db7190bf",
-   "files": "63017777025e9d0a8abf8d2f12c67fe25164032f8acd7af0f1fcf49a66de05f3",
+   "content": "57a569bafa4b9e1a",
+   "files": "5430812435ad134e66fab50471efe7cbb87f48bf792892ca398b9a8c7a139b7f",
+   "key": "f3fe1f81b846e65ee193f62b",
+   "packs": {
+    "620.70.06": "3dac6eeccb776e2731db68d4044cd8a042ed6569a7f4bc6ed6bec2d3797c241b"
+   },
    "warp": "1.18.0"
   }
- }
+ },
+ "format": 4
 }

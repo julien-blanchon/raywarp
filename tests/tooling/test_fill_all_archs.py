@@ -254,7 +254,7 @@ def test_each_architecture_gets_its_backend_census_and_pack_flavor(tmp_path: Pat
   assert "--profiles rtx_pro_6000,l4,a10g" in _spec(env, "census-0")[1]
   assert "--census /tmp/census/sm89/*.json" in _spec(env, "sm89-merge")[1]
   assert "--census" not in _spec(env, "sm80-merge")[1]
-  assert _spec(env, "sm120-pack-0")[0] == "rtx-pro-6000 35m" and "620.70.06" in _spec(env, "sm120-pack-0")[1]
+  assert _spec(env, "sm120-pack-0")[0] == "rtx-pro-6000 35m" and "FATAL" not in _spec(env, "sm120-pack-0")[1]
   head, pack = _spec(env, "sm89-pack-0")
   assert head == "l4x1 35m" and "--shard 0/6" in pack and "--groups fast+default:own" in pack and "FATAL" not in pack
   assert _spec(env, "sm86-pack-0")[0] == "a10g-large 35m" and _spec(env, "sm80-release")[0].startswith("cpu-upgrade")
@@ -351,6 +351,13 @@ def test_a_release_compiles_only_what_no_earlier_fill_made(tmp_path: Path) -> No
   only = "scene=fs_point0_plain_none_mesh_n,tier=fast,layout=shared,gi=False,outputs=shaded,set=env"
   _, ran, made = _refill(tmp_path, "t4", FILL_ARGS="--niche", ONLY=only)
   assert made == [] and "sm120-release" in ran and not any("pack" in j or j.startswith("census") for j in ran)
+  assert list(json.loads((tmp_path / "pins.json").read_text())["bundles"]["120"]["packs"]) == ["580.1"]
+
+  # No pinned driver (the default since HF moved to 620.70.06): the merge plans against the newest
+  # driver the cache holds (580.1: nothing left), still one pack job runs (it learns the machines'
+  # driver), takes every module from the cache, and the pins carry its driver's pack.
+  _, ran, made = _refill(tmp_path, "t5", FILL_ARGS="--niche", ONLY=only, DRIVER_120="")
+  assert made == [] and "sm120-pack-0" in ran and "sm120-pack-1" not in ran
   assert list(json.loads((tmp_path / "pins.json").read_text())["bundles"]["120"]["packs"]) == ["580.1"]
 
 

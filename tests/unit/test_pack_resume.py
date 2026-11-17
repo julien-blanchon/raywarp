@@ -265,6 +265,13 @@ def test_a_seed_of_another_driver_is_refused(tmp_path: Path, made: list[FakeCont
   assert made
 
 
+def test_no_pack_published_for_the_job_s_driver_is_no_seed(tmp_path: Path) -> None:
+  """`open_seed` of a driver no release published (HF moved its machines to a new driver: the pack
+  job appends its own driver to the seed URL) is None: every module is made, the build goes on."""
+  (tmp_path / "pub").mkdir()
+  assert build.open_seed((tmp_path / "pub" / "620.70.06").as_uri(), tmp_path / "seed", 120, "620.70.06") is None
+
+
 def test_the_runtime_finds_a_fill_s_modules_by_the_pack_s_names(
   tmp_path: Path, made: list[FakeContext], monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -987,15 +987,22 @@ def test_the_refill_job_commands_hand_over_archives(tmp_path: Path) -> None:
   assert spec("sm120-p0")[1].count("--exclude-x") == 1 and "--exclude-x --out /tmp/list" in spec("sm120-list-0")[1]
   merge = spec("sm120-merge")[1]
   assert "-ge 3 ]" in merge and "--census /tmp/census/sm120/*.json" in merge and f"{base}-sm120-merged-ptx.tar" in merge
-  assert "plan-pack" in merge and "--keep /cache/sm120/optix/620.70.06" in merge
+  # No pinned driver: the merge plans against the newest driver the cache holds modules for, and
+  # each pack job packs for its own (a driver upgrade on HF never fails the build).
+  assert "plan-pack" in merge and "sort -V | tail -1" in merge and "--keep /cache/sm120/optix/$exp" in merge
   head, pack = spec("sm120-pack-0")
-  assert head == "rtx-pro-6000 35m" and "620.70.06" in pack and "--shard 0/9" in pack
+  assert head == "rtx-pro-6000 35m" and "FATAL" not in pack and "--shard 0/9" in pack
   assert "--groups quality:own,fast+default:own" in pack
   assert "--workers 32" in pack and "--deadline $((HF_DEADLINE - 600))" in pack and "--keep /cache/sm120/optix/$drv" in pack
   assert "--seed" not in pack
-  env |= {"SEED": "c0@r0", "SEED_GUARD": ""}  # the published pack of bundle c0 (driver 620.70.06) seeds every pack
-  seeded = "--seed https://huggingface.co/buckets/blanchon/raywarp-kernels/resolve/sm120/c0/optix/620.70.06 "
+  env |= {"SEED": "c0@r0", "SEED_GUARD": ""}  # bundle c0's published pack of each job's own driver seeds it
+  seeded = "--seed https://huggingface.co/buckets/blanchon/raywarp-kernels/resolve/sm120/c0/optix/$drv "
   assert all(seeded in spec(f"sm120-pack-{i}")[1] for i in (0, 8))
+  # A pinned driver: checked in every pack job, and the merge plans for it.
+  env["DRIVER_120"] = "620.70.06"
+  assert "FATAL: driver $drv, the pack is for 620.70.06" in spec("sm120-pack-0")[1]
+  assert "--keep /cache/sm120/optix/$exp" in spec("sm120-merge")[1] and "exp=620.70.06" in spec("sm120-merge")[1]
+  del env["DRIVER_120"]
   release = spec("sm120-release")[1]
   assert "merge-packs" in release and "kernels layout /tmp/b/raywarp_kernels/sm120 /tmp/layout" in release
 

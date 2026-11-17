@@ -159,14 +159,22 @@ PACK_MARGIN=${PACK_MARGIN:-600}
 # most PACKS_<A>): w15rel2 measured 413 per RTX PRO 6000 job; the L4 / A10G scaled by their vCPUs.
 PACK_MODULES_120=${PACK_MODULES_120:-400} PACK_MODULES_89=${PACK_MODULES_89:-100} PACK_MODULES_86=${PACK_MODULES_86:-130}
 L4_FLAVOR=${L4_FLAVOR:-l4x1}  # sm_89: l4x1 ($0.80/h) or l40sx1 ($1.80/h, more cores)
-# The release driver of each architecture's module pack ("" : the pack job's own, recorded).
-DRIVER_120=${DRIVER_120-620.70.06} DRIVER_89=${DRIVER_89-} DRIVER_86=${DRIVER_86-}
+# The release driver of each architecture's module pack. "" (every architecture's default): the pack
+# job's own driver, recorded in the pack's manifest and the pins (`merge-packs` refuses packs of two
+# drivers); a driver upgrade on HF's machines then makes a pack for the new driver instead of failing
+# the build (2026-11-17: the RTX PRO 6000 machines moved from 580.178.04 to 620.70.06 and the pinned
+# check failed every pack job). A version: checked in each pack job (exit 3 on another). The runtime
+# uses a pack only on its own driver (`prebuilt.module_pack`); on another, OptiX creates each module
+# on first use. Without a pin, the merge plans against the newest driver the build cache holds modules
+# for (`expected_driver`) and at least one pack job runs (it learns the machines' current driver).
+DRIVER_120=${DRIVER_120-} DRIVER_89=${DRIVER_89-} DRIVER_86=${DRIVER_86-}
 # The seed of the packs (`build.py pack --seed`): a published pack of the same architecture and
 # driver whose modules the packs fetch instead of making them (a module's name is the digest of its
 # PTX and record: unchanged ones keep their names; the pack stays the census's set). SEED=auto:
-# for each OptiX architecture with a DRIVER_<A>, the bundle raywarp/core/build/kernel_cache/
-# kernels.json pins for it, if its pins list a pack of that driver (format 1 pins list no packs:
-# assumed), and the tree its refill ran from (the latest commit of kernels.json naming that bundle:
+# for each OptiX architecture, the bundle raywarp/core/build/kernel_cache/kernels.json pins for it,
+# if its pins list a pack (of DRIVER_<A> when pinned; format 1 pins list no packs: assumed); each
+# pack job seeds from that bundle's pack of its own driver, when published (none: every module
+# made), and the tree its refill ran from (the latest commit of kernels.json naming that bundle:
 # "... bundle CONTENT ... (refill TAG from REV)"); SEED_<A>=CONTENT@REV names one; SEED="": none. The name does not cover the code that
 # turns a record into OptiX's compile options: a refill whose SEED_GUARD files differ from REV's
 # refuses the seed (a module of other options would be a cache miss at first use); read that diff,
@@ -278,16 +286,18 @@ only() {  # the dry run's --only flags
   [ -z "$ONLY" ] || echo "$ONLY" | tr ',' '\n' | sed 's/^/--only /' | tr '\n' ' '
 }
 
-seed_url() {  # A: the seed pack's URL of architecture A ("" without one), its options code checked against REV's
+seed_url() {  # A: the seed bundle's packs URL of architecture A (`.../optix`: a pack job appends its
+  # driver; "" without one), its options code checked against REV's
   local seed content rev changed driver
   driver=$(per_arch DRIVER "$1" "")
   seed=$(per_arch SEED "$1" "$SEED")
-  [ -n "$seed" ] && [ -n "$driver" ] || return 0
+  [ -n "$seed" ] || return 0
   if [ "$seed" = auto ]; then
     content=$($PY -c "
 import json, sys
 b = json.load(open('raywarp/core/build/kernel_cache/kernels.json'))['bundles'].get('$1')
-print(b['content'] if b and ('packs' not in b or '$driver' in b['packs']) else '')")
+packs = b.get('packs') if b else None
+print(b['content'] if b and (packs is None or ('$driver' in packs if '$driver' else packs)) else '')")
     [ -n "$content" ] || return 0  # no published pack of this architecture and driver
     # The latest pins commit naming this bundle (a release that skipped the architecture kept it).
     seed=$(git log --format=%s -- raywarp/core/build/kernel_cache/kernels.json | sed -n "s/.*bundle \($content\)[ ,].*from \([0-9a-f]*\))\$/\1@\2/p" | head -1)
@@ -300,7 +310,7 @@ print(b['content'] if b and ('packs' not in b or '$driver' in b['packs']) else '
   changed=""
   [ -z "$SEED_GUARD" ] || changed=$(git diff --name-only "$rev" HEAD -- $SEED_GUARD) || return 1
   [ -z "$changed" ] || { echo "SEED $seed (sm$1): the options code changed since $rev ($changed): read the diff, then narrow SEED_GUARD or set SEED=\"\"" >&2; return 1; }
-  echo "https://huggingface.co/buckets/$BUCKET/resolve/sm$1/$content/optix/$driver"
+  echo "https://huggingface.co/buckets/$BUCKET/resolve/sm$1/$content/optix"
 }
 
 all_scenes() {  # every census scene, one per line (a public checkout: the fs_* ones)
@@ -357,7 +367,7 @@ job_spec() {  # NAME: "flavor cap" and, on the next line, the job's command
       check=""
       [ -z "$driver" ] || check="[ \"\$drv\" = $driver ] || { echo \"FATAL: driver \$drv, the pack is for $driver\"; exit 3; };"
       echo "$(pack_flavor "$arch") $PACK_CAP"
-      echo "$BEAT drv=\$(nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -1); echo \"pack driver \$drv\"; $check mkdir -p /tmp/b /tmp/census && cp $b-merged-ptx.tar /tmp/b.tar && tar -xf /tmp/b.tar -C /tmp/b && cp $b-census.tar /tmp/c.tar && tar -xf /tmp/c.tar -C /tmp/census && python -m tools.prebuilt.build pack --bundle /tmp/b/raywarp_kernels/sm$arch --workers $(pack_workers "$arch") --out /tmp/pack --shard $i/$n --select /tmp/census/*.json --groups $(pack_groups "$arch") --keep $keep_dir ${url:+--seed $url }--deadline \$((HF_DEADLINE - $PACK_MARGIN)) 2>&1 | grep --line-buffered -E '^pack|Error|Traceback' && $(keep /tmp/pack "$b-pack-$i.tar" raywarp_optix_modules)" ;;
+      echo "$BEAT drv=\$(nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -1); echo \"pack driver \$drv\"; $check mkdir -p /tmp/b /tmp/census && cp $b-merged-ptx.tar /tmp/b.tar && tar -xf /tmp/b.tar -C /tmp/b && cp $b-census.tar /tmp/c.tar && tar -xf /tmp/c.tar -C /tmp/census && python -m tools.prebuilt.build pack --bundle /tmp/b/raywarp_kernels/sm$arch --workers $(pack_workers "$arch") --out /tmp/pack --shard $i/$n --select /tmp/census/*.json --groups $(pack_groups "$arch") --keep $keep_dir ${url:+--seed $url/\$drv }--deadline \$((HF_DEADLINE - $PACK_MARGIN)) 2>&1 | grep --line-buffered -E '^pack|Error|Traceback' && $(keep /tmp/pack "$b-pack-$i.tar" raywarp_optix_modules)" ;;
     p* | w*)
       local i=${job:1} root=/tmp/fill part="$b-partial-$job.tar" final="$b-final-$job.tar" fill
       case $job in
@@ -382,8 +392,10 @@ job_spec() {  # NAME: "flavor cap" and, on the next line, the job's command
         census_get="mkdir -p /tmp/census/sm$arch && cp $CACHE/sm$arch/census/$ck/*.json /tmp/census/sm$arch/"
         census_arg="--census /tmp/census/sm$arch/*.json"
         census_keep="$(keep /tmp/census/sm$arch "$b-census.tar")"
-        # With a release driver: the modules left to make (neither in the cache nor in the seed pack).
-        [ -z "$driver" ] || plan="python -m tools.prebuilt.build plan-pack --bundle /tmp/dist/raywarp_kernels/sm$arch --select /tmp/census/sm$arch/*.json --groups $(pack_groups "$arch") --keep $CACHE/sm$arch/optix/$driver ${url:+--seed $url }--driver $driver --out /tmp/todo 2>&1 | grep -E '^pack|Error|Traceback' && cp /tmp/todo $b-pack-todo"
+        # The modules left to make (neither in the cache nor in the seed pack) for the expected
+        # driver: DRIVER_<A>, else the newest the cache holds modules for (none: no plan, every
+        # pack job runs); -pack-todo: "<count> <driver>".
+        plan="{ exp=${driver:-\$(ls $CACHE/sm$arch/optix 2>/dev/null | sort -V | tail -1)}; if [ -z \"\$exp\" ]; then echo 'pack plan: no driver known yet'; else python -m tools.prebuilt.build plan-pack --bundle /tmp/dist/raywarp_kernels/sm$arch --select /tmp/census/sm$arch/*.json --groups $(pack_groups "$arch") --keep $CACHE/sm$arch/optix/\$exp ${url:+--seed $url/\$exp }--driver \$exp --out /tmp/todo 2>&1 | grep -E '^pack|Error|Traceback' && echo \"\$(cat /tmp/todo) \$exp\" > $b-pack-todo; fi; }"
       fi
       echo "cpu-upgrade $MERGE_CAP"
       echo "$BEAT $(wait_for "$b-final-[pw]*.tar" "$((np + nw))") $census_wait mkdir -p /tmp/s /tmp/census && for s in$shards; do cp $b-final-\$s.tar /tmp/s.tar && mkdir -p /tmp/s/\$s && tar -xf /tmp/s.tar -C /tmp/s/\$s && rm /tmp/s.tar || exit 1; done && $census_get && python -m tools.prebuilt.build merge \$(for s in$shards; do echo --bundle /tmp/s/\$s/raywarp_kernels/sm$arch; done) $census_arg --out /tmp/dist 2>&1 | grep -E '^(bundle|merge)|Error|Traceback' && $(keep /tmp/dist "$b-merged.tar" raywarp_kernels) && { [ ! -d /tmp/dist/raywarp_kernels/sm$arch/ptx ] || $(keep /tmp/dist "$b-merged-ptx.tar" "raywarp_kernels/sm$arch/ptx raywarp_kernels/sm$arch/manifest.json"); } && $census_keep && $plan" ;;
@@ -396,7 +408,7 @@ job_spec() {  # NAME: "flavor cap" and, on the next line, the job's command
         got="for i in \$(seq 0 $((n - 1))); do mkdir -p /tmp/p/\$i && cp $b-pack-\$i.tar /tmp/p.tar && tar -xf /tmp/p.tar -C /tmp/p/\$i || exit 1; done && python -m tools.prebuilt.build merge-packs \$(for d in /tmp/p/*/raywarp_optix_modules/sm$arch-drv*; do echo --pack \$d; done) --out /tmp/pack"
       elif assembled "$arch"; then
         # Every module is in the cache or the seed pack: the pack assembled here, no GPU.
-        got="mkdir -p /tmp/census && cp $b-census.tar /tmp/c.tar && tar -xf /tmp/c.tar -C /tmp/census && python -m tools.prebuilt.build pack --bundle /tmp/b/raywarp_kernels/sm$arch --assemble $driver --out /tmp/pack --select /tmp/census/*.json --groups $(pack_groups "$arch") --keep $CACHE/sm$arch/optix/$driver ${url:+--seed $url} 2>&1 | grep --line-buffered -E '^pack|Error|Traceback'"
+        got="mkdir -p /tmp/census && cp $b-census.tar /tmp/c.tar && tar -xf /tmp/c.tar -C /tmp/census && python -m tools.prebuilt.build pack --bundle /tmp/b/raywarp_kernels/sm$arch --assemble $driver --out /tmp/pack --select /tmp/census/*.json --groups $(pack_groups "$arch") --keep $CACHE/sm$arch/optix/$driver ${url:+--seed $url/$driver} 2>&1 | grep --line-buffered -E '^pack|Error|Traceback'"
       fi
       if (( n )) || assembled "$arch"; then pack="--pack \$(ls -d /tmp/pack/raywarp_optix_modules/sm$arch-drv*)"; fi
       refs="python -m tools.prebuilt.build_cache refs --arch $arch --bundle /tmp/b/raywarp_kernels/sm$arch ${pack} --list-key $lk${ck:+ --census-key $ck} --out /tmp/refs.json && cp /tmp/refs.json $b-refs.json"
@@ -514,18 +526,23 @@ b = p.get('bundles', {}).get('$1') if p.get('bucket') == '$BUCKET' else None
 print(f'https://huggingface.co/buckets/$BUCKET/resolve/sm$1/{b[\"content\"]}' if b else '')"
 }
 
-plan_packs() {  # each OptiX architecture with a release driver: its pack jobs from the modules its
-  # merge found left to make (none: the release assembles the pack), once
-  local a todo n per most tmp
+plan_packs() {  # each OptiX architecture whose merge planned its pack ("<count> <driver>": the
+  # modules left to make for the expected driver): its pack jobs, once. None left: with a pinned
+  # DRIVER_<A>, no GPU job (the release assembles the pack); without one, one pack job (the
+  # machines may run another driver than the cache's newest: the job learns it and makes or takes
+  # its modules).
+  local a todo exp n per most tmp
   tmp=$(mktemp)
   for a in $(optix_archs); do
     grep -q "^$a " "$STATE.packs" 2>/dev/null && continue
-    [ -n "$(per_arch DRIVER "$a" "")" ] || continue
-    command $HF_CLI buckets cp "hf://buckets/$PROJECT_BUCKET/runs/$(day)-$tag-sm$a-pack-todo" "$tmp" || continue
-    todo=$(tr -dc 0-9 < "$tmp") per=$(per_arch PACK_MODULES "$a" 400) most=$(packs "$a")
+    command $HF_CLI buckets cp "hf://buckets/$PROJECT_BUCKET/runs/$(day)-$tag-sm$a-pack-todo" "$tmp" 2>/dev/null || continue
+    read -r todo exp < "$tmp" || true
+    [ -n "$todo" ] || continue
+    per=$(per_arch PACK_MODULES "$a" 400) most=$(packs "$a")
     n=$(( (todo + per - 1) / per )); (( n <= most )) || n=$most
+    [ -n "$(per_arch DRIVER "$a" "")" ] || (( n >= 1 )) || n=1
     echo "$a $n" >> "$STATE.packs"
-    echo "sm$a: $todo pack modules left to make: $n pack jobs"
+    echo "sm$a: $todo pack modules left to make for driver $exp: $n pack jobs"
   done
   rm -f "$tmp"
 }
