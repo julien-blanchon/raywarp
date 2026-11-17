@@ -987,14 +987,14 @@ def test_the_refill_job_commands_hand_over_archives(tmp_path: Path) -> None:
   assert spec("sm120-p0")[1].count("--exclude-x") == 1 and "--exclude-x --out /tmp/list" in spec("sm120-list-0")[1]
   merge = spec("sm120-merge")[1]
   assert "-ge 3 ]" in merge and "--census /tmp/census/sm120/*.json" in merge and f"{base}-sm120-merged-ptx.tar" in merge
-  assert "plan-pack" in merge and "--keep /cache/sm120/optix/580.178.04" in merge
+  assert "plan-pack" in merge and "--keep /cache/sm120/optix/620.70.06" in merge
   head, pack = spec("sm120-pack-0")
-  assert head == "rtx-pro-6000 35m" and "580.178.04" in pack and "--shard 0/9" in pack
+  assert head == "rtx-pro-6000 35m" and "620.70.06" in pack and "--shard 0/9" in pack
   assert "--groups quality:own,fast+default:own" in pack
   assert "--workers 32" in pack and "--deadline $((HF_DEADLINE - 600))" in pack and "--keep /cache/sm120/optix/$drv" in pack
   assert "--seed" not in pack
-  env |= {"SEED": "c0@r0", "SEED_GUARD": ""}  # the published pack of bundle c0 (driver 580.178.04) seeds every pack
-  seeded = "--seed https://huggingface.co/buckets/blanchon/raywarp-kernels/resolve/sm120/c0/optix/580.178.04 "
+  env |= {"SEED": "c0@r0", "SEED_GUARD": ""}  # the published pack of bundle c0 (driver 620.70.06) seeds every pack
+  seeded = "--seed https://huggingface.co/buckets/blanchon/raywarp-kernels/resolve/sm120/c0/optix/620.70.06 "
   assert all(seeded in spec(f"sm120-pack-{i}")[1] for i in (0, 8))
   release = spec("sm120-release")[1]
   assert "merge-packs" in release and "kernels layout /tmp/b/raywarp_kernels/sm120 /tmp/layout" in release

@@ -216,3 +216,27 @@ def test_bucket_names_are_written_in_one_place() -> None:
   assert names["CACHE_BUCKET"] == "blanchon/raywarp-build-cache"
   assert "tools/prebuilt/buckets.env" in (ROOT / "tools" / "prebuilt" / "fill_all.sh").read_text()
   assert "tools/prebuilt/buckets.env" in (ROOT / ".github" / "workflows" / "kernels.yml").read_text()
+
+
+def test_spread_splits_word_groups_and_a_dry_run_keeps_a_handful(tmp_path: Path) -> None:
+  """`fill spread`: a software word group of 30 modules becomes owners of at most `GROUP_CHUNK`
+  (its links no longer one after another in one shard: dry run 43978938600 hit the cap), spread over
+  the shards; `--limit 6` keeps two word modules of the smallest group and the four smallest others;
+  the summary counts each shard's word modules and their expected wall."""
+  point = {"scene": "s"}
+  words = [[f"wp_w{i:02d}_0123456", "g1", 1000, point] for i in range(30)]
+  small = [[f"wp_v{i}_0123456", "g0", 10, point] for i in range(3)]
+  plain = [[f"wp_p{i}_0123456", f"wp_p{i}_0123456", 100 + i, point] for i in range(8)]
+  (tmp_path / "part-0.json").write_text(json.dumps({"builds": [], "modules": words + small + plain}))
+  fill.spread(tmp_path, 0, 4)
+  shards = [json.loads((tmp_path / f"warp-{i}.json").read_text())["modules"] for i in range(4)]
+  assert sorted(n for s in shards for n in s) == sorted(str(m[0]) for m in words + small + plain)
+  assert all(sum(n.startswith("wp_w") for n in s) <= 2 * fill.GROUP_CHUNK for s in shards)
+  assert sum(1 for s in shards if any(n.startswith("wp_w") for n in s)) >= 3  # 30 words: 3 chunks
+  summary = json.loads((tmp_path / "listing.json").read_text())
+  assert sum(summary["word_modules"]) == 33 and summary["word_wall_min"] == [
+    round(n * fill.WORD_WALL_S / 60) for n in summary["word_modules"]
+  ]
+  fill.spread(tmp_path, 0, 1, limit=6)
+  (kept,) = [json.loads((tmp_path / "warp-0.json").read_text())["modules"]]
+  assert sorted(kept) == ["wp_p0_0123456", "wp_p1_0123456", "wp_p2_0123456", "wp_p3_0123456", "wp_v0_0123456", "wp_v1_0123456"]

@@ -644,7 +644,10 @@ def _compile_warp(
         kept.keep_warp(wp.config.version, cache / name)
         held.add(name)
 
-  n = _run(workers, [functools.partial(_fill_group, ms, arch, cache) for ms in groups.values()], "group", t0, keep)
+  # A group's links run one after another (9-55 s each): its modules in chunks of `GROUP_CHUNK`,
+  # each a job of its own (its own LTO-IR), so `workers` link at once.
+  chunks = [ms[i : i + GROUP_CHUNK] for ms in groups.values() for i in range(0, len(ms), GROUP_CHUNK)]
+  n = _run(workers, [functools.partial(_fill_group, ms, arch, cache) for ms in chunks], "group", t0, keep)
   return n + _run(workers, [functools.partial(_compile_module, m, arch, cache) for m in plain], "module", t0, keep)
 
 
@@ -920,12 +923,25 @@ def listing(
   )
 
 
-def spread(out: Path, ptx_shards: int, warp_shards: int) -> None:
+# The most modules of one software word group compiled as one job (`_compile_warp`, `spread`): one
+# LTO-IR (minutes) and as many links (9-55 s each on cpu-upgrade, one after another).
+GROUP_CHUNK: Final = 12
+# Shard wall per software word module on cpu-upgrade (4 workers): a link (9-55 s, dry run
+# 43978938600) and its share of its chunk's LTO-IR, over the workers: the sizing estimate `spread`
+# prints.
+WORD_WALL_S: Final = 17
+
+
+def spread(out: Path, ptx_shards: int, warp_shards: int, *, chunk: int = GROUP_CHUNK, limit: int = 0) -> None:
   """The shard files of a sharded fill (`fill --shard`) from the listing parts in `out`
   (`listing`): `ptx-<i>.json` (one point of each build, every `ptx_shards`-th build from the i-th),
   `warp-<i>.json` (the modules, their owners spread over `warp_shards` shards by size, `_spread`,
   each `SHARD_ALONE` owner in a shard of its own, and one point of each) and `listing.json` (the
-  counts and each Warp shard's size)."""
+  counts and each Warp shard's size). `chunk`: a software word group of more modules is split into
+  owners of at most `chunk` (each its own LTO-IR and links: a group's links run one after another,
+  9-55 s each, so a whole group of hundreds outlasted a shard's cap; dry run 43978938600).
+  `limit`: only that many modules (a dry run's proof of the path: the smallest word group's first
+  two and the smallest other modules)."""
   builds: dict[str, dict[str, str]] = {}
   made: dict[str, tuple[str, int, dict[str, str]]] = {}
   for path in sorted(out.glob("part-*.json"), key=lambda p: int(p.stem.split("-")[1])):
@@ -934,6 +950,9 @@ def spread(out: Path, ptx_shards: int, warp_shards: int) -> None:
       builds.setdefault(key, point)
     for name, owner, size, point in data["modules"]:
       made.setdefault(name, (owner, size, point))
+  made = _chunked(made, chunk)
+  if limit:
+    made = _limited(made, limit)
   keys = list(builds)
   for i in range(ptx_shards if keys else 0):
     _write(out / f"ptx-{i}.json", {"points": _unique(builds[k] for k in keys[i::ptx_shards])})
@@ -949,8 +968,10 @@ def spread(out: Path, ptx_shards: int, warp_shards: int) -> None:
     shards = [[o] for o in alone] + _spread({o: n for o, n in sizes.items() if o not in alone}, warp_shards - len(alone))
   else:
     shards = _spread(sizes, warp_shards)
+  words: list[int] = []
   for i, members in enumerate(shards):
     names = [n for owner in members for n in owners[owner]]
+    words.append(sum(_word_owner(n, made[n][0].split("#")[0]) for n in names))
     _write(out / f"warp-{i}.json", {"points": _unique(made[n][2] for n in names), "modules": names})
   summary = {
     "builds": len(keys),
@@ -960,6 +981,8 @@ def spread(out: Path, ptx_shards: int, warp_shards: int) -> None:
     "alone": len(alone),
     "warp_bytes": [sum(sizes[o] for o in members) for members in shards],
     "largest": sorted(((sizes[o], o) for o in sizes), reverse=True)[:10],
+    "word_modules": words,
+    "word_wall_min": [round(n * WORD_WALL_S / 60) for n in words],
   }
   _write(out / "listing.json", summary)
   print(
@@ -967,6 +990,49 @@ def spread(out: Path, ptx_shards: int, warp_shards: int) -> None:
     f"{summary['warp_bytes']}",
     flush=True,
   )
+  if any(words):
+    print(
+      f"FILL spread software word modules per shard {words}: the longest ~{max(summary['word_wall_min'])} min of "
+      f"links at ~{WORD_WALL_S} s each (more than the shard cap: raise WARP_SOFTWARE)",
+      flush=True,
+    )
+
+
+def _word_owner(name: str, owner: str) -> bool:
+  """Whether module `name`'s shard owner `owner` is a software word group (`_owner`: a group key,
+  not the module's own name)."""
+  return owner != name
+
+
+def _chunked(made: dict[str, tuple[str, int, dict[str, str]]], chunk: int) -> dict[str, tuple[str, int, dict[str, str]]]:
+  """`made` (module -> owner, size, point) with each word group of more than `chunk` modules (0:
+  none split) split into owners `<group>#<i>` of at most `chunk` modules each, by name."""
+  if chunk <= 0:
+    return made
+  groups: dict[str, list[str]] = {}
+  for name, (owner, _, _) in made.items():
+    if _word_owner(name, owner):
+      groups.setdefault(owner, []).append(name)
+  out = dict(made)
+  for owner, names in groups.items():
+    if len(names) > chunk:
+      for i, name in enumerate(sorted(names)):
+        _, size, point = made[name]
+        out[name] = (f"{owner}#{i // chunk}", size, point)
+  return out
+
+
+def _limited(made: dict[str, tuple[str, int, dict[str, str]]], limit: int) -> dict[str, tuple[str, int, dict[str, str]]]:
+  """`limit` modules of `made`: the first two (by name) of its smallest word-group owner, then the
+  smallest other modules (a dry run: every compile path, in minutes)."""
+  sizes: dict[str, int] = {}
+  for name, (owner, size, _) in made.items():
+    if _word_owner(name, owner):
+      sizes[owner] = sizes.get(owner, 0) + size
+  words = sorted(n for n, (o, _, _) in made.items() if sizes and o == min(sizes, key=lambda k: (sizes[k], k)))[:2]
+  plain = sorted((s, n) for n, (o, s, _) in made.items() if not _word_owner(n, o))
+  keep = words + [n for _, n in plain][: max(0, limit - len(words))]
+  return {n: made[n] for n in keep}
 
 
 # The Warp modules a Warp shard compiles alone (`spread`): the GI relight kernels (made by a
@@ -1318,6 +1384,13 @@ def main(argv: list[str]) -> None:
   sp.add_argument("--out", type=Path, required=True, help="the directory of the listing parts")
   sp.add_argument("--ptx-shards", type=int, required=True, help="OptiX PTX shards (0 on the software backend)")
   sp.add_argument("--warp-shards", type=int, required=True, help="Warp module shards")
+  sp.add_argument(
+    "--chunk",
+    type=int,
+    default=GROUP_CHUNK,
+    help="split software word groups into owners of at most this many modules (0: whole)",
+  )
+  sp.add_argument("--limit", type=int, default=0, help="only this many Warp modules (a dry run)")
   fl = sub.add_parser("fill")
   fl.add_argument("--root", type=Path, required=True, help="the cache root (`build.py collect --root`)")
   fl.add_argument("--workers", type=int, required=True, help="NVRTC processes (~3 GB each; a job's cores, not the host's)")
@@ -1354,7 +1427,7 @@ def main(argv: list[str]) -> None:
   elif a.cmd == "list":
     listing(a.backend, a.out, a.part, [dict(kv.split("=", 1) for kv in a.only)] if a.only else None, a.profile)
   elif a.cmd == "spread":
-    spread(a.out, a.ptx_shards, a.warp_shards)
+    spread(a.out, a.ptx_shards, a.warp_shards, chunk=a.chunk, limit=a.limit)
   else:
     only = [dict(kv.split("=", 1) for kv in a.only)] if a.only else None
     fill(

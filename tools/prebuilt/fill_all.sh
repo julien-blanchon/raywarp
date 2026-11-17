@@ -107,7 +107,11 @@ set -euo pipefail
 cmd=$1 tag=$2
 DRY=${DRY:-0}
 if [ "$DRY" = 1 ]; then
-  ARCHS=${ARCHS:-120 80} OPTIX_PARTS=${OPTIX_PARTS:-1} PTX=${PTX:-1} WARP=${WARP:-1} WARP_SOFTWARE=${WARP_SOFTWARE:-4} CENSUS_JOBS=${CENSUS_JOBS:-1}
+  ARCHS=${ARCHS:-120 80} OPTIX_PARTS=${OPTIX_PARTS:-1} PTX=${PTX:-1} WARP=${WARP:-1} WARP_SOFTWARE=${WARP_SOFTWARE:-1} CENSUS_JOBS=${CENSUS_JOBS:-1}
+  # The software path's dry point lists 1 546 Warp modules (links of 9-55 s each: dry run
+  # 43978938600 hit the 30 min cap): only a handful (`fill spread --limit`: two word modules of
+  # the smallest group, then the smallest others) prove every compile path in minutes.
+  WARP_LIMIT_SOFTWARE=${WARP_LIMIT_SOFTWARE:-6} SHARD_CAP_SOFTWARE=${SHARD_CAP_SOFTWARE:-30m}
   PACKS=${PACKS:-0} HEAVY=${HEAVY-} PREFIX=${PREFIX:-scratch/dry-$tag} SEED=${SEED-} BUNDLE_SEED=${BUNDLE_SEED-}
   ONLY=${ONLY:-scene=fs_point0_plain_none_mesh_n,tier=fast,layout=shared,gi=False,outputs=shaded}
   SHARD_CAP=${SHARD_CAP:-30m} MERGE_CAP=${MERGE_CAP:-30m} RELEASE_CAP=${RELEASE_CAP:-30m} RELEASE_FLAVOR=cpu-upgrade
@@ -121,9 +125,14 @@ ARCHS=${ARCHS:-120 89 86 90 80}
 PTX=${PTX:-40} WARP=${WARP:-16} OPTIX_PARTS=${OPTIX_PARTS:-12} CENSUS_JOBS=${CENSUS_JOBS:-8} PACKS=${PACKS:-}
 # Warp shards of a software-path architecture (sm_80 / sm_90): its builds are Warp word modules (each
 # a megakernel per word and literal twin, lens model: one point lists 1 546 modules / ~500 MB of source
-# against 118 / 1.7 MB on OptiX, measured 2026-11-16 on the dry point), so 3x the OptiX count; the
-# dry run's point spreads over 4 (~125 MB each; one shard of all 1 546 was the failed dry run's).
-WARP_SOFTWARE=${WARP_SOFTWARE:-48}
+# against 118 / 1.7 MB on OptiX, measured 2026-11-16 on the dry point), so 3x the OptiX count, with a
+# longer cap: a word module links in 9-55 s (dry run 43978938600: 386 in 25 min on one shard, its
+# groups' links one after another); word groups are split in chunks of `fill.GROUP_CHUNK` (12) so the
+# shard's 4 workers link at once: ~17 s of shard wall per module (link + its share of the chunk's
+# LTO-IR, over 4), ~250 modules per 90 min shard after bootstrap and listing; 48 shards hold ~12 000
+# modules. The full software listing's count is not measured yet: `fill spread` prints each shard's
+# expected wall; read it on the first software build.
+WARP_SOFTWARE=${WARP_SOFTWARE:-48} WARP_LIMIT_SOFTWARE=${WARP_LIMIT_SOFTWARE:-} SHARD_CAP_SOFTWARE=${SHARD_CAP_SOFTWARE:-90m}
 WORKERS=${WORKERS:-4}  # NVRTC processes per PTX shard (cpu-upgrade: 4 at once is the best rate)
 SHARD_FLAVOR=${SHARD_FLAVOR:-cpu-upgrade}  # cpu-performance: ~2x faster per build, ~60x the price
 RETRIES=${RETRIES:-2} WATCH_EVERY=${WATCH_EVERY:-120} SNAP_EVERY=${SNAP_EVERY:-600} POLL=${POLL:-30}
@@ -151,7 +160,7 @@ PACK_MARGIN=${PACK_MARGIN:-600}
 PACK_MODULES_120=${PACK_MODULES_120:-400} PACK_MODULES_89=${PACK_MODULES_89:-100} PACK_MODULES_86=${PACK_MODULES_86:-130}
 L4_FLAVOR=${L4_FLAVOR:-l4x1}  # sm_89: l4x1 ($0.80/h) or l40sx1 ($1.80/h, more cores)
 # The release driver of each architecture's module pack ("" : the pack job's own, recorded).
-DRIVER_120=${DRIVER_120-580.178.04} DRIVER_89=${DRIVER_89-} DRIVER_86=${DRIVER_86-}
+DRIVER_120=${DRIVER_120-620.70.06} DRIVER_89=${DRIVER_89-} DRIVER_86=${DRIVER_86-}
 # The seed of the packs (`build.py pack --seed`): a published pack of the same architecture and
 # driver whose modules the packs fetch instead of making them (a module's name is the digest of its
 # PTX and record: unchanged ones keep their names; the pack stays the census's set). SEED=auto:
@@ -333,7 +342,9 @@ job_spec() {  # NAME: "flavor cap" and, on the next line, the job's command
   local lk; lk=$(state "list-key-$arch")
   local be pr np nw lists="/tmp/lists" listed="$CACHE/sm$arch/list/$lk" parts="$CACHE/sm$arch/list/$lk/part-*.json"
   be=$(backend "$arch") pr=$(profile "$arch") np=$(ptx_shards "$arch") nw=$(warp_shards "$arch")
-  local spread="mkdir -p $lists && cp $parts $lists/ && python -m tools.prebuilt.fill spread --ptx-shards $np --warp-shards $nw --out $lists | grep FILL &&"
+  local limit=""
+  [ "$be" != software ] || [ -z "$WARP_LIMIT_SOFTWARE" ] || limit=" --limit $WARP_LIMIT_SOFTWARE"
+  local spread="mkdir -p $lists && cp $parts $lists/ && python -m tools.prebuilt.fill spread --ptx-shards $np --warp-shards $nw$limit --out $lists | grep FILL &&"
   case $job in
     list-*)
       local i=${job#list-}
@@ -356,7 +367,7 @@ job_spec() {  # NAME: "flavor cap" and, on the next line, the job's command
       esac
       local seed; seed=$(bundle_seed "$arch")
       fill="$fill --cache $CACHE${seed:+ --seed $seed}"
-      echo "$SHARD_FLAVOR $SHARD_CAP"
+      if [ "$be" = software ]; then echo "$SHARD_FLAVOR $SHARD_CAP_SOFTWARE"; else echo "$SHARD_FLAVOR $SHARD_CAP"; fi
       # Resume from the last snapshot; snapshot every SNAP_EVERY s while the fill runs; then the
       # shard's bundle (`build.py collect`) as its final archive.
       local snap="(while sleep $SNAP_EVERY; do tar -cf $part.partial -C $root . 2>/dev/null && mv $part.partial $part && echo \"FILL snapshot \$(du -h $part | cut -f1)\"; done) & SNAP=\$!;"

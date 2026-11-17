@@ -245,11 +245,16 @@ def test_each_architecture_gets_its_backend_census_and_pack_flavor(tmp_path: Pat
   env |= {"SCENES_FILE": str(scenes), "HEAVY": ""}
   assert "--profile l4 " in _spec(env, "sm89-p0")[1] and "--backend optix --profile a10g" in _spec(env, "sm86-list-0")[1]
   head, w0 = _spec(env, "sm90-w0")
-  assert head == "cpu-upgrade 75m" and "--warp --backend software --profile h100" in w0 and "--ptx-shards 0" in w0
+  assert head == "cpu-upgrade 90m" and "--warp --backend software --profile h100" in w0 and "--ptx-shards 0" in w0
+  assert "--limit" not in w0 and _spec(env, "sm120-w0")[0] == "cpu-upgrade 75m"  # a release: every module
+  # A dry run: one software Warp shard of a handful of modules (two word links), in minutes.
+  head, dry = _spec(env | {"DRY": "1", "ARCHS": "120 80", "WARP_SOFTWARE": ""}, "sm80-w0")
+  assert head == "cpu-upgrade 30m" and "--warp-shards 1 --limit 6 " in dry
+  assert "--limit" not in _spec(env | {"DRY": "1", "ARCHS": "120 80"}, "sm120-w0")[1]
   assert "--profiles rtx_pro_6000,l4,a10g" in _spec(env, "census-0")[1]
   assert "--census /tmp/census/sm89/*.json" in _spec(env, "sm89-merge")[1]
   assert "--census" not in _spec(env, "sm80-merge")[1]
-  assert _spec(env, "sm120-pack-0")[0] == "rtx-pro-6000 35m" and "580.178.04" in _spec(env, "sm120-pack-0")[1]
+  assert _spec(env, "sm120-pack-0")[0] == "rtx-pro-6000 35m" and "620.70.06" in _spec(env, "sm120-pack-0")[1]
   head, pack = _spec(env, "sm89-pack-0")
   assert head == "l4x1 35m" and "--shard 0/6" in pack and "--groups fast+default:own" in pack and "FATAL" not in pack
   assert _spec(env, "sm86-pack-0")[0] == "a10g-large 35m" and _spec(env, "sm80-release")[0].startswith("cpu-upgrade")
@@ -277,17 +282,14 @@ def test_the_dry_refill_lays_out_and_pins_two_architectures(tmp_path: Path) -> N
   ran = {p.parent.name.split("-t-", 1)[1] for p in (tmp_path / "jobs").glob("*/exit")}
   assert ran == {"sm120-list-0", "sm120-p0", "sm120-w0", "sm120-merge", "sm120-pack-0", "sm120-release"} | {
     "sm80-list-0",
-    "sm80-w0",
-    "sm80-w1",
-    "sm80-w2",
-    "sm80-w3",  # the dry point's 1 546 software modules over 4 shards (WARP_SOFTWARE)
+    "sm80-w0",  # one shard of a handful of modules (WARP_LIMIT_SOFTWARE)
     "sm80-merge",
     "sm80-release",
     "census-0",
   }
   # Every Warp shard (and only they) installs the fill's NVRTC / nvJitLink (sm_80's failed without).
   withs = {p.parent.name.split("-t-", 1)[1]: p.read_text().strip() for p in (tmp_path / "jobs").glob("*/with")}
-  assert {j for j, w in withs.items() if w == "fillcuda"} == {"sm120-w0", *(f"sm80-w{i}" for i in range(4))}
+  assert {j for j, w in withs.items() if w == "fillcuda"} == {"sm120-w0", "sm80-w0"}
   assert set(withs.values()) == {"", "fillcuda"}
   flavors = {p.parent.name.split("-t-", 1)[1]: p.read_text().strip() for p in (tmp_path / "jobs").glob("*/flavor")}
   assert flavors.pop("sm120-pack-0") == "rtx-pro-6000" and set(flavors.values()) == {"cpu-upgrade"}
@@ -400,3 +402,32 @@ def test_in_ci_a_job_out_of_relaunches_fails_the_fill_at_once(tmp_path: Path) ->
     check=False,
   )
   assert other.returncode == 2 and "FILL REFUSED" in other.stderr and "belongs to another build" in other.stderr
+
+
+def test_a_dry_dispatch_with_the_default_input_keeps_the_two_dry_architectures(tmp_path: Path) -> None:
+  """kernels.yml's architecture step: a dry dispatch with the default input leaves ARCHS unset
+  (fill_all.sh's dry pair, sm_120 + sm_80; dry run 43978938600 built all five), a real one or a dry
+  one with chosen architectures sets it; the tag names the dispatch (dry) or the build (real)."""
+  import yaml
+
+  workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "kernels.yml").read_text())
+  (step,) = [s for s in workflow["jobs"]["fill"]["steps"] if s.get("name", "").startswith("The fill's architectures")]
+
+  def run(**env: str) -> dict[str, str]:
+    out = tmp_path / "github_env"
+    out.write_text("")
+    base = {
+      "GITHUB_ENV": str(out),
+      "GITHUB_RUN_ID": "77",
+      "GITHUB_REF_NAME": "main",
+      "GITHUB_SHA": "0123456789abcdef",
+      "FORCE": "0",
+    }
+    subprocess.run(["bash", "-euo", "pipefail", "-c", step["run"]], env={"PATH": os.environ["PATH"], **base, **env}, check=True)
+    return dict(line.split("=", 1) for line in out.read_text().splitlines())
+
+  default = "120 89 86 90 80"
+  assert run(DRY="1", ARCHS_IN=default) == {"TAG": "kernels-dry-77"}
+  assert run(DRY="1", ARCHS_IN="120")["ARCHS"] == "120"
+  real = run(DRY="0", ARCHS_IN=default)
+  assert real["ARCHS"] == default and real["TAG"].startswith("kernels-main-01234567-")
