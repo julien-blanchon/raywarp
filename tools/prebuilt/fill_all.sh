@@ -282,7 +282,10 @@ print(b['content'] if b and ('packs' not in b or '$driver' in b['packs']) else '
     [ -n "$content" ] || return 0  # no published pack of this architecture and driver
     # The latest pins commit naming this bundle (a release that skipped the architecture kept it).
     seed=$(git log --format=%s -- raywarp/core/build/kernel_cache/kernels.json | sed -n "s/.*bundle \($content\)[ ,].*from \([0-9a-f]*\))\$/\1@\2/p" | head -1)
-    [ -n "$seed" ] || { echo "SEED=auto: no commit of raywarp/core/build/kernel_cache/kernels.json names a refill of bundle $content: set SEED_$1=CONTENT@REV" >&2; return 1; }
+    # The seed only saves pack time: SEED=auto without a findable refill commit (a fresh clone, a
+    # squashed public history) or without that commit builds the pack unseeded.
+    [ -n "$seed" ] || { echo "SEED=auto: no commit names a refill of bundle $content: the sm$1 pack is built unseeded" >&2; return 0; }
+    git cat-file -e "${seed#*@}^{commit}" 2>/dev/null || { echo "SEED=auto: commit ${seed#*@} is not in this history: the sm$1 pack is built unseeded" >&2; return 0; }
   fi
   content=${seed%@*} rev=${seed#*@}
   changed=""
